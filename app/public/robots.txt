@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://app-beta-lilac-23.vercel.app/sitemap.xml

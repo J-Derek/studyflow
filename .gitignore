@@ -1,0 +1,22 @@
+# Dependencies & Build Artifacts
+node_modules/
+dist/
+dist-ssr/
+.vercel/
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Logs & Temporary Files
+*.log
+*.zip
+qa-screenshots/
+.DS_Store
+Thumbs.db
+
+# Agent & AI Artifacts
+graphify-out/
+.gemini/
+.agents/

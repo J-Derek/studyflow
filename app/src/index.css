@@ -1,0 +1,31 @@
+/* Hallmark StudyFlow Academic Design System */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-canvas-light dark:bg-canvas-dark text-zinc-900 dark:text-zinc-100 antialiased font-sans min-h-screen selection:bg-blue-100 selection:text-blue-900 dark:selection:bg-blue-950 dark:selection:text-blue-200;
+  }
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full;
+}
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-slate-700;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-600;
+}

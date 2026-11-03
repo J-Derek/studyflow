@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2318181B'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta name="description" content="StudyFlow — High-performance academic command center, dynamic GPA predictor, deep work timer, and syllabus milestone ledger." />
+    <meta name="keywords" content="study planner, GPA calculator, student productivity, academic command center, Pomodoro timer, syllabus tracker" />
+    <meta name="author" content="StudyFlow Team" />
+    <link rel="canonical" href="https://app-beta-lilac-23.vercel.app/" />
+
+    <!-- Open Graph Metadata -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://app-beta-lilac-23.vercel.app/" />
+    <meta property="og:title" content="StudyFlow — Academic Command Center" />
+    <meta property="og:description" content="High-performance academic command center with dynamic GPA modeling, deep work timer, and syllabus deliverable tracking." />
+    <meta property="og:site_name" content="StudyFlow" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="StudyFlow — Academic Command Center" />
+    <meta name="twitter:description" content="High-performance academic command center with dynamic GPA modeling, deep work timer, and syllabus deliverable tracking." />
+
+    <!-- Mobile & Theming -->
+    <meta name="theme-color" content="#F8F9FA" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#090A0C" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>StudyFlow: Academic Command Center & GPA Simulator</title>
+
+    <!-- Schema.org JSON-LD Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "StudyFlow",
+        "url": "https://app-beta-lilac-23.vercel.app/",
+        "description": "High-performance academic command center with dynamic GPA modeling, deep work timer, and syllabus deliverable tracking.",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "All",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+
+    <!-- Inter & JetBrains Mono Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+      try {
+        const s = JSON.parse(localStorage.getItem('studyflow_storage_v1') || '{}');
+        const t = s?.state?.theme ?? 'system';
+        const dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', dark);
+      } catch {}
+    </script>
+  </head>
+  <body class="bg-canvas-light dark:bg-canvas-dark text-zinc-900 dark:text-zinc-100 transition-colors duration-150">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyFlow — Design System & Screen Specifications</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            study: {
+              bg: '#FAF9F6',
+              surface: '#FFFFFF',
+              surfaceMuted: '#F4F4F5',
+              border: '#E4E4E7',
+              indigo: '#1E1B4B',
+              indigoLight: '#312E81',
+              lavender: '#818CF8',
+              lavenderSoft: '#EEF2FF',
+              lavenderSubtle: '#E0E7FF',
+              green: '#059669',
+              greenSoft: '#ECFDF5',
+              greenLight: '#34D399',
+              amber: '#D97706',
+              amberSoft: '#FFFBEB',
+              rose: '#E11D48',
+              roseSoft: '#FFF1F2',
+              textPrimary: '#0F172A',
+              textSecondary: '#475569',
+              textMuted: '#94A3B8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #FAF9F6; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+  </style>
+</head>
+<body class="text-study-textPrimary min-h-screen">
+
+  <!-- Top Global Bar / Navigation Switcher -->
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-study-border px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-xl bg-study-indigo flex items-center justify-center text-white shadow-md shadow-study-indigo/20">
+        <i data-lucide="book-open" class="w-5 h-5 text-study-lavender"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-lg text-study-indigo flex items-center gap-2">
+          StudyFlow
+          <span class="text-xs px-2 py-0.5 rounded-full bg-study-lavenderSoft text-study-indigo font-semibold border border-study-lavender/30">Figma Design v1.0</span>
+        </h1>
+        <p class="text-xs text-study-textSecondary">Architect: ChatGPT • Developer: Antigravity (Agy)</p>
+      </div>
+    </div>
+
+    <!-- View Switcher -->
+    <div class="flex items-center bg-study-surfaceMuted p-1 rounded-xl border border-study-border text-sm font-medium">
+      <button onclick="switchView('dashboard')" id="btn-dashboard" class="px-3.5 py-1.5 rounded-lg bg-white text-study-indigo shadow-xs transition">Dashboard</button>
+      <button onclick="switchView('assignments')" id="btn-assignments" class="px-3.5 py-1.5 rounded-lg text-study-textSecondary hover:text-study-textPrimary transition">Assignments</button>
+      <button onclick="switchView('calendar')" id="btn-calendar" class="px-3.5 py-1.5 rounded-lg text-study-textSecondary hover:text-study-textPrimary transition">Calendar</button>
+      <button onclick="switchView('timer')" id="btn-timer" class="px-3.5 py-1.5 rounded-lg text-study-textSecondary hover:text-study-textPrimary transition">Focus Timer</button>
+      <button onclick="switchView('mobile')" id="btn-mobile" class="px-3.5 py-1.5 rounded-lg text-study-textSecondary hover:text-study-textPrimary transition flex items-center gap-1.5">
+        <i data-lucide="smartphone" class="w-4 h-4"></i> Mobile (390px)
+      </button>
+      <button onclick="switchView('system')" id="btn-system" class="px-3.5 py-1.5 rounded-lg text-study-textSecondary hover:text-study-textPrimary transition flex items-center gap-1.5">
+        <i data-lucide="palette" class="w-4 h-4 text-study-green"></i> Design System
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER FOR DESKTOP VIEWS -->
+  <div id="desktop-wrapper" class="flex min-h-[calc(100vh-65px)]">
+
+    <!-- DESKTOP SIDEBAR -->
+    <aside class="w-64 bg-white border-r border-study-border p-5 flex flex-col justify-between shrink-0">
+      <div class="space-y-6">
+        <div class="px-3 py-2 bg-study-lavenderSoft/60 rounded-xl border border-study-lavenderSubtle flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-study-indigo text-white flex items-center justify-center font-bold text-sm">DM</div>
+          <div class="overflow-hidden">
+            <h4 class="font-semibold text-sm truncate">Derrick Macharia</h4>
+            <p class="text-xs text-study-textMuted truncate">CS & Data Science '26</p>
+          </div>
+        </div>
+
+        <nav class="space-y-1">
+          <a href="#" onclick="switchView('dashboard'); return false;" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition bg-study-indigo text-white shadow-xs">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+          </a>
+          <a href="#" onclick="switchView('assignments'); return false;" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm text-study-textSecondary hover:bg-study-surfaceMuted transition">
+            <div class="flex items-center gap-3">
+              <i data-lucide="check-square" class="w-4 h-4"></i> Assignments
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-study-roseSoft text-study-rose font-bold">3 due</span>
+          </a>
+          <a href="#" onclick="switchView('calendar'); return false;" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-study-textSecondary hover:bg-study-surfaceMuted transition">
+            <i data-lucide="calendar" class="w-4 h-4"></i> Study Calendar
+          </a>
+          <a href="#" onclick="switchView('timer'); return false;" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm text-study-textSecondary hover:bg-study-surfaceMuted transition">
+            <div class="flex items-center gap-3">
+              <i data-lucide="clock" class="w-4 h-4"></i> Focus Timer
+            </div>
+            <span class="w-2 h-2 rounded-full bg-study-green animate-pulse"></span>
+          </a>
+        </nav>
+
+        <div>
+          <h5 class="text-xs font-semibold text-study-textMuted uppercase tracking-wider px-3 mb-2">My Courses</h5>
+          <div class="space-y-1 text-sm">
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-study-textSecondary hover:bg-study-surfaceMuted cursor-pointer">
+              <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span> CS301 Algorithms
+            </div>
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-study-textSecondary hover:bg-study-surfaceMuted cursor-pointer">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> MATH220 Linear Algebra
+            </div>
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-study-textSecondary hover:bg-study-surfaceMuted cursor-pointer">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> PHYS102 Electromagnetism
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Productivity Metric at Bottom -->
+      <div class="bg-study-bg p-4 rounded-xl border border-study-border">
+        <div class="flex justify-between items-center mb-1.5">
+          <span class="text-xs font-semibold text-study-textSecondary">Weekly Target</span>
+          <span class="text-xs font-bold text-study-indigo">78%</span>
+        </div>
+        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+          <div class="bg-study-indigo h-full rounded-full" style="width: 78%"></div>
+        </div>
+        <p class="text-[11px] text-study-textMuted mt-2 flex items-center gap-1">
+          <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-500"></i> 5-day study streak!
+        </p>
+      </div>
+    </aside>
+
+    <!-- CONTENT AREA -->
+    <main class="flex-1 p-8 overflow-y-auto custom-scroll">
+
+      <!-- VIEW 1: DASHBOARD -->
+      <section id="view-dashboard" class="space-y-8 max-w-6xl mx-auto">
+        <!-- Welcome Hero Banner -->
+        <div class="bg-gradient-to-r from-study-indigo to-study-indigoLight text-white rounded-2xl p-7 shadow-lg shadow-study-indigo/15 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-medium text-study-lavenderSoft mb-3 border border-white/15">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-study-greenLight"></i> Fall Semester 2026 • Week 9
+            </div>
+            <h2 class="text-2xl font-bold tracking-tight">Good evening, Derrick 👋</h2>
+            <p class="text-study-lavenderSoft text-sm mt-1 max-w-xl">
+              You've got <span class="font-semibold text-white">3 assignments</span> due over the next 48 hours. Keep up the momentum!
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="switchView('timer')" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium text-sm flex items-center gap-2 transition">
+              <i data-lucide="play" class="w-4 h-4 text-study-greenLight"></i> Start Focus
+            </button>
+            <button class="px-4 py-2.5 rounded-xl bg-study-lavender hover:bg-indigo-400 text-study-indigo font-bold text-sm shadow-md transition flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i> Add Task
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Stat Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div class="bg-white p-5 rounded-2xl border border-study-border shadow-xs hover:border-study-lavender transition">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-semibold text-study-textMuted uppercase tracking-wider">Pending Tasks</p>
+                <h3 class="text-2xl font-extrabold text-study-indigo mt-1">7</h3>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <i data-lucide="list-todo" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 mt-3 text-xs text-study-rose font-medium">
+              <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> 3 due within 48h
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-study-border shadow-xs hover:border-study-lavender transition">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-semibold text-study-textMuted uppercase tracking-wider">Completed</p>
+                <h3 class="text-2xl font-extrabold text-study-indigo mt-1">14</h3>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 mt-3 text-xs text-study-green font-medium">
+              <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> +4 from last week
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-study-border shadow-xs hover:border-study-lavender transition">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-semibold text-study-textMuted uppercase tracking-wider">Focus Time</p>
+                <h3 class="text-2xl font-extrabold text-study-indigo mt-1">18.5h</h3>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <i data-lucide="hourglass" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 mt-3 text-xs text-study-textSecondary font-medium">
+              <i data-lucide="zap" class="w-3.5 h-3.5 text-study-lavender"></i> 3.5h logged today
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-study-border shadow-xs hover:border-study-lavender transition">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-semibold text-study-textMuted uppercase tracking-wider">Study Streak</p>
+                <h3 class="text-2xl font-extrabold text-study-indigo mt-1">5 Days</h3>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
+                <i data-lucide="flame" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 mt-3 text-xs text-orange-600 font-medium">
+              Personal record: 12 days
+            </div>
+          </div>
+        </div>
+
+        <!-- 2-Column Split: Upcoming Deadlines & Today's Schedule -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <!-- Left Column (2 Cols): Urgent Assignments -->
+          <div class="lg:col-span-2 bg-white rounded-2xl border border-study-border p-6 shadow-xs">
+            <div class="flex justify-between items-center mb-5">
+              <div>
+                <h3 class="font-bold text-lg text-study-indigo">Upcoming Assignments</h3>
+                <p class="text-xs text-study-textMuted">Sorted by urgency</p>
+              </div>
+              <button onclick="switchView('assignments')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                View all (7) <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <!-- Task Items -->
+            <div class="space-y-3">
+              <!-- Item 1 -->
+              <div class="p-4 rounded-xl border border-study-border hover:border-study-lavender transition flex items-center justify-between gap-4 bg-study-bg/30">
+                <div class="flex items-center gap-3.5">
+                  <input type="checkbox" class="w-5 h-5 rounded-md border-gray-300 text-study-indigo focus:ring-study-indigo cursor-pointer">
+                  <div>
+                    <h4 class="font-semibold text-sm text-study-indigo">Dynamic Programming Problem Set</h4>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-xs px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-medium">CS301</span>
+                      <span class="text-xs text-study-rose font-medium flex items-center gap-1">
+                        <i data-lucide="clock" class="w-3 h-3"></i> Due in 4 hours
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <span class="text-xs px-2.5 py-1 rounded-full font-bold bg-study-roseSoft text-study-rose border border-rose-200">High</span>
+              </div>
+
+              <!-- Item 2 -->
+              <div class="p-4 rounded-xl border border-study-border hover:border-study-lavender transition flex items-center justify-between gap-4 bg-study-bg/30">
+                <div class="flex items-center gap-3.5">
+                  <input type="checkbox" class="w-5 h-5 rounded-md border-gray-300 text-study-indigo focus:ring-study-indigo cursor-pointer">
+                  <div>
+                    <h4 class="font-semibold text-sm text-study-indigo">Eigenvalues & Matrix Decomposition Lab</h4>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-xs px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-medium">MATH220</span>
+                      <span class="text-xs text-amber-600 font-medium flex items-center gap-1">
+                        <i data-lucide="clock" class="w-3 h-3"></i> Tomorrow at 2:00 PM
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <span class="text-xs px-2.5 py-1 rounded-full font-bold bg-study-amberSoft text-study-amber border border-amber-200">Medium</span>
+              </div>
+
+              <!-- Item 3 -->
+              <div class="p-4 rounded-xl border border-study-border hover:border-study-lavender transition flex items-center justify-between gap-4 bg-study-bg/30">
+                <div class="flex items-center gap-3.5">
+                  <input type="checkbox" class="w-5 h-5 rounded-md border-gray-300 text-study-indigo focus:ring-study-indigo cursor-pointer">
+                  <div>
+                    <h4 class="font-semibold text-sm text-study-indigo">Maxwell Equations Weekly Quiz</h4>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-xs px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 font-medium">PHYS102</span>
+                      <span class="text-xs text-study-textMuted font-medium flex items-center gap-1">
+                        <i data-lucide="calendar" class="w-3 h-3"></i> Thursday, Nov 5
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <span class="text-xs px-2.5 py-1 rounded-full font-bold bg-study-greenSoft text-study-green border border-green-200">Low</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Today's Study Schedule & Focus Widget -->
+          <div class="space-y-6">
+            <!-- Today's Schedule Card -->
+            <div class="bg-white rounded-2xl border border-study-border p-6 shadow-xs">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-base text-study-indigo">Today's Study Plan</h3>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">Nov 1</span>
+              </div>
+              <div class="space-y-3 relative pl-4 border-l-2 border-indigo-100">
+                <div class="relative">
+                  <div class="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-study-green ring-4 ring-white"></div>
+                  <p class="text-xs text-study-textMuted">09:00 AM - 10:30 AM</p>
+                  <p class="text-sm font-semibold text-study-indigo">Algorithms DP Review</p>
+                  <span class="text-[11px] text-emerald-600 font-medium">Completed (90m)</span>
+                </div>
+                <div class="relative">
+                  <div class="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-study-indigo ring-4 ring-white"></div>
+                  <p class="text-xs text-study-textMuted">02:00 PM - 03:30 PM</p>
+                  <p class="text-sm font-semibold text-study-indigo">Linear Algebra Exercises</p>
+                  <span class="text-[11px] text-indigo-600 font-medium">In Progress (60m)</span>
+                </div>
+                <div class="relative">
+                  <div class="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-slate-300 ring-4 ring-white"></div>
+                  <p class="text-xs text-study-textMuted">07:00 PM - 08:00 PM</p>
+                  <p class="text-sm font-semibold text-study-indigo">Physics Chapter 8 Reading</p>
+                  <span class="text-[11px] text-slate-500 font-medium">Upcoming (60m)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mini Focus Card -->
+            <div class="bg-gradient-to-br from-study-lavenderSoft to-indigo-50 border border-study-lavenderSubtle p-5 rounded-2xl flex items-center justify-between">
+              <div>
+                <p class="text-xs font-bold text-study-indigo uppercase tracking-wider">Ready to focus?</p>
+                <p class="text-xs text-study-textSecondary mt-0.5">25 min Pomodoro ready</p>
+              </div>
+              <button onclick="switchView('timer')" class="w-10 h-10 rounded-full bg-study-indigo text-white flex items-center justify-center hover:scale-105 transition shadow-md">
+                <i data-lucide="play" class="w-4 h-4 ml-0.5"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- VIEW 2: ASSIGNMENT MANAGEMENT -->
+      <section id="view-assignments" class="hidden space-y-6 max-w-6xl mx-auto">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 class="text-2xl font-bold text-study-indigo">Assignment Management</h2>
+            <p class="text-sm text-study-textSecondary">Manage all academic deadlines, priorities, and progress</p>
+          </div>
+          <button class="px-4 py-2.5 bg-study-indigo text-white rounded-xl font-bold text-sm hover:bg-study-indigoLight transition flex items-center gap-2 shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i> New Assignment
+          </button>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="bg-white p-4 rounded-2xl border border-study-border flex flex-col md:flex-row gap-3 justify-between items-center">
+          <div class="flex items-center gap-2 w-full md:w-auto">
+            <div class="relative w-full md:w-72">
+              <i data-lucide="search" class="w-4 h-4 text-study-textMuted absolute left-3 top-3"></i>
+              <input type="text" placeholder="Search assignments or courses..." class="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-study-border focus:ring-2 focus:ring-study-indigo focus:outline-none">
+            </div>
+            <select class="text-sm border border-study-border rounded-xl px-3 py-2 bg-white text-study-textSecondary focus:outline-none">
+              <option>All Courses</option>
+              <option>CS301 Algorithms</option>
+              <option>MATH220 Linear Algebra</option>
+              <option>PHYS102 Electromagnetism</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-1.5 self-end md:self-auto bg-study-surfaceMuted p-1 rounded-xl border border-study-border text-xs font-semibold">
+            <button class="px-3 py-1.5 rounded-lg bg-white text-study-indigo shadow-xs">All (7)</button>
+            <button class="px-3 py-1.5 rounded-lg text-study-textSecondary">In Progress (4)</button>
+            <button class="px-3 py-1.5 rounded-lg text-study-textSecondary">Completed (14)</button>
+          </div>
+        </div>
+
+        <!-- Assignment Cards Table/List -->
+        <div class="space-y-3">
+          <!-- Row 1 -->
+          <div class="bg-white p-4 rounded-2xl border border-study-border hover:border-study-lavender transition flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+              <input type="checkbox" class="w-5 h-5 mt-0.5 rounded-md border-gray-300 text-study-indigo focus:ring-study-indigo cursor-pointer">
+              <div>
+                <h4 class="font-bold text-base text-study-indigo">Dynamic Programming Problem Set 3</h4>
+                <p class="text-xs text-study-textSecondary mt-0.5">Solve questions on Knapsack, Edit Distance, and Matrix Chain Multiplication.</p>
+                <div class="flex items-center gap-3 mt-2">
+                  <span class="text-xs px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-semibold">CS301</span>
+                  <span class="text-xs text-study-rose font-medium flex items-center gap-1">
+                    <i data-lucide="clock" class="w-3.5 h-3.5"></i> Today, 11:59 PM (4 hrs left)
+                  </span>
+                  <span class="text-xs text-study-textMuted flex items-center gap-1">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-study-green"></i> 3/5 subtasks
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 self-end md:self-auto">
+              <span class="text-xs px-3 py-1 rounded-full font-bold bg-study-roseSoft text-study-rose border border-rose-200">High Priority</span>
+              <button class="p-2 text-study-textMuted hover:text-study-textPrimary rounded-lg"><i data-lucide="more-vertical" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+
+          <!-- Row 2 -->
+          <div class="bg-white p-4 rounded-2xl border border-study-border hover:border-study-lavender transition flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+              <input type="checkbox" class="w-5 h-5 mt-0.5 rounded-md border-gray-300 text-study-indigo focus:ring-study-indigo cursor-pointer">
+              <div>
+                <h4 class="font-bold text-base text-study-indigo">Eigenvalues & Matrix Decomposition Lab</h4>
+                <p class="text-xs text-study-textSecondary mt-0.5">Implement QR algorithm in Python and submit Jupyter notebook.</p>
+                <div class="flex items-center gap-3 mt-2">
+                  <span class="text-xs px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-semibold">MATH220</span>
+                  <span class="text-xs text-amber-600 font-medium flex items-center gap-1">
+                    <i data-lucide="clock" class="w-3.5 h-3.5"></i> Tomorrow, 2:00 PM
+                  </span>
+                  <span class="text-xs text-study-textMuted flex items-center gap-1">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-study-green"></i> 1/3 subtasks
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 self-end md:self-auto">
+              <span class="text-xs px-3 py-1 rounded-full font-bold bg-study-amberSoft text-study-amber border border-amber-200">Medium</span>
+              <button class="p-2 text-study-textMuted hover:text-study-textPrimary rounded-lg"><i data-lucide="more-vertical" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+
+          <!-- Row 3 -->
+          <div class="bg-white p-4 rounded-2xl border border-study-border hover:border-study-lavender transition flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+              <input type="checkbox" class="w-5 h-5 mt-0.5 rounded-md border-gray-300 text-study-indigo focus:ring-study-indigo cursor-pointer">
+              <div>
+                <h4 class="font-bold text-base text-study-indigo">Maxwell Equations Weekly Quiz 4</h4>
+                <p class="text-xs text-study-textSecondary mt-0.5">Review Gauss law and Ampere law with Maxwell correction.</p>
+                <div class="flex items-center gap-3 mt-2">
+                  <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-700 font-semibold">PHYS102</span>
+                  <span class="text-xs text-study-textMuted font-medium flex items-center gap-1">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Nov 5, 2026
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 self-end md:self-auto">
+              <span class="text-xs px-3 py-1 rounded-full font-bold bg-study-greenSoft text-study-green border border-green-200">Low</span>
+              <button class="p-2 text-study-textMuted hover:text-study-textPrimary rounded-lg"><i data-lucide="more-vertical" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: WEEKLY STUDY CALENDAR -->
+      <section id="view-calendar" class="hidden space-y-6 max-w-6xl mx-auto">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-2xl font-bold text-study-indigo">Weekly Study Calendar</h2>
+            <p class="text-sm text-study-textSecondary">Organize study blocks, class times, and deadline markers</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="px-3 py-1.5 bg-white border border-study-border rounded-xl text-xs font-semibold text-study-textSecondary hover:bg-slate-50">&lt; Previous</button>
+            <span class="text-xs font-bold px-3 py-1 bg-study-lavenderSoft rounded-xl text-study-indigo">Nov 1 – Nov 7, 2026</span>
+            <button class="px-3 py-1.5 bg-white border border-study-border rounded-xl text-xs font-semibold text-study-textSecondary hover:bg-slate-50">Next &gt;</button>
+          </div>
+        </div>
+
+        <!-- 7-Day Calendar Grid -->
+        <div class="bg-white rounded-2xl border border-study-border p-5 shadow-xs overflow-x-auto">
+          <div class="grid grid-cols-7 gap-3 min-w-[700px]">
+            <!-- Day 1: Sun -->
+            <div class="space-y-3">
+              <div class="text-center pb-2 border-b border-study-border">
+                <span class="text-xs font-semibold text-study-textMuted">Sun</span>
+                <p class="text-lg font-extrabold text-study-indigo">1</p>
+              </div>
+              <div class="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900 font-medium">
+                <span class="font-bold block text-[11px] text-indigo-700">09:00 - 10:30</span>
+                Algorithms DP Review
+              </div>
+              <div class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 font-medium">
+                <span class="font-bold block text-[11px] text-rose-700">23:59 DEADLINE</span>
+                CS301 Problem Set
+              </div>
+            </div>
+
+            <!-- Day 2: Mon -->
+            <div class="space-y-3">
+              <div class="text-center pb-2 border-b border-study-border">
+                <span class="text-xs font-semibold text-study-textMuted">Mon</span>
+                <p class="text-lg font-extrabold text-study-indigo">2</p>
+              </div>
+              <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 font-medium">
+                <span class="font-bold block text-[11px] text-emerald-700">14:00 DEADLINE</span>
+                MATH220 Lab Submission
+              </div>
+              <div class="p-2.5 rounded-xl bg-study-surfaceMuted border border-study-border text-xs text-slate-700 font-medium">
+                <span class="font-bold block text-[11px] text-slate-500">16:00 - 17:30</span>
+                Study Group Session
+              </div>
+            </div>
+
+            <!-- Day 3: Tue -->
+            <div class="space-y-3">
+              <div class="text-center pb-2 border-b border-study-border">
+                <span class="text-xs font-semibold text-study-textMuted">Tue</span>
+                <p class="text-lg font-extrabold text-study-indigo">3</p>
+              </div>
+              <div class="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900 font-medium">
+                <span class="font-bold block text-[11px] text-indigo-700">11:00 - 12:30</span>
+                CS301 Lecture
+              </div>
+            </div>
+
+            <!-- Day 4: Wed -->
+            <div class="space-y-3">
+              <div class="text-center pb-2 border-b border-study-border">
+                <span class="text-xs font-semibold text-study-textMuted">Wed</span>
+                <p class="text-lg font-extrabold text-study-indigo">4</p>
+              </div>
+              <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 font-medium">
+                <span class="font-bold block text-[11px] text-amber-700">10:00 - 11:30</span>
+                Physics Lab Practice
+              </div>
+            </div>
+
+            <!-- Day 5: Thu -->
+            <div class="space-y-3">
+              <div class="text-center pb-2 border-b border-study-border">
+                <span class="text-xs font-semibold text-study-textMuted">Thu</span>
+                <p class="text-lg font-extrabold text-study-indigo">5</p>
+              </div>
+              <div class="p-2.5 rounded-xl bg-amber-50 border border-rose-200 text-xs text-rose-900 font-medium">
+                <span class="font-bold block text-[11px] text-rose-700">17:00 DEADLINE</span>
+                PHYS102 Quiz
+              </div>
+            </div>
+
+            <!-- Day 6: Fri -->
+            <div class="space-y-3">
+              <div class="text-center pb-2 border-b border-study-border">
+                <span class="text-xs font-semibold text-study-textMuted">Fri</span>
+                <p class="text-lg font-extrabold text-study-indigo">6</p>
+              </div>
+              <div class="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900 font-medium">
+                <span class="font-bold block text-[11px] text-indigo-700">13:00 - 15:00</span>
+                Research Project Prep
+              </div>
+            </div>
+
+            <!-- Day 7: Sat -->
+            <div class="space-y-3">
+              <div class="text-center pb-2 border-b border-study-border">
+                <span class="text-xs font-semibold text-study-textMuted">Sat</span>
+                <p class="text-lg font-extrabold text-study-indigo">7</p>
+              </div>
+              <div class="p-2.5 rounded-xl bg-study-surfaceMuted border border-dashed border-study-border text-xs text-slate-400 text-center py-6">
+                No sessions planned
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: FOCUS TIMER (POMODORO) -->
+      <section id="view-timer" class="hidden space-y-6 max-w-3xl mx-auto text-center">
+        <div>
+          <h2 class="text-2xl font-bold text-study-indigo">Focus Timer</h2>
+          <p class="text-sm text-study-textSecondary">Deep work session powered by configurable Pomodoro technique</p>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-study-border p-10 shadow-sm flex flex-col items-center">
+          <!-- Modes -->
+          <div class="flex items-center gap-2 bg-study-surfaceMuted p-1.5 rounded-2xl border border-study-border mb-8">
+            <button class="px-5 py-2 rounded-xl bg-white text-study-indigo font-bold text-xs shadow-xs">Focus (25m)</button>
+            <button class="px-5 py-2 rounded-xl text-study-textSecondary font-semibold text-xs hover:text-study-textPrimary">Short Break (5m)</button>
+            <button class="px-5 py-2 rounded-xl text-study-textSecondary font-semibold text-xs hover:text-study-textPrimary">Long Break (15m)</button>
+          </div>
+
+          <!-- Circular Timer Ring -->
+          <div class="relative w-64 h-64 flex items-center justify-center my-4">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="44" stroke="#EEF2FF" stroke-width="6" fill="transparent" />
+              <circle cx="50" cy="50" r="44" stroke="#1E1B4B" stroke-width="6" fill="transparent" stroke-dasharray="276.46" stroke-dashoffset="69.11" stroke-linecap="round" />
+            </svg>
+            <div class="absolute flex flex-col items-center">
+              <span class="text-5xl font-black text-study-indigo tracking-tight">18:45</span>
+              <span class="text-xs font-semibold text-study-textMuted uppercase mt-1">CS301 Dynamic Prog</span>
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="flex items-center gap-4 mt-6">
+            <button class="w-12 h-12 rounded-2xl bg-study-surfaceMuted border border-study-border flex items-center justify-center text-study-textSecondary hover:bg-slate-200 transition">
+              <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+            </button>
+            <button class="px-8 py-3.5 rounded-2xl bg-study-indigo text-white font-bold text-base shadow-lg shadow-study-indigo/25 hover:bg-study-indigoLight transition flex items-center gap-2">
+              <i data-lucide="pause" class="w-5 h-5"></i> Pause Session
+            </button>
+            <button class="w-12 h-12 rounded-2xl bg-study-surfaceMuted border border-study-border flex items-center justify-center text-study-textSecondary hover:bg-slate-200 transition">
+              <i data-lucide="skip-forward" class="w-5 h-5"></i>
+            </button>
+          </div>
+
+          <!-- Session Progress Indicator -->
+          <div class="flex items-center gap-2 mt-8 text-xs font-semibold text-study-textSecondary">
+            <span>Session:</span>
+            <div class="flex gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-study-indigo"></span>
+              <span class="w-3 h-3 rounded-full bg-study-indigo"></span>
+              <span class="w-3 h-3 rounded-full bg-study-lavender animate-pulse"></span>
+              <span class="w-3 h-3 rounded-full bg-slate-200"></span>
+            </div>
+            <span class="text-study-textMuted ml-1">3 of 4</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 5: DESIGN SYSTEM SHOWCASE -->
+      <section id="view-system" class="hidden space-y-10 max-w-6xl mx-auto">
+        <div class="border-b border-study-border pb-4">
+          <h2 class="text-3xl font-extrabold text-study-indigo">StudyFlow Design System Foundation</h2>
+          <p class="text-sm text-study-textSecondary mt-1">Design tokens, typography scale, color semantics, and core reusable components.</p>
+        </div>
+
+        <!-- Color Palette Token Display -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-bold text-study-indigo flex items-center gap-2">
+            <i data-lucide="palette" class="w-5 h-5 text-study-lavender"></i> Color Semantics & Tokens
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div class="bg-white p-4 rounded-2xl border border-study-border shadow-xs">
+              <div class="h-16 rounded-xl bg-[#1E1B4B] mb-3"></div>
+              <h4 class="font-bold text-sm text-study-indigo">Deep Indigo</h4>
+              <p class="text-xs text-study-textMuted">#1E1B4B • Primary Brand</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-study-border shadow-xs">
+              <div class="h-16 rounded-xl bg-[#818CF8] mb-3"></div>
+              <h4 class="font-bold text-sm text-study-indigo">Soft Lavender</h4>
+              <p class="text-xs text-study-textMuted">#818CF8 • Secondary/Action</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-study-border shadow-xs">
+              <div class="h-16 rounded-xl bg-[#FAF9F6] border border-gray-300 mb-3"></div>
+              <h4 class="font-bold text-sm text-study-indigo">Warm Off-White</h4>
+              <p class="text-xs text-study-textMuted">#FAF9F6 • Background Canvas</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-study-border shadow-xs">
+              <div class="h-16 rounded-xl bg-[#059669] mb-3"></div>
+              <h4 class="font-bold text-sm text-study-indigo">Muted Green</h4>
+              <p class="text-xs text-study-textMuted">#059669 • Success & Streak</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-study-border shadow-xs">
+              <div class="h-16 rounded-xl bg-[#E11D48] mb-3"></div>
+              <h4 class="font-bold text-sm text-study-indigo">Rose Alert</h4>
+              <p class="text-xs text-study-textMuted">#E11D48 • High Priority/Urgent</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Typography Ramp -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-bold text-study-indigo flex items-center gap-2">
+            <i data-lucide="type" class="w-5 h-5 text-study-lavender"></i> Typography Ramp (Inter)
+          </h3>
+          <div class="bg-white p-6 rounded-2xl border border-study-border space-y-4">
+            <div class="flex justify-between items-baseline border-b border-study-border pb-3">
+              <div>
+                <span class="text-xs font-semibold text-study-textMuted uppercase">Display / Hero (32px Bold)</span>
+                <p class="text-3xl font-extrabold text-study-indigo mt-1">Organize your academic life with clarity.</p>
+              </div>
+              <span class="text-xs font-mono text-study-textMuted">32px / 1.2</span>
+            </div>
+            <div class="flex justify-between items-baseline border-b border-study-border pb-3">
+              <div>
+                <span class="text-xs font-semibold text-study-textMuted uppercase">Heading 1 (24px Bold)</span>
+                <p class="text-2xl font-bold text-study-indigo mt-1">Upcoming Assignments & Tests</p>
+              </div>
+              <span class="text-xs font-mono text-study-textMuted">24px / 1.3</span>
+            </div>
+            <div class="flex justify-between items-baseline border-b border-study-border pb-3">
+              <div>
+                <span class="text-xs font-semibold text-study-textMuted uppercase">Heading 2 (18px SemiBold)</span>
+                <p class="text-lg font-semibold text-study-indigo mt-1">Today's Focus Sessions</p>
+              </div>
+              <span class="text-xs font-mono text-study-textMuted">18px / 1.4</span>
+            </div>
+            <div class="flex justify-between items-baseline">
+              <div>
+                <span class="text-xs font-semibold text-study-textMuted uppercase">Body & Caption (14px Regular / 12px Medium)</span>
+                <p class="text-sm text-study-textSecondary mt-1">Consistent spacing and clean hierarchy engineered for zero cognitive fatigue.</p>
+              </div>
+              <span class="text-xs font-mono text-study-textMuted">14px / 1.5</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reusable Component Library -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-bold text-study-indigo flex items-center gap-2">
+            <i data-lucide="box" class="w-5 h-5 text-study-lavender"></i> Reusable UI Components
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Buttons -->
+            <div class="bg-white p-6 rounded-2xl border border-study-border space-y-4">
+              <h4 class="font-bold text-sm text-study-indigo">Button Variants</h4>
+              <div class="flex flex-wrap gap-3">
+                <button class="px-4 py-2 bg-study-indigo text-white rounded-xl font-bold text-xs shadow-sm hover:bg-study-indigoLight transition">Primary</button>
+                <button class="px-4 py-2 bg-study-lavender text-study-indigo rounded-xl font-bold text-xs shadow-xs hover:bg-indigo-300 transition">Secondary</button>
+                <button class="px-4 py-2 bg-study-surfaceMuted text-study-textSecondary border border-study-border rounded-xl font-bold text-xs hover:bg-slate-200 transition">Ghost</button>
+                <button class="px-4 py-2 bg-study-roseSoft text-study-rose border border-rose-200 rounded-xl font-bold text-xs hover:bg-rose-100 transition">Destructive</button>
+              </div>
+            </div>
+
+            <!-- Priority Badges -->
+            <div class="bg-white p-6 rounded-2xl border border-study-border space-y-4">
+              <h4 class="font-bold text-sm text-study-indigo">Priority & Status Badges</h4>
+              <div class="flex flex-wrap gap-3">
+                <span class="px-3 py-1 rounded-full text-xs font-bold bg-study-roseSoft text-study-rose border border-rose-200">High Priority</span>
+                <span class="px-3 py-1 rounded-full text-xs font-bold bg-study-amberSoft text-study-amber border border-amber-200">Medium</span>
+                <span class="px-3 py-1 rounded-full text-xs font-bold bg-study-greenSoft text-study-green border border-green-200">Low</span>
+                <span class="px-3 py-1 rounded-full text-xs font-bold bg-study-lavenderSoft text-study-indigo border border-indigo-200">In Progress</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- VIEW 6: MOBILE DEVICE SIMULATOR (390px iPhone Frame) -->
+  <div id="mobile-wrapper" class="hidden min-h-[calc(100vh-65px)] flex justify-center items-center py-8 bg-slate-200">
+    <!-- iPhone 15 Frame -->
+    <div class="w-[390px] h-[800px] bg-study-bg rounded-[48px] border-[10px] border-slate-900 shadow-2xl overflow-hidden flex flex-col relative ring-1 ring-slate-900/10">
+      
+      <!-- Dynamic Island / Notch -->
+      <div class="h-7 bg-transparent flex justify-center items-end shrink-0 z-20">
+        <div class="w-28 h-5 bg-black rounded-full"></div>
+      </div>
+
+      <!-- Mobile Content Scrollable -->
+      <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-4 pb-20">
+        <!-- Mobile Header -->
+        <div class="flex justify-between items-center pt-2">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-study-indigo text-white flex items-center justify-center font-bold text-xs">DM</div>
+            <div>
+              <p class="text-xs text-study-textMuted">Hey, Derrick</p>
+              <h3 class="font-bold text-sm text-study-indigo">StudyFlow</h3>
+            </div>
+          </div>
+          <button class="p-2 rounded-xl bg-white border border-study-border text-study-textSecondary">
+            <i data-lucide="bell" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Mobile Hero -->
+        <div class="bg-gradient-to-r from-study-indigo to-study-indigoLight text-white rounded-2xl p-5 shadow-sm">
+          <span class="text-[10px] uppercase font-bold tracking-wider text-study-lavender">Week 9 Goals</span>
+          <h4 class="font-bold text-lg mt-0.5">3 tasks due today</h4>
+          <p class="text-xs text-study-lavenderSoft mt-1">78% completed so far this week</p>
+          <div class="w-full bg-white/20 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div class="bg-study-lavender h-full rounded-full" style="width: 78%"></div>
+          </div>
+        </div>
+
+        <!-- Mobile Mini Stats -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="bg-white p-3.5 rounded-xl border border-study-border">
+            <span class="text-[10px] text-study-textMuted font-bold uppercase">Focus Today</span>
+            <p class="text-lg font-black text-study-indigo mt-0.5">3.5 hrs</p>
+          </div>
+          <div class="bg-white p-3.5 rounded-xl border border-study-border">
+            <span class="text-[10px] text-study-textMuted font-bold uppercase">Study Streak</span>
+            <p class="text-lg font-black text-orange-500 mt-0.5 flex items-center gap-1">
+              <i data-lucide="flame" class="w-4 h-4"></i> 5 Days
+            </p>
+          </div>
+        </div>
+
+        <!-- Mobile Urgent Tasks -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center">
+            <h5 class="text-xs font-bold text-study-indigo uppercase tracking-wider">Urgent Tasks</h5>
+            <span class="text-[11px] font-bold text-indigo-600">See all</span>
+          </div>
+          
+          <div class="bg-white p-3.5 rounded-xl border border-study-border space-y-1.5">
+            <div class="flex justify-between items-start">
+              <span class="text-[10px] px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-bold">CS301</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-50 text-rose-600">High</span>
+            </div>
+            <h6 class="font-bold text-xs text-study-indigo">Dynamic Programming Set 3</h6>
+            <p class="text-[11px] text-study-rose font-medium flex items-center gap-1">
+              <i data-lucide="clock" class="w-3 h-3"></i> Due in 4 hours
+            </p>
+          </div>
+
+          <div class="bg-white p-3.5 rounded-xl border border-study-border space-y-1.5">
+            <div class="flex justify-between items-start">
+              <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold">MATH220</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-50 text-amber-600">Medium</span>
+            </div>
+            <h6 class="font-bold text-xs text-study-indigo">Eigenvalues Decomposition Lab</h6>
+            <p class="text-[11px] text-amber-600 font-medium flex items-center gap-1">
+              <i data-lucide="clock" class="w-3 h-3"></i> Tomorrow at 2 PM
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Sticky Bottom Nav Bar -->
+      <nav class="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-study-border py-2 px-6 flex justify-between items-center text-[10px] font-semibold text-study-textMuted z-30">
+        <div class="flex flex-col items-center text-study-indigo">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+          <span>Home</span>
+        </div>
+        <div class="flex flex-col items-center">
+          <i data-lucide="check-square" class="w-5 h-5"></i>
+          <span>Tasks</span>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-study-indigo text-white flex items-center justify-center -mt-4 shadow-lg shadow-study-indigo/30">
+          <i data-lucide="plus" class="w-5 h-5"></i>
+        </div>
+        <div class="flex flex-col items-center">
+          <i data-lucide="calendar" class="w-5 h-5"></i>
+          <span>Calendar</span>
+        </div>
+        <div class="flex flex-col items-center">
+          <i data-lucide="clock" class="w-5 h-5"></i>
+          <span>Timer</span>
+        </div>
+      </nav>
+
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function switchView(viewName) {
+      const desktopWrapper = document.getElementById('desktop-wrapper');
+      const mobileWrapper = document.getElementById('mobile-wrapper');
+
+      const views = ['dashboard', 'assignments', 'calendar', 'timer', 'system'];
+      const buttons = ['btn-dashboard', 'btn-assignments', 'btn-calendar', 'btn-timer', 'btn-mobile', 'btn-system'];
+
+      // Reset button styles
+      buttons.forEach(bId => {
+        const btn = document.getElementById(bId);
+        if (btn) {
+          btn.className = "px-3.5 py-1.5 rounded-lg text-study-textSecondary hover:text-study-textPrimary transition flex items-center gap-1.5";
+        }
+      });
+
+      if (viewName === 'mobile') {
+        desktopWrapper.classList.add('hidden');
+        mobileWrapper.classList.remove('hidden');
+        document.getElementById('btn-mobile').className = "px-3.5 py-1.5 rounded-lg bg-white text-study-indigo shadow-xs transition flex items-center gap-1.5";
+      } else {
+        mobileWrapper.classList.add('hidden');
+        desktopWrapper.classList.remove('hidden');
+
+        views.forEach(v => {
+          const el = document.getElementById(`view-${v}`);
+          if (el) el.classList.add('hidden');
+        });
+
+        const activeEl = document.getElementById(`view-${viewName}`);
+        if (activeEl) activeEl.classList.remove('hidden');
+
+        const activeBtn = document.getElementById(`btn-${viewName}`);
+        if (activeBtn) {
+          activeBtn.className = "px-3.5 py-1.5 rounded-lg bg-white text-study-indigo shadow-xs transition flex items-center gap-1.5";
+        }
+      }
+    }
+  </script>
+</body>
+</html>
