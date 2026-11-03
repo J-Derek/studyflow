@@ -124,6 +124,27 @@ export const CalendarPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Empty State Onboarding Guidance */}
+      {sessions.length === 0 && (
+        <div className="p-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+              Your weekly class schedule is empty
+            </h4>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+              Add your lectures, labs, and study blocks to organize your week, or load demo courses from the Help menu (?).
+            </p>
+          </div>
+          <button
+            onClick={() => setModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium shrink-0 cursor-pointer shadow-2xs"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>Add Class Block</span>
+          </button>
+        </div>
+      )}
+
       {/* Unified 7-Day Continuous Calendar Grid (Cron / Notion Calendar Architecture) */}
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark shadow-2xs overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 min-h-[500px]">

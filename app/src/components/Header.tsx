@@ -5,7 +5,8 @@ import {
   LogIn,
   Plus,
   Search,
-  Command
+  Command,
+  HelpCircle
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { signInOrLinkWithGoogle } from '../lib/auth';
@@ -15,9 +16,16 @@ interface HeaderProps {
   onOpenSearch?: () => void;
   onOpenBackup?: () => void;
   onOpenProfile?: () => void;
+  onOpenHelp?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenAddModal, onOpenSearch, onOpenBackup, onOpenProfile }) => {
+export const Header: React.FC<HeaderProps> = ({ 
+  onOpenAddModal, 
+  onOpenSearch, 
+  onOpenBackup, 
+  onOpenProfile,
+  onOpenHelp 
+}) => {
   const { theme, toggleTheme, isAnonymous, isSyncing, activeTab, user } = useStudyFlowStore();
   const [isLinking, setIsLinking] = useState(false);
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -144,6 +152,19 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddModal, onOpenSearch, on
             <span>{!isOnline ? 'Offline Cache' : isSyncing ? 'Syncing...' : 'Live Cloud'}</span>
           </div>
 
+          {/* Help & Playbook Guide */}
+          {onOpenHelp && (
+            <button
+              type="button"
+              onClick={onOpenHelp}
+              title="StudyFlow Playbook & 45-Second Tour"
+              aria-label="StudyFlow Playbook & 45-Second Tour"
+              className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-lg border border-zinc-200/80 dark:border-zinc-750 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </button>
+          )}
+
           {/* Guest Account Upgrade / Backup Button */}
           {isAnonymous && (
             <button
@@ -154,7 +175,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddModal, onOpenSearch, on
               disabled={isLinking}
               aria-label="Academic ledger backup & cloud sync"
               title="Academic ledger backup & cloud sync"
-              className="flex items-center justify-center gap-1.5 px-3 min-h-[44px] min-w-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium transition-colors disabled:opacity-60"
+              className="flex items-center justify-center gap-1.5 px-3 min-h-[44px] min-w-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium transition-colors disabled:opacity-60 cursor-pointer"
             >
               <LogIn className="h-3.5 w-3.5 text-blue-600" />
               <span className="hidden md:inline">{isLinking ? 'Linking...' : 'Backup'}</span>

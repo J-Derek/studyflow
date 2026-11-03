@@ -6,6 +6,7 @@ import { AssignmentModal } from './components/AssignmentModal';
 import { CommandPalette } from './components/CommandPalette';
 import { BackupModal } from './components/BackupModal';
 import { ProfileModal } from './components/ProfileModal';
+import { HelpMenuModal } from './components/HelpMenuModal';
 import { useStudyFlowStore, getTabFromPath } from './store/studyFlowStore';
 import { ensureAuthenticatedUser } from './lib/auth';
 import { initFirestoreSync } from './services/firestoreSync';
@@ -23,6 +24,7 @@ export function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   // Initialize guest-first anonymous authentication & live Firestore sync
   useEffect(() => {
@@ -99,6 +101,7 @@ export function App() {
           onOpenSearch={() => setIsSearchOpen(true)}
           onOpenBackup={() => setIsBackupOpen(true)}
           onOpenProfile={() => setIsProfileOpen(true)}
+          onOpenHelp={() => setIsHelpOpen(true)}
         />
 
         {/* Page Content Viewport with Accessible Suspense Fallback */}
@@ -121,7 +124,14 @@ export function App() {
               </div>
             }
           >
-            {activeTab === 'dashboard' && <Dashboard onOpenProfile={() => setIsProfileOpen(true)} />}
+            {activeTab === 'dashboard' && (
+              <Dashboard 
+                onOpenProfile={() => setIsProfileOpen(true)}
+                onOpenAddModal={() => setIsAddModalOpen(true)}
+                onOpenBackup={() => setIsBackupOpen(true)}
+                onOpenHelp={() => setIsHelpOpen(true)}
+              />
+            )}
             {activeTab === 'assignments' && <AssignmentsPage />}
             {activeTab === 'calendar' && <CalendarPage />}
             {activeTab === 'timer' && <FocusTimerPage />}
@@ -156,6 +166,12 @@ export function App() {
         <ProfileModal
           isOpen={isProfileOpen}
           onClose={() => setIsProfileOpen(false)}
+        />
+
+        {/* StudyFlow Playbook & 45-Second Tour Modal */}
+        <HelpMenuModal
+          isOpen={isHelpOpen}
+          onClose={() => setIsHelpOpen(false)}
         />
       </div>
     </div>

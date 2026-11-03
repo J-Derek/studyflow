@@ -10,12 +10,22 @@ import { useStudyFlowStore } from '../store/studyFlowStore';
 import { getDaysRemaining } from '../utils/formatters';
 import { calculateCumulativeGpa, getAcademicStanding } from '../utils/academicCalculations';
 import { AssignmentModal } from '../components/AssignmentModal';
+import { FirstDeadlineCard } from '../components/FirstDeadlineCard';
+import { GettingStartedChecklist } from '../components/GettingStartedChecklist';
 
 interface DashboardProps {
   onOpenProfile?: () => void;
+  onOpenAddModal?: () => void;
+  onOpenBackup?: () => void;
+  onOpenHelp?: () => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ onOpenProfile }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ 
+  onOpenProfile,
+  onOpenAddModal,
+  onOpenBackup,
+  onOpenHelp 
+}) => {
   const { user, assignments, sessions, grades, pomodorosCompleted, setActiveTab, toggleAssignmentComplete } = useStudyFlowStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -62,7 +72,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenProfile }) => {
             </div>
             
             <h1 className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-              Academic Command Ledger
+              Academic Dashboard
             </h1>
             
             <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-sans">
@@ -70,9 +80,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenProfile }) => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            {onOpenHelp && (
+              <button
+                type="button"
+                onClick={onOpenHelp}
+                aria-label="StudyFlow Playbook & 45-Second Tour"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg border border-zinc-200/80 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs transition cursor-pointer"
+              >
+                <span>45s Tour & Guide</span>
+              </button>
+            )}
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => (onOpenAddModal ? onOpenAddModal() : setIsModalOpen(true))}
               aria-label="Add Deliverable"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium text-xs hover:bg-zinc-800 dark:hover:bg-white/90 transition-transform active:scale-95 shadow-2xs cursor-pointer"
             >
@@ -90,6 +110,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenProfile }) => {
           </div>
         </div>
       </div>
+
+      {/* Zero State Activation Hero: Quick First Deadline Input */}
+      {assignments.length === 0 && (
+        <FirstDeadlineCard />
+      )}
+
+      {/* Getting Started Derived Activation Checklist */}
+      <GettingStartedChecklist
+        onOpenAddModal={onOpenAddModal || (() => setIsModalOpen(true))}
+        onOpenBackup={onOpenBackup}
+      />
 
       {/* Unified High-Density Performance Ledger Strip (Continuous Hairline Grid) */}
       <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-2 lg:grid-cols-4 shadow-2xs overflow-hidden">
@@ -199,9 +230,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenProfile }) => {
           <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark overflow-hidden divide-y divide-zinc-200/70 dark:divide-zinc-800/70 shadow-2xs">
             {urgentAssignments.length === 0 ? (
               <div className="p-8 text-center">
-                <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-                <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">All deliverables cleared</h4>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">No urgent deadlines pending on your syllabus.</p>
+                {assignments.length === 0 ? (
+                  <>
+                    <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">No deadlines scheduled yet</h4>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">Use the quick start card above or click "Add Deliverable" to begin.</p>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
+                    <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">All deliverables cleared</h4>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">No urgent deadlines pending on your syllabus.</p>
+                  </>
+                )}
               </div>
             ) : (
               urgentAssignments.map((asg) => {

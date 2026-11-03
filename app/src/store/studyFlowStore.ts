@@ -48,6 +48,12 @@ interface StudyFlowState {
   user: UserPreferences;
   updateUser: (user: Partial<UserPreferences>) => void;
 
+  // Onboarding & Demo Sandbox
+  onboardingDismissed: boolean;
+  dismissOnboarding: () => void;
+  loadSampleData: () => void;
+  clearAllData: () => void;
+
   // Active Navigation Tab
   activeTab: 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades';
   setActiveTab: (tab: 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades') => void;
@@ -295,29 +301,56 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           isAnonymous: true,
           userEmail: null,
           isSyncing: false,
-          assignments: initialAssignments,
-          sessions: initialSessions,
-          grades: initialGrades,
+          assignments: [],
+          sessions: [],
+          grades: [],
+          onboardingDismissed: false,
           user: {
-            name: 'Guest Scholar',
+            name: 'Student',
             university: 'Academic Workspace',
-            program: 'General Studies',
-            semester: 'Fall 2026'
+            program: 'Undergraduate',
+            semester: 'Current Term'
           }
         });
       },
 
       user: {
-        name: 'Alex Rivera',
-        university: 'Stanford University',
-        program: 'Computer Science & Mathematics',
-        semester: 'Fall 2026'
+        name: 'Student',
+        university: 'Academic Workspace',
+        program: 'Undergraduate',
+        semester: 'Current Term'
       },
 
       updateUser: (updates) =>
         set((state) => ({
           user: { ...state.user, ...updates }
         })),
+
+      onboardingDismissed: false,
+      dismissOnboarding: () => set({ onboardingDismissed: true }),
+
+      loadSampleData: () => {
+        set({
+          assignments: initialAssignments,
+          sessions: initialSessions,
+          grades: initialGrades,
+          user: {
+            name: 'Alex Vance',
+            university: 'Polytechnic Institute',
+            program: 'Computer Engineering',
+            semester: 'Fall 2026'
+          }
+        });
+      },
+
+      clearAllData: () => {
+        set({
+          assignments: [],
+          sessions: [],
+          grades: [],
+          pomodorosCompleted: 0
+        });
+      },
 
       activeTab: typeof window !== 'undefined' ? getTabFromPath(window.location.pathname) : 'dashboard',
       setActiveTab: (tab) => {
@@ -752,8 +785,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
             return a;
           });
 
-          if (!state.grades || state.grades.length === 0) {
-            state.grades = initialGrades;
+          if (!state.grades) {
+            state.grades = [];
           }
         }
       }

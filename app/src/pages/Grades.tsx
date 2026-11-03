@@ -254,16 +254,34 @@ export const GradesPage: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-          {grades.map((course) => {
-            const { currentPct, gradedWeight } = calculateCoursePercentage(course);
-            const letter = percentageToLetter(currentPct);
-
-            return (
-              <div
-                key={course.id}
-                className="p-4 rounded-xl bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs space-y-3 transition-colors"
+        {grades.length === 0 ? (
+          <div className="p-8 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-surface-light dark:bg-surface-dark text-center">
+            <Calculator className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
+            <h3 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">No courses enrolled</h3>
+            <p className="text-[11px] text-zinc-400 max-w-sm mx-auto mt-0.5">
+              Add your classes and syllabus grade weights to calculate your cumulative GPA and simulate target final exam scores.
+            </p>
+            <div className="mt-3">
+              <button
+                onClick={() => setShowAddCourseModal(true)}
+                className="px-3.5 py-1.5 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
               >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Add First Course</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {grades.map((course) => {
+              const { currentPct, gradedWeight } = calculateCoursePercentage(course);
+              const letter = percentageToLetter(currentPct);
+
+              return (
+                <div
+                  key={course.id}
+                  className="p-4 rounded-xl bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs space-y-3 transition-colors"
+                >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2.5">
                     <div
@@ -355,6 +373,7 @@ export const GradesPage: React.FC = () => {
             );
           })}
         </div>
+        )}
       </div>
 
       {/* Modal: Add New Course */}

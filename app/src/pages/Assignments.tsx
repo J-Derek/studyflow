@@ -172,10 +172,25 @@ export const AssignmentsPage: React.FC = () => {
         {filteredAssignments.length === 0 ? (
           <div className="py-12 text-center p-6">
             <CheckSquare className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
-            <h3 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">No deliverables found</h3>
+            <h3 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
+              {assignments.length === 0 ? 'Your coursework ledger is empty' : 'No deliverables match filters'}
+            </h3>
             <p className="text-[11px] text-zinc-400 max-w-sm mx-auto mt-0.5">
-              Adjust your search filters or click "New Deliverable" to add a coursework milestone.
+              {assignments.length === 0 
+                ? 'Add your first problem set, paper, or lab report to start tracking your deadlines.' 
+                : 'Adjust your search filters or click "New Deliverable" to add a coursework milestone.'}
             </p>
+            {assignments.length === 0 && (
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setModalOpen(true)}
+                  className="px-3.5 py-1.5 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Add First Deliverable</span>
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           paginatedAssignments.map((asg) => {
