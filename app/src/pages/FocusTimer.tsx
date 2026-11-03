@@ -142,7 +142,7 @@ export const FocusTimerPage: React.FC = () => {
   const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
   const soundscapesList: { id: SoundscapeType; label: string; icon: React.ReactNode }[] = [
-    { id: 'off', label: 'Mute', icon: <VolumeX className="w-5 h-5 text-slate-400" /> },
+    { id: 'off', label: 'Mute', icon: <VolumeX className="w-5 h-5 text-zinc-400" /> },
     { id: 'rain', label: 'Gentle Rain', icon: <CloudRain className="w-5 h-5 text-indigo-400" /> },
     { id: 'brown', label: 'Deep Waterfall', icon: <Waves className="w-5 h-5 text-cyan-400" /> },
     { id: 'white', label: 'White Noise', icon: <BookOpen className="w-5 h-5 text-amber-400" /> },

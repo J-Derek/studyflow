@@ -400,7 +400,7 @@ export const GradesPage: React.FC = () => {
                   placeholder="e.g. CS 240"
                   value={newCode}
                   onChange={(e) => setNewCode(e.target.value)}
-                  className="mt-1 w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -412,7 +412,7 @@ export const GradesPage: React.FC = () => {
                   placeholder="e.g. Advanced Operating Systems"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="mt-1 w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                   required
                 />
               </div>

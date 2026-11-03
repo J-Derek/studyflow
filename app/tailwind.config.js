@@ -18,6 +18,10 @@ export default {
           elevatedLight: '#F1F3F5',
           elevatedDark: '#18191E',
         },
+        zinc: {
+          750: '#27282f',
+          850: '#14151a',
+        },
         brand: {
           dark: '#1D4ED8',
           primary: '#2563EB',

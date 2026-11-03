@@ -176,7 +176,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Problem Set 2 or Chapter 4 Summary"
-              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
+              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
             />
           </div>
 
@@ -190,7 +190,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               value={course}
               onChange={(e) => setCourse(e.target.value)}
               placeholder="e.g. CS 101 or Physics"
-              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
+              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
             />
           </div>
         </div>

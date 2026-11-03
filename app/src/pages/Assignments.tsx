@@ -103,7 +103,7 @@ export const AssignmentsPage: React.FC = () => {
               placeholder="Search deliverables by title, course code, or notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 transition"
+              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 transition"
             />
           </div>
 
@@ -351,7 +351,7 @@ export const AssignmentsPage: React.FC = () => {
                             setNewSubtaskInputs((prev) => ({ ...prev, [asg.id]: '' }));
                           }
                         }}
-                        className="px-2 py-0.8 text-[11px] rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500 flex-1 font-mono"
+                        className="px-2 py-0.8 text-[11px] rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500 flex-1 font-mono"
                       />
                     </div>
                   )}

@@ -163,7 +163,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 <span>Currently running in local guest session.</span>
               </div>
-              <p className="text-[11px] text-zinc-500">
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                 Link your Google account to mirror your study plan across phone, tablet, and laptop with zero data loss.
               </p>
               <button
