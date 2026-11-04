@@ -3,7 +3,8 @@ import type { StudySession } from '../types';
 /**
  * Generates an RFC 5545 compliant iCalendar (.ics) string for recurring weekly study sessions
  */
-export function generateICalendarFeed(sessions: StudySession[]): string {
+export function generateICalendarFeed(allSessions: StudySession[]): string {
+  const sessions = allSessions.filter((s) => !s.sample);
   const dayNames = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
   const now = new Date();
   const timestamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';

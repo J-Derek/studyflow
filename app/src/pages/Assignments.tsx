@@ -196,13 +196,7 @@ export const AssignmentsPage: React.FC = () => {
           paginatedAssignments.map((asg) => {
             const isCompleted = asg.status === 'completed';
             const { label, isUrgent } = getDaysRemaining(asg.dueDate);
-            const effectiveSubtasks: Subtask[] = (asg.subtasks && asg.subtasks.length > 0)
-              ? asg.subtasks
-              : [
-                  { id: `${asg.id}-st-1`, title: 'Synthesize research & lecture notes', completed: asg.progress >= 30 },
-                  { id: `${asg.id}-st-2`, title: 'Execute core technical deliverables', completed: asg.progress >= 70 },
-                  { id: `${asg.id}-st-3`, title: 'Final proofing and format submission', completed: asg.progress === 100 }
-                ];
+            const effectiveSubtasks: Subtask[] = asg.subtasks ?? [];
 
             return (
               <div
@@ -239,6 +233,11 @@ export const AssignmentsPage: React.FC = () => {
                       >
                         {asg.title}
                       </span>
+                      {asg.sample && (
+                        <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded border border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400">
+                          Sample
+                        </span>
+                      )}
 
                       {asg.notes && (
                         <span className="text-[11px] text-zinc-400 truncate hidden md:inline">

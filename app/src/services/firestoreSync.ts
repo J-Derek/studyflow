@@ -5,19 +5,18 @@ import {
   deleteDoc,
   writeBatch,
   onSnapshot,
+  limit,
+  query,
   serverTimestamp,
   type Unsubscribe
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import type { Assignment, StudySession, TimerMode } from '../types';
+import type { Assignment, StudySession } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
+import { assignmentToDoc, docToAssignment, docToSession, sessionToDoc } from './firestoreMappers';
+import { isLegacySeedId } from '../utils/sampleData';
 
-export interface FirestoreTimerState {
-  mode: TimerMode;
-  secondsLeft: number;
-  isRunning: boolean;
-  updatedAt: any;
-}
+const LIST_CAP = 500;
 
 let activeUnsubscribes: Unsubscribe[] = [];
 
@@ -28,111 +27,125 @@ export function unsubscribeAllFirestoreSync(): void {
   activeUnsubscribes.forEach((unsub) => {
     try {
       unsub();
-    } catch {}
+    } catch {
+      /* listener already closed */
+    }
   });
   activeUnsubscribes = [];
 }
 
+function isCurrentUser(uid: string): boolean {
+  return useStudyFlowStore.getState().userId === uid;
+}
+
 /**
- * Initializes bidirectional synchronization between Zustand store and Firestore.
- * Automatically seeds default items to the user's isolated subcollection on first run.
+ * Starts listeners for the signed-in user. Every callback re-checks that `uid` is still the active
+ * user, so a late snapshot from a previous account can never repopulate the store.
  */
 export function initFirestoreSync(uid: string): () => void {
-  // Tear down previous listeners if any
   unsubscribeAllFirestoreSync();
 
-  const store = useStudyFlowStore.getState();
-
-  // 0. Ensure root user document exists
   const userDocRef = doc(db, 'users', uid);
-  setDoc(userDocRef, {
-    uid,
-    name: store.user.name,
-    university: store.user.university,
-    program: store.user.program,
-    semester: store.user.semester,
-    updatedAt: serverTimestamp()
-  }, { merge: true }).catch((err) => console.warn('User root doc write warning:', err));
+  const { user } = useStudyFlowStore.getState();
+  setDoc(
+    userDocRef,
+    {
+      uid,
+      name: user.name,
+      university: user.university,
+      program: user.program,
+      semester: user.semester,
+      updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  ).catch((err) => console.warn('User root doc write warning:', err));
 
-  // 1. Sync Assignments
-  const assignmentsColRef = collection(db, 'users', uid, 'assignments');
-  const unsubAssignments = onSnapshot(assignmentsColRef, async (snapshot) => {
-    // Guard against late in-flight snapshot race if user switched / signed out
-    if (useStudyFlowStore.getState().userId !== uid) return;
-
-    // Track real Firestore pending writes
-    const hasPendingWrites = snapshot.metadata.hasPendingWrites;
-    useStudyFlowStore.setState({ isSyncing: hasPendingWrites });
-
-    if (snapshot.empty && store.assignments.length > 0) {
-      // First-time guest initialization: seed initial assignments atomically
-      const batch = writeBatch(db);
-      for (const asg of store.assignments) {
-        const asgDocRef = doc(db, 'users', uid, 'assignments', asg.id);
-        batch.set(asgDocRef, { ...asg, updatedAt: serverTimestamp() }, { merge: true });
+  const unsubUser = onSnapshot(
+    userDocRef,
+    (snap) => {
+      if (!isCurrentUser(uid)) return;
+      const dismissed = snap.data()?.onboarding?.dismissed === true;
+      if (dismissed !== useStudyFlowStore.getState().onboardingDismissed) {
+        useStudyFlowStore.setState({ onboardingDismissed: dismissed });
       }
-      await batch.commit().catch((err) => console.warn('Batched assignment seed warning:', err));
-    } else if (!snapshot.empty) {
-      const remoteAssignments: Assignment[] = [];
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        remoteAssignments.push({
-          id: docSnap.id,
-          title: data.title || '',
-          course: data.course || '',
-          dueDate: data.dueDate || '',
-          dueTime: data.dueTime,
-          priority: data.priority || 'medium',
-          status: data.status || 'pending',
-          progress: typeof data.progress === 'number' ? data.progress : 0,
-          notes: data.notes || '',
-          createdAt: data.createdAt || new Date().toISOString(),
-          completedAt: data.completedAt
-        });
+    },
+    (err) => console.warn('Firestore profile listener warning:', err.message)
+  );
+  activeUnsubscribes.push(unsubUser);
+
+  // Assignments. Upload happens only once, on the first server snapshot, when the cloud is empty and
+  // the device holds records made before sign-in. Never re-seed after the student deletes things.
+  let assignmentsSeeded = false;
+  const unsubAssignments = onSnapshot(
+    query(collection(db, 'users', uid, 'assignments'), limit(LIST_CAP)),
+    async (snapshot) => {
+      if (!isCurrentUser(uid)) return;
+      useStudyFlowStore.setState({ isSyncing: snapshot.metadata.hasPendingWrites });
+
+      if (snapshot.metadata.fromCache && snapshot.empty) return; // wait for the server
+
+      if (snapshot.empty && !assignmentsSeeded) {
+        assignmentsSeeded = true;
+        const local = useStudyFlowStore.getState().assignments;
+        if (local.length > 0) {
+          const batch = writeBatch(db);
+          for (const asg of local.slice(0, LIST_CAP)) {
+            batch.set(doc(db, 'users', uid, 'assignments', asg.id), {
+              ...assignmentToDoc(asg),
+              updatedAt: serverTimestamp()
+            });
+          }
+          await batch.commit().catch((err) => console.warn('Batched assignment upload warning:', err));
+        }
+        return;
+      }
+      assignmentsSeeded = true;
+
+      const remote: Assignment[] = [];
+      snapshot.forEach((d) => {
+        const a = docToAssignment(d.id, d.data());
+        remote.push(isLegacySeedId('assignment', a.id) ? { ...a, sample: true } : a);
       });
-      // Sort: high priority first, then due date
-      remoteAssignments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-      useStudyFlowStore.setState({ assignments: remoteAssignments });
-    }
-  }, (err) => {
-    console.warn('Firestore assignments listener warning (using offline cache):', err.message);
-  });
+      remote.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+      if (isCurrentUser(uid)) useStudyFlowStore.setState({ assignments: remote });
+    },
+    (err) => console.warn('Firestore assignments listener warning (using offline cache):', err.message)
+  );
   activeUnsubscribes.push(unsubAssignments);
 
-  // 2. Sync Study Sessions (Calendar)
-  const sessionsColRef = collection(db, 'users', uid, 'sessions');
-  const unsubSessions = onSnapshot(sessionsColRef, async (snapshot) => {
-    // Guard against late in-flight snapshot race if user switched / signed out
-    if (useStudyFlowStore.getState().userId !== uid) return;
+  let sessionsSeeded = false;
+  const unsubSessions = onSnapshot(
+    query(collection(db, 'users', uid, 'sessions'), limit(LIST_CAP)),
+    async (snapshot) => {
+      if (!isCurrentUser(uid)) return;
+      if (snapshot.metadata.fromCache && snapshot.empty) return;
 
-    if (snapshot.empty && store.sessions.length > 0) {
-      // Seed default study schedule atomically
-      const batch = writeBatch(db);
-      for (const session of store.sessions) {
-        const sessionDocRef = doc(db, 'users', uid, 'sessions', session.id);
-        batch.set(sessionDocRef, { ...session, updatedAt: serverTimestamp() }, { merge: true });
+      if (snapshot.empty && !sessionsSeeded) {
+        sessionsSeeded = true;
+        const local = useStudyFlowStore.getState().sessions;
+        if (local.length > 0) {
+          const batch = writeBatch(db);
+          for (const s of local.slice(0, LIST_CAP)) {
+            batch.set(doc(db, 'users', uid, 'sessions', s.id), {
+              ...sessionToDoc(s),
+              updatedAt: serverTimestamp()
+            });
+          }
+          await batch.commit().catch((err) => console.warn('Batched session upload warning:', err));
+        }
+        return;
       }
-      await batch.commit().catch((err) => console.warn('Batched session seed warning:', err));
-    } else if (!snapshot.empty) {
-      const remoteSessions: StudySession[] = [];
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        remoteSessions.push({
-          id: docSnap.id,
-          title: data.title || '',
-          course: data.course || '',
-          dayOfWeek: data.dayOfWeek ?? 1,
-          startTime: data.startTime || '09:00',
-          endTime: data.endTime || '10:00',
-          type: data.type || 'study',
-          color: data.color
-        });
+      sessionsSeeded = true;
+
+      const remote: StudySession[] = [];
+      snapshot.forEach((d) => {
+        const s = docToSession(d.id, d.data());
+        remote.push(isLegacySeedId('session', s.id) ? { ...s, sample: true } : s);
       });
-      useStudyFlowStore.setState({ sessions: remoteSessions });
-    }
-  }, (err) => {
-    console.warn('Firestore sessions listener warning (using offline cache):', err.message);
-  });
+      if (isCurrentUser(uid)) useStudyFlowStore.setState({ sessions: remote });
+    },
+    (err) => console.warn('Firestore sessions listener warning (using offline cache):', err.message)
+  );
   activeUnsubscribes.push(unsubSessions);
 
   return () => {
@@ -140,40 +153,33 @@ export function initFirestoreSync(uid: string): () => void {
   };
 }
 
-/**
- * Persists an assignment to Firestore (and offline cache)
- */
+/** Writes the whole document (no merge) so removed fields really disappear. */
 export async function syncAssignmentToFirestore(uid: string, assignment: Assignment): Promise<void> {
-  const asgDocRef = doc(db, 'users', uid, 'assignments', assignment.id);
-  await setDoc(asgDocRef, {
-    ...assignment,
+  await setDoc(doc(db, 'users', uid, 'assignments', assignment.id), {
+    ...assignmentToDoc(assignment),
     updatedAt: serverTimestamp()
-  }, { merge: true });
+  });
 }
 
-/**
- * Deletes an assignment from Firestore
- */
 export async function deleteAssignmentFromFirestore(uid: string, assignmentId: string): Promise<void> {
-  const asgDocRef = doc(db, 'users', uid, 'assignments', assignmentId);
-  await deleteDoc(asgDocRef);
+  await deleteDoc(doc(db, 'users', uid, 'assignments', assignmentId));
 }
 
-/**
- * Persists a study session to Firestore
- */
 export async function syncSessionToFirestore(uid: string, session: StudySession): Promise<void> {
-  const sessionDocRef = doc(db, 'users', uid, 'sessions', session.id);
-  await setDoc(sessionDocRef, {
-    ...session,
+  await setDoc(doc(db, 'users', uid, 'sessions', session.id), {
+    ...sessionToDoc(session),
     updatedAt: serverTimestamp()
-  }, { merge: true });
+  });
 }
 
-/**
- * Deletes a study session from Firestore
- */
 export async function deleteSessionFromFirestore(uid: string, sessionId: string): Promise<void> {
-  const sessionDocRef = doc(db, 'users', uid, 'sessions', sessionId);
-  await deleteDoc(sessionDocRef);
+  await deleteDoc(doc(db, 'users', uid, 'sessions', sessionId));
+}
+
+export async function syncOnboardingDismissed(uid: string): Promise<void> {
+  await setDoc(
+    doc(db, 'users', uid),
+    { onboarding: { dismissed: true }, updatedAt: serverTimestamp() },
+    { merge: true }
+  );
 }

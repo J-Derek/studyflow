@@ -35,7 +35,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
       id: 'step-asg',
       title: 'Add your first deliverable',
       desc: 'Set an upcoming exam, homework, or project deadline',
-      completed: assignments.length > 0,
+      completed: assignments.some((a) => !a.sample),
       icon: CheckSquare,
       action: () => {
         if (onOpenAddModal) onOpenAddModal();
@@ -54,7 +54,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
       id: 'step-calendar',
       title: 'Add your weekly class schedule',
       desc: 'Map your lectures, labs, and study sessions',
-      completed: sessions.length > 0,
+      completed: sessions.some((s) => !s.sample),
       icon: Calendar,
       action: () => setActiveTab('calendar')
     },

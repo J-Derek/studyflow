@@ -60,34 +60,52 @@ export function calculateCoursePercentage(course: CourseGrade): {
     }
   });
 
-  const currentPct = gradedWeight > 0 ? (earnedWeightScore / gradedWeight) * 100 : 100;
+  const currentPct = gradedWeight > 0 ? (earnedWeightScore / gradedWeight) * 100 : 0;
   return { currentPct, gradedWeight, totalWeight, earnedWeightScore };
 }
 
+/**
+ * Cumulative GPA over the student's own courses. Sample courses are excluded.
+ * Uses integer arithmetic: grade points are held in hundredths and quality points in
+ * hundredths of a point, so 3 x 3.7 never becomes 11.100000000000001.
+ */
 export function calculateCumulativeGpa(grades: CourseGrade[]): {
   gpa: number;
   gpaString: string;
   totalCredits: number;
   totalQualityPoints: number;
+  hasData: boolean;
 } {
-  let totalQualityPoints = 0;
+  let qualityHundredths = 0;
   let totalCredits = 0;
+  // Credits are tracked in tenths so half-credit courses stay exact.
+  let creditTenths = 0;
 
   grades.forEach((c) => {
-    if (c.credits > 0) {
-      const { currentPct } = calculateCoursePercentage(c);
-      const courseGpa = percentageToGpa(currentPct);
-      totalQualityPoints += courseGpa * c.credits;
+    if (c.sample) return;
+    if (c.credits > 0 && Number.isFinite(c.credits)) {
+      const { currentPct, gradedWeight } = calculateCoursePercentage(c);
+      if (gradedWeight <= 0) return; // nothing graded yet: not part of the GPA
+      const gradeHundredths = Math.round(percentageToGpa(currentPct) * 100);
+      const cTenths = Math.round(c.credits * 10);
+      qualityHundredths += gradeHundredths * cTenths; // hundredths x tenths = thousandths of a point
+      creditTenths += cTenths;
       totalCredits += c.credits;
     }
   });
 
-  const gpa = totalCredits > 0 ? totalQualityPoints / totalCredits : 4.0;
+  if (creditTenths === 0) {
+    return { gpa: 0, gpaString: '0.00', totalCredits: 0, totalQualityPoints: 0, hasData: false };
+  }
+  // GPA = quality / credits, rounded half-up to 2 decimals using integers only.
+  const gpaHundredths = Math.floor((qualityHundredths * 2 + creditTenths) / (creditTenths * 2));
+  const gpa = gpaHundredths / 100;
   return {
-    gpa: Number(gpa.toFixed(2)),
+    gpa,
     gpaString: gpa.toFixed(2),
     totalCredits,
-    totalQualityPoints: Number(totalQualityPoints.toFixed(2))
+    totalQualityPoints: Math.round(qualityHundredths / 10) / 100,
+    hasData: true
   };
 }
 
@@ -95,10 +113,11 @@ export function getAcademicStanding(gpa: number): {
   standing: string;
   tier: string;
 } {
-  if (gpa >= 3.8) return { standing: "Dean's List", tier: 'Highest Honors Track' };
-  if (gpa >= 3.5) return { standing: 'Honor Roll', tier: "Dean's Honors Threshold" };
-  if (gpa >= 3.0) return { standing: 'Good Standing', tier: 'Satisfactory Standing' };
-  return { standing: 'Academic Review', tier: 'Academic Warning' };
+  // Projected, not official: these cut-offs are a common default. Universities differ.
+  if (gpa >= 3.8) return { standing: 'Projected: highest honors range', tier: 'Above 3.8 (default scale)' };
+  if (gpa >= 3.5) return { standing: 'Projected: honors range', tier: 'Above 3.5 (default scale)' };
+  if (gpa >= 3.0) return { standing: 'Projected: good standing', tier: 'Above 3.0 (default scale)' };
+  return { standing: 'Projected: below 3.0', tier: 'Check your university policy' };
 }
 
 export function solveRequiredFinalScore(

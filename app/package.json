@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:rules": "firebase emulators:exec --config ../firebase.json --only firestore --project studyflow-rules-test \"vitest run --config vitest.rules.config.ts\""
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
@@ -21,12 +22,15 @@
     "zustand": "^5.0.16"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "@playwright/test": "^1.64.1",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "autoprefixer": "^10.6.2",
+    "firebase-tools": "^15.35.0",
     "oxlint": "^1.89.0",
     "postcss": "^8.5.32",
     "tailwindcss": "^3.4.17",

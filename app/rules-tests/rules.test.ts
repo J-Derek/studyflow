@@ -1,0 +1,384 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  assertFails,
+  assertSucceeds,
+  initializeTestEnvironment,
+  type RulesTestEnvironment
+} from '@firebase/rules-unit-testing';
+import {
+  collection,
+  deleteDoc,
+  deleteField,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  query,
+  serverTimestamp,
+  setDoc,
+  Timestamp,
+  updateDoc,
+  writeBatch
+} from 'firebase/firestore';
+
+let env: RulesTestEnvironment;
+const ALICE = 'alice';
+const BOB = 'bob';
+
+beforeAll(async () => {
+  env = await initializeTestEnvironment({
+    projectId: 'studyflow-rules-test',
+    firestore: {
+      rules: readFileSync(resolve(__dirname, '../../firestore.rules'), 'utf8'),
+      host: '127.0.0.1',
+      port: 8080
+    }
+  });
+});
+afterAll(async () => {
+  await env.cleanup();
+});
+beforeEach(async () => {
+  await env.clearFirestore();
+});
+
+type Db = ReturnType<RulesTestEnvironment['unauthenticatedContext']>['firestore'] extends () => infer R ? R : never;
+const asAlice = (): Db => env.authenticatedContext(ALICE).firestore();
+const asBob = (): Db => env.authenticatedContext(BOB).firestore();
+const anon = (): Db => env.unauthenticatedContext().firestore();
+
+const asg = (over: Record<string, unknown> = {}) => ({
+  id: 'a1',
+  title: 'Essay',
+  course: 'ENG 101',
+  dueDate: '2026-11-20',
+  dueTime: '17:00',
+  priority: 'medium',
+  status: 'pending',
+  progress: 0,
+  createdAt: '2026-11-01T10:00:00.000Z',
+  updatedAt: serverTimestamp(),
+  ...over
+});
+const ses = (over: Record<string, unknown> = {}) => ({
+  id: 's1',
+  title: 'Lecture',
+  course: 'ENG 101',
+  dayOfWeek: 1,
+  startTime: '09:00',
+  endTime: '10:30',
+  type: 'lecture',
+  updatedAt: serverTimestamp(),
+  ...over
+});
+const aDoc = (db: Db, id = 'a1') => doc(db, 'users', ALICE, 'assignments', id);
+const sDoc = (db: Db, id = 's1') => doc(db, 'users', ALICE, 'sessions', id);
+const timerDoc = (db: Db) => doc(db, 'users', ALICE, 'liveState', 'timer');
+const fsDoc = (db: Db, id: string) => doc(db, 'users', ALICE, 'focusSessions', id);
+
+async function seedRunningTimer(rev: number, elapsedMs = 1600 * 1000): Promise<void> {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'users', ALICE, 'liveState', 'timer'), {
+      rev,
+      status: 'running',
+      mode: 'focus',
+      durationSeconds: 1500,
+      startedAt: Timestamp.fromMillis(Date.now() - elapsedMs),
+      updatedAt: Timestamp.now()
+    });
+  });
+}
+
+describe('tenancy', () => {
+  it('denies unauthenticated reads and writes', async () => {
+    await assertFails(setDoc(aDoc(anon()), asg()));
+    await assertFails(getDoc(aDoc(anon())));
+  });
+  it("denies another user's reads and writes", async () => {
+    await assertSucceeds(setDoc(aDoc(asAlice()), asg()));
+    await assertFails(getDoc(aDoc(asBob())));
+    await assertFails(setDoc(aDoc(asBob()), asg()));
+    await assertFails(deleteDoc(aDoc(asBob())));
+    await assertFails(getDocs(query(collection(asBob(), 'users', ALICE, 'assignments'), limit(10))));
+  });
+  it('denies unmapped paths', async () => {
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'surprise', 'x'), { a: 1 }));
+    await assertFails(setDoc(doc(asAlice(), 'other', 'x'), { a: 1 }));
+  });
+  it('denies listing /users', async () => {
+    await assertFails(getDocs(query(collection(asAlice(), 'users'), limit(5))));
+  });
+});
+
+describe('user profile', () => {
+  const user = (over: Record<string, unknown> = {}) => ({
+    uid: ALICE,
+    name: 'Alice',
+    university: 'Daystar',
+    program: 'CS',
+    semester: 'Fall',
+    updatedAt: serverTimestamp(),
+    ...over
+  });
+  const ref = () => doc(asAlice(), 'users', ALICE);
+  it('accepts a valid profile with the onboarding map', async () => {
+    await assertSucceeds(setDoc(ref(), user({ onboarding: { dismissed: true } })));
+  });
+  it('rejects uid mismatch, extra keys, missing keys', async () => {
+    await assertFails(setDoc(ref(), user({ uid: BOB })));
+    await assertFails(setDoc(ref(), user({ isAdmin: true })));
+    const noName: Record<string, unknown> = user();
+    delete noName.name;
+    await assertFails(setDoc(ref(), noName));
+  });
+  it('rejects a malformed onboarding map', async () => {
+    await assertFails(setDoc(ref(), user({ onboarding: 'yes' })));
+    await assertFails(setDoc(ref(), user({ onboarding: { dismissed: 'yes' } })));
+    await assertFails(setDoc(ref(), user({ onboarding: { dismissed: true, extra: 1 } })));
+  });
+  it('rejects a client-sent updatedAt', async () => {
+    await assertFails(setDoc(ref(), user({ updatedAt: Timestamp.fromMillis(1) })));
+  });
+  it('makes uid immutable', async () => {
+    await assertSucceeds(setDoc(ref(), user()));
+    await assertFails(updateDoc(ref(), { uid: BOB, updatedAt: serverTimestamp() }));
+  });
+});
+
+describe('assignments: shape', () => {
+  it('accepts a valid assignment, with sample flag and map subtasks', async () => {
+    await assertSucceeds(setDoc(aDoc(asAlice()), asg()));
+    await assertSucceeds(
+      setDoc(
+        aDoc(asAlice(), 'a2'),
+        asg({
+          id: 'a2',
+          sample: true,
+          subtasks: { 'st-1': { id: 'st-1', title: 'Read', completed: false, order: 0 } }
+        })
+      )
+    );
+  });
+  it('rejects unknown keys', async () => {
+    await assertFails(setDoc(aDoc(asAlice()), asg({ role: 'admin' })));
+  });
+  it('rejects missing required keys', async () => {
+    const rest: Record<string, unknown> = asg();
+    delete rest.title;
+    await assertFails(setDoc(aDoc(asAlice()), rest));
+  });
+  it('rejects wrong types', async () => {
+    await assertFails(setDoc(aDoc(asAlice()), asg({ title: 5 })));
+    await assertFails(setDoc(aDoc(asAlice()), asg({ progress: '50' })));
+    await assertFails(setDoc(aDoc(asAlice()), asg({ sample: 'true' })));
+    await assertFails(setDoc(aDoc(asAlice()), asg({ priority: 'urgent' })));
+    await assertFails(setDoc(aDoc(asAlice()), asg({ subtasks: 'nope' })));
+  });
+  it('rejects NaN, Infinity and out-of-range progress', async () => {
+    await assertFails(setDoc(aDoc(asAlice()), asg({ progress: NaN })));
+    await assertFails(setDoc(aDoc(asAlice()), asg({ progress: Infinity })));
+    await assertFails(setDoc(aDoc(asAlice()), asg({ progress: -1 })));
+    await assertFails(setDoc(aDoc(asAlice()), asg({ progress: 101 })));
+  });
+  it('rejects status completed with progress below 100', async () => {
+    await assertFails(setDoc(aDoc(asAlice()), asg({ status: 'completed', progress: 50 })));
+    await assertSucceeds(setDoc(aDoc(asAlice()), asg({ status: 'completed', progress: 100 })));
+  });
+  it('enforces string length edges (title max 250)', async () => {
+    await assertSucceeds(setDoc(aDoc(asAlice()), asg({ title: 'x'.repeat(250) })));
+    await assertFails(setDoc(aDoc(asAlice(), 'a2'), asg({ id: 'a2', title: 'x'.repeat(251) })));
+    await assertFails(setDoc(aDoc(asAlice(), 'a3'), asg({ id: 'a3', title: '' })));
+  });
+  it('measured: rules count UTF-16 units, so an emoji uses 2 of the 250 allowed', async () => {
+    await assertSucceeds(setDoc(aDoc(asAlice()), asg({ title: '😀'.repeat(125) })));
+    await assertFails(setDoc(aDoc(asAlice(), 'a2'), asg({ id: 'a2', title: '😀'.repeat(126) })));
+  });
+  it('rejects bad time formats', async () => {
+    await assertFails(setDoc(aDoc(asAlice()), asg({ dueTime: '25:99' })));
+    await assertFails(setDoc(aDoc(asAlice()), asg({ dueTime: '5pm' })));
+  });
+  it('requires doc id to equal data.id', async () => {
+    await assertFails(setDoc(aDoc(asAlice(), 'other'), asg()));
+  });
+  it('rejects more than 100 subtasks', async () => {
+    const many: Record<string, unknown> = {};
+    for (let i = 0; i < 101; i++) many[`s${i}`] = { id: `s${i}`, title: 't', completed: false, order: i };
+    await assertFails(setDoc(aDoc(asAlice()), asg({ subtasks: many })));
+  });
+});
+
+describe('assignments: timestamps and updates', () => {
+  it('rejects a client-sent updatedAt and a missing updatedAt', async () => {
+    await assertFails(setDoc(aDoc(asAlice()), asg({ updatedAt: Timestamp.fromMillis(Date.now() + 86400000) })));
+    const none: Record<string, unknown> = asg();
+    delete none.updatedAt;
+    await assertFails(setDoc(aDoc(asAlice()), none));
+  });
+  it('keeps id and createdAt immutable', async () => {
+    await assertSucceeds(setDoc(aDoc(asAlice()), asg()));
+    await assertFails(updateDoc(aDoc(asAlice()), { createdAt: '2020-01-01T00:00:00.000Z', updatedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(aDoc(asAlice()), { title: 'Renamed', updatedAt: serverTimestamp() }));
+  });
+  it('rejects an update that leaves the document invalid', async () => {
+    await assertSucceeds(setDoc(aDoc(asAlice()), asg()));
+    await assertFails(updateDoc(aDoc(asAlice()), { priority: 'nope', updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(aDoc(asAlice()), { extra: 1, updatedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(aDoc(asAlice()), { notes: deleteField(), updatedAt: serverTimestamp() }));
+  });
+});
+
+describe('sessions (timetable)', () => {
+  it('accepts valid, rejects bad day, bad time, unknown type, extra key', async () => {
+    await assertSucceeds(setDoc(sDoc(asAlice()), ses({ sample: true })));
+    await assertFails(setDoc(sDoc(asAlice(), 's2'), ses({ id: 's2', dayOfWeek: 7 })));
+    await assertFails(setDoc(sDoc(asAlice(), 's3'), ses({ id: 's3', dayOfWeek: 1.5 })));
+    await assertFails(setDoc(sDoc(asAlice(), 's4'), ses({ id: 's4', startTime: '9am' })));
+    await assertFails(setDoc(sDoc(asAlice(), 's5'), ses({ id: 's5', type: 'party' })));
+    await assertFails(setDoc(sDoc(asAlice(), 's6'), ses({ id: 's6', hacked: 1 })));
+  });
+});
+
+describe('list queries are capped', () => {
+  it('allows limit <= 500, denies larger or missing limit', async () => {
+    for (const c of ['assignments', 'sessions', 'focusSessions']) {
+      await assertSucceeds(getDocs(query(collection(asAlice(), 'users', ALICE, c), limit(500))));
+      await assertFails(getDocs(query(collection(asAlice(), 'users', ALICE, c), limit(501))));
+      await assertFails(getDocs(collection(asAlice(), 'users', ALICE, c)));
+    }
+  });
+});
+
+describe('timer state (liveState/timer) compare-and-swap', () => {
+  const idle = (over: Record<string, unknown> = {}) => ({
+    rev: 1,
+    status: 'idle',
+    mode: 'focus',
+    durationSeconds: 1500,
+    updatedAt: serverTimestamp(),
+    ...over
+  });
+  const running = (rev: number, over: Record<string, unknown> = {}) => ({
+    rev,
+    status: 'running',
+    mode: 'focus',
+    durationSeconds: 1500,
+    startedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...over
+  });
+
+  it('creates at rev 1 only', async () => {
+    await assertFails(setDoc(timerDoc(asAlice()), idle({ rev: 5 })));
+    await assertSucceeds(setDoc(timerDoc(asAlice()), idle()));
+  });
+  it('requires rev to increase by exactly one', async () => {
+    await assertSucceeds(setDoc(timerDoc(asAlice()), idle()));
+    await assertFails(setDoc(timerDoc(asAlice()), running(1)));
+    await assertFails(setDoc(timerDoc(asAlice()), running(3)));
+    await assertSucceeds(setDoc(timerDoc(asAlice()), running(2)));
+  });
+  it('two clients, same rev: exactly one succeeds', async () => {
+    await assertSucceeds(setDoc(timerDoc(asAlice()), idle()));
+    const a = env.authenticatedContext(ALICE).firestore();
+    const b = env.authenticatedContext(ALICE).firestore();
+    const results = await Promise.allSettled([
+      setDoc(timerDoc(a), running(2)),
+      setDoc(timerDoc(b), running(2, { durationSeconds: 900 }))
+    ]);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+  });
+  it('rejects a client-sent startedAt when running', async () => {
+    await assertSucceeds(setDoc(timerDoc(asAlice()), idle()));
+    await assertFails(setDoc(timerDoc(asAlice()), running(2, { startedAt: Timestamp.fromMillis(1) })));
+  });
+  it('rejects bad mode, bad duration, extra keys', async () => {
+    await assertFails(setDoc(timerDoc(asAlice()), idle({ mode: 'nap' })));
+    await assertFails(setDoc(timerDoc(asAlice()), idle({ durationSeconds: 0 })));
+    await assertFails(setDoc(timerDoc(asAlice()), idle({ durationSeconds: 86401 })));
+    await assertFails(setDoc(timerDoc(asAlice()), idle({ secondsLeft: 3 })));
+  });
+});
+
+describe('focusSessions: forged creation is blocked', () => {
+  const idle = (rev: number) => ({
+    rev,
+    status: 'idle',
+    mode: 'focus',
+    durationSeconds: 1500,
+    updatedAt: serverTimestamp()
+  });
+  const session = (over: Record<string, unknown> = {}) => ({
+    durationSeconds: 1500,
+    mode: 'focus',
+    completedAt: serverTimestamp(),
+    localDate: '2026-11-05',
+    ...over
+  });
+
+  it('denies creation when no timer exists', async () => {
+    await assertFails(setDoc(fsDoc(asAlice(), 'run-1'), session()));
+  });
+  it('denies creation while the timer is idle', async () => {
+    await assertSucceeds(setDoc(timerDoc(asAlice()), idle(1)));
+    await assertFails(setDoc(fsDoc(asAlice(), 'run-1'), session()));
+  });
+  it('denies a session that claims more time than has elapsed', async () => {
+    await seedRunningTimer(2, 5 * 1000);
+    const db = asAlice();
+    const b = writeBatch(db);
+    b.set(fsDoc(db, 'run-2'), session({ durationSeconds: 1500 }));
+    b.set(timerDoc(db), idle(3));
+    await assertFails(b.commit());
+  });
+  it('allows a session once the elapsed time has passed', async () => {
+    await seedRunningTimer(2);
+    const db = asAlice();
+    const b = writeBatch(db);
+    b.set(fsDoc(db, 'run-2'), session({ durationSeconds: 1500 }));
+    b.set(timerDoc(db), idle(3));
+    await assertSucceeds(b.commit());
+  });
+  it('binds the session id to the timer rev (one session per run)', async () => {
+    await seedRunningTimer(2);
+    const db = asAlice();
+    const wrong = writeBatch(db);
+    wrong.set(fsDoc(db, 'anything-i-like'), session());
+    wrong.set(timerDoc(db), idle(3));
+    await assertFails(wrong.commit());
+  });
+  it('denies updates to existing sessions', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ALICE, 'focusSessions', 'run-2'), {
+        durationSeconds: 60,
+        mode: 'focus',
+        completedAt: Timestamp.now(),
+        localDate: '2026-11-05'
+      });
+    });
+    await assertFails(updateDoc(fsDoc(asAlice(), 'run-2'), { durationSeconds: 86400 }));
+  });
+});
+
+describe('get/exists call budget on the largest batch', () => {
+  it('a 500-document assignment batch commits (no get() calls in those rules)', async () => {
+    const db = asAlice();
+    const b = writeBatch(db);
+    for (let i = 0; i < 500; i++) b.set(aDoc(db, `a${i}`), asg({ id: `a${i}` }));
+    await assertSucceeds(b.commit());
+  });
+  it('the timer-stop batch (session + timer) stays within the call limit', async () => {
+    await seedRunningTimer(4);
+    const db = asAlice();
+    const b = writeBatch(db);
+    b.set(fsDoc(db, 'run-4'), {
+      durationSeconds: 1500,
+      mode: 'focus',
+      completedAt: serverTimestamp(),
+      localDate: '2026-11-05'
+    });
+    b.set(timerDoc(db), { rev: 5, status: 'idle', mode: 'focus', durationSeconds: 1500, updatedAt: serverTimestamp() });
+    await assertSucceeds(b.commit());
+  });
+});

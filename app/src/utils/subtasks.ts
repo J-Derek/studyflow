@@ -15,8 +15,10 @@ export interface SubtaskProgressResult {
  */
 export function calculateSubtaskProgress(
   subtasks: Subtask[] | undefined | null,
-  fallbackProgress = 0
+  fallbackProgress = 0,
+  options: { allowComplete?: boolean } = {}
 ): SubtaskProgressResult {
+  const allowComplete = options.allowComplete ?? true;
   if (!subtasks || subtasks.length === 0) {
     const isComplete = fallbackProgress >= 100;
     return {
@@ -30,7 +32,9 @@ export function calculateSubtaskProgress(
 
   const totalCount = subtasks.length;
   const completedCount = subtasks.filter((s) => s.completed).length;
-  const allDone = completedCount === totalCount;
+  // Completion must follow an explicit tick. Adding or deleting a subtask never completes the
+  // assignment on its own (deleting the last open subtask used to flip it to 100%).
+  const allDone = allowComplete && completedCount === totalCount;
   const anyDone = completedCount > 0;
 
   // Strict invariant: 100% only when allDone is true; otherwise capped at 99%.

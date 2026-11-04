@@ -23,9 +23,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
       version: 'StudyFlow-v1.2',
       exportedAt: new Date().toISOString(),
       ledger: {
-        assignments,
-        sessions,
-        grades
+        assignments: assignments.filter((x) => !x.sample),
+        sessions: sessions.filter((x) => !x.sample),
+        grades: grades.filter((x) => !x.sample)
       }
     };
 
