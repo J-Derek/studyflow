@@ -1,4 +1,4 @@
-import type { Assignment, StudySession, Subtask } from '../types';
+import type { Assignment, CourseGrade, StudySession, Subtask } from '../types';
 
 type Doc = Record<string, unknown>;
 
@@ -92,6 +92,47 @@ export function docToSession(id: string, data: Doc): StudySession {
     endTime: typeof data.endTime === 'string' ? data.endTime : '10:00',
     type: types.find((t) => t === data.type) ?? 'study',
     color: typeof data.color === 'string' ? data.color : undefined,
+    sample: data.sample === true ? true : undefined
+  };
+}
+
+export function gradeToDoc(g: CourseGrade): Doc {
+  const out: Doc = {
+    id: g.id,
+    courseCode: g.courseCode,
+    courseName: g.courseName,
+    credits: Number.isFinite(g.credits) ? g.credits : 0,
+    targetLetter: g.targetLetter,
+    color: g.color,
+    // Firestore rejects `undefined`, so an ungraded assessment simply has no `score` key.
+    assessments: g.assessments.map((a) => ({
+      id: a.id,
+      name: a.name,
+      weight: Number.isFinite(a.weight) ? a.weight : 0,
+      ...(typeof a.score === 'number' && Number.isFinite(a.score) ? { score: a.score } : {})
+    }))
+  };
+  if (g.sample) out.sample = true;
+  return out;
+}
+
+export function docToGrade(id: string, data: Doc): CourseGrade {
+  const raw = Array.isArray(data.assessments) ? data.assessments : [];
+  return {
+    id,
+    courseCode: typeof data.courseCode === 'string' ? data.courseCode : '',
+    courseName: typeof data.courseName === 'string' ? data.courseName : '',
+    credits: typeof data.credits === 'number' && Number.isFinite(data.credits) ? data.credits : 0,
+    targetLetter: typeof data.targetLetter === 'string' ? data.targetLetter : 'A',
+    color: typeof data.color === 'string' ? data.color : '#6366F1',
+    assessments: raw
+      .filter((a): a is Record<string, unknown> => !!a && typeof a === 'object')
+      .map((a) => ({
+        id: String(a.id ?? ''),
+        name: String(a.name ?? ''),
+        weight: typeof a.weight === 'number' ? a.weight : 0,
+        ...(typeof a.score === 'number' ? { score: a.score } : {})
+      })),
     sample: data.sample === true ? true : undefined
   };
 }

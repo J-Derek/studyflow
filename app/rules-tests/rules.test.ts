@@ -240,6 +240,41 @@ describe('sessions (timetable)', () => {
   });
 });
 
+describe('grades', () => {
+  const grade = (over: Record<string, unknown> = {}) => ({
+    id: 'g1', courseCode: 'CS 301', courseName: 'Algorithms', credits: 3, targetLetter: 'A', color: '#6366F1',
+    assessments: [{ id: 'x1', name: 'Midterm', weight: 40, score: 82 }, { id: 'x2', name: 'Final exam', weight: 60 }],
+    updatedAt: serverTimestamp(), ...over
+  });
+  const gDoc = (db: Db, id = 'g1') => doc(db, 'users', ALICE, 'grades', id);
+  it('accepts a valid course and its owner can read it back', async () => {
+    await assertSucceeds(setDoc(gDoc(asAlice()), grade()));
+    await assertSucceeds(getDoc(gDoc(asAlice())));
+    await assertSucceeds(setDoc(gDoc(asAlice(), 'g2'), grade({ id: 'g2', sample: true })));
+  });
+  it('denies other users and unauthenticated access', async () => {
+    await assertSucceeds(setDoc(gDoc(asAlice()), grade()));
+    await assertFails(getDoc(gDoc(asBob())));
+    await assertFails(setDoc(gDoc(asBob(), 'g9'), grade({ id: 'g9' })));
+    await assertFails(getDoc(gDoc(anon())));
+  });
+  it('rejects bad credits, unknown keys, too many assessments, client timestamps, id mismatch', async () => {
+    await assertFails(setDoc(gDoc(asAlice()), grade({ credits: -1 })));
+    await assertFails(setDoc(gDoc(asAlice()), grade({ credits: 31 })));
+    await assertFails(setDoc(gDoc(asAlice()), grade({ credits: NaN })));
+    await assertFails(setDoc(gDoc(asAlice()), grade({ gpa: 4 })));
+    await assertFails(setDoc(gDoc(asAlice()), grade({ assessments: Array.from({ length: 51 }, (_, i) => ({ id: `a${i}`, name: 'x', weight: 1 })) })));
+    await assertFails(setDoc(gDoc(asAlice()), grade({ updatedAt: Timestamp.fromMillis(1) })));
+    await assertFails(setDoc(gDoc(asAlice(), 'other'), grade()));
+  });
+  it('keeps id immutable and lists capped', async () => {
+    await assertSucceeds(setDoc(gDoc(asAlice()), grade()));
+    await assertFails(updateDoc(gDoc(asAlice()), { id: 'zzz', updatedAt: serverTimestamp() }));
+    await assertSucceeds(getDocs(query(collection(asAlice(), 'users', ALICE, 'grades'), limit(500))));
+    await assertFails(getDocs(query(collection(asAlice(), 'users', ALICE, 'grades'), limit(501))));
+  });
+});
+
 describe('list queries are capped', () => {
   it('allows limit <= 500, denies larger or missing limit', async () => {
     for (const c of ['assignments', 'sessions', 'focusSessions']) {

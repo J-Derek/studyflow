@@ -12,10 +12,10 @@ import {
   type Unsubscribe
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import type { Assignment, StudySession } from '../types';
+import type { Assignment, CourseGrade, StudySession } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
-import { assignmentToDoc, docToAssignment, docToSession, sessionToDoc } from './firestoreMappers';
+import { assignmentToDoc, docToAssignment, docToGrade, docToSession, gradeToDoc, sessionToDoc } from './firestoreMappers';
 import { isLegacySeedId } from '../utils/sampleData';
 
 const LIST_CAP = 500;
@@ -190,6 +190,38 @@ export function initFirestoreSync(uid: string): () => void {
   );
   activeUnsubscribes.push(unsubSessions);
 
+  let gradesSeeded = false;
+  const unsubGrades = onSnapshot(
+    query(collection(db, 'users', uid, 'grades'), limit(LIST_CAP)),
+    async (snapshot) => {
+      if (!isCurrentUser(uid)) return;
+      if (snapshot.metadata.fromCache && snapshot.empty) return;
+
+      if (snapshot.empty && !gradesSeeded) {
+        gradesSeeded = true;
+        const local = useStudyFlowStore.getState().grades;
+        if (local.length > 0) {
+          const batch = writeBatch(db);
+          for (const g of local.slice(0, LIST_CAP)) {
+            batch.set(doc(db, 'users', uid, 'grades', g.id), { ...gradeToDoc(g), updatedAt: serverTimestamp() });
+          }
+          await batch.commit().catch((err) => console.warn('Batched grade upload warning:', err));
+        }
+        return;
+      }
+      gradesSeeded = true;
+
+      const remote: CourseGrade[] = [];
+      snapshot.forEach((d) => {
+        const g = docToGrade(d.id, d.data());
+        remote.push(isLegacySeedId('grade', g.id) ? { ...g, sample: true } : g);
+      });
+      if (isCurrentUser(uid)) useStudyFlowStore.setState({ grades: remote });
+    },
+    (err) => console.warn('Firestore grades listener warning (using offline cache):', err.message)
+  );
+  activeUnsubscribes.push(unsubGrades);
+
   return () => {
     unsubscribeAllFirestoreSync();
   };
@@ -236,17 +268,23 @@ export function planMerge<T extends { id: string }>(existingIds: Set<string>, gu
 
 export async function mergeGuestDataIntoAccount(
   uid: string,
-  guest: { assignments: Assignment[]; sessions: StudySession[] }
+  guest: { assignments: Assignment[]; sessions: StudySession[]; grades?: CourseGrade[] }
 ): Promise<void> {
-  if (guest.assignments.length === 0 && guest.sessions.length === 0) return;
-  const [asgSnap, sesSnap] = await Promise.all([
+  const guestGrades = guest.grades ?? [];
+  if (guest.assignments.length === 0 && guest.sessions.length === 0 && guestGrades.length === 0) return;
+  const [asgSnap, sesSnap, gradeSnap] = await Promise.all([
     getDocs(query(collection(db, 'users', uid, 'assignments'), limit(LIST_CAP))),
-    getDocs(query(collection(db, 'users', uid, 'sessions'), limit(LIST_CAP)))
+    getDocs(query(collection(db, 'users', uid, 'sessions'), limit(LIST_CAP))),
+    getDocs(query(collection(db, 'users', uid, 'grades'), limit(LIST_CAP)))
   ]);
+  const newGrades = planMerge(new Set(gradeSnap.docs.map((d) => d.id)), guestGrades);
   const newAssignments = planMerge(new Set(asgSnap.docs.map((d) => d.id)), guest.assignments);
   const newSessions = planMerge(new Set(sesSnap.docs.map((d) => d.id)), guest.sessions);
 
   const batch = writeBatch(db);
+  newGrades.slice(0, LIST_CAP).forEach((g) =>
+    batch.set(doc(db, 'users', uid, 'grades', g.id), { ...gradeToDoc(g), updatedAt: serverTimestamp() })
+  );
   newAssignments.slice(0, LIST_CAP).forEach((a) =>
     batch.set(doc(db, 'users', uid, 'assignments', a.id), { ...assignmentToDoc(a), updatedAt: serverTimestamp() })
   );
@@ -318,4 +356,12 @@ export function completeFocusSession(uid: string, t: TimerState): void {
   batch.commit().catch((err) => {
     console.warn('Focus session not recorded in the cloud:', err?.code ?? err);
   });
+}
+
+export async function syncGradeToFirestore(uid: string, grade: CourseGrade): Promise<void> {
+  await setDoc(doc(db, 'users', uid, 'grades', grade.id), { ...gradeToDoc(grade), updatedAt: serverTimestamp() });
+}
+
+export async function deleteGradeFromFirestore(uid: string, gradeId: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', uid, 'grades', gradeId));
 }

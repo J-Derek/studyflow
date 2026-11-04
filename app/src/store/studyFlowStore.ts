@@ -17,6 +17,8 @@ import {
   syncSessionToFirestore,
   deleteSessionFromFirestore,
   syncOnboardingDismissed,
+  syncGradeToFirestore,
+  deleteGradeFromFirestore,
   pushTimerState,
   completeFocusSession
 } from '../services/firestoreSync';
@@ -224,6 +226,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (uid) {
           newAssignments.forEach((x) => syncAssignmentToFirestore(uid, x).catch(console.warn));
           newSessions.forEach((x) => syncSessionToFirestore(uid, x).catch(console.warn));
+          newGrades.forEach((x) => syncGradeToFirestore(uid, x).catch(console.warn));
         }
       },
 
@@ -232,6 +235,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const uid = state.userId;
         const keepA = new Set(ledger.assignments.map((x) => x.id));
         const keepS = new Set(ledger.sessions.map((x) => x.id));
+        const keepG = new Set(ledger.grades.map((x) => x.id));
+        const removedG = state.grades.filter((x) => !keepG.has(x.id));
         const removedA = state.assignments.filter((x) => !keepA.has(x.id));
         const removedS = state.sessions.filter((x) => !keepS.has(x.id));
         set({ assignments: ledger.assignments, sessions: ledger.sessions, grades: ledger.grades });
@@ -241,6 +246,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           ledger.sessions.forEach((x) => syncSessionToFirestore(uid, x).catch(console.warn));
           removedA.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(console.warn));
           removedS.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(console.warn));
+          ledger.grades.forEach((x) => syncGradeToFirestore(uid, x).catch(console.warn));
+          removedG.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(console.warn));
         }
       },
 
@@ -248,6 +255,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const state = get();
         const sampleAssignments = state.assignments.filter((x) => x.sample);
         const sampleSessions = state.sessions.filter((x) => x.sample);
+        const sampleGrades = state.grades.filter((x) => x.sample);
         set({
           assignments: state.assignments.filter((x) => !x.sample),
           sessions: state.sessions.filter((x) => !x.sample),
@@ -257,6 +265,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (uid) {
           sampleAssignments.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(console.warn));
           sampleSessions.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(console.warn));
+          sampleGrades.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(console.warn));
         }
       },
 
@@ -266,6 +275,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (uid) {
           state.assignments.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(console.warn));
           state.sessions.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(console.warn));
+          state.grades.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(console.warn));
         }
         set({
           assignments: [],
@@ -496,35 +506,31 @@ export const useStudyFlowStore = create<StudyFlowState>()(
 
       grades: [],
       updateAssessmentScore: (courseId, assessmentId, score) => {
-        set((state) => ({
-          grades: state.grades.map((c) => {
-            if (c.id === courseId) {
-              return {
-                ...c,
-                assessments: c.assessments.map((a) =>
-                  a.id === assessmentId ? { ...a, score } : a
-                )
-              };
-            }
-            return c;
-          })
-        }));
+        const course = get().grades.find((c) => c.id === courseId);
+        if (!course) return;
+        const next: CourseGrade = {
+          ...course,
+          assessments: course.assessments.map((a) => (a.id === assessmentId ? { ...a, score } : a))
+        };
+        set((state) => ({ grades: state.grades.map((c) => (c.id === courseId ? next : c)) }));
+        const uid = get().userId;
+        if (uid) syncGradeToFirestore(uid, next).catch((err) => console.warn('Sync error updating grade:', err));
       },
 
       addCourseGrade: (course) => {
         const newCourse: CourseGrade = {
           ...course,
-          id: `cg-${Date.now()}`
+          id: `cg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
         };
-        set((state) => ({
-          grades: [...state.grades, newCourse]
-        }));
+        set((state) => ({ grades: [...state.grades, newCourse] }));
+        const uid = get().userId;
+        if (uid) syncGradeToFirestore(uid, newCourse).catch((err) => console.warn('Sync error adding grade:', err));
       },
 
       deleteCourseGrade: (courseId) => {
-        set((state) => ({
-          grades: state.grades.filter((c) => c.id !== courseId)
-        }));
+        set((state) => ({ grades: state.grades.filter((c) => c.id !== courseId) }));
+        const uid = get().userId;
+        if (uid) deleteGradeFromFirestore(uid, courseId).catch((err) => console.warn('Sync error deleting grade:', err));
       },
 
       // Focus Timer

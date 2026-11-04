@@ -49,3 +49,31 @@ describe('sessionToDoc', () => {
     expect('color' in doc).toBe(false);
   });
 });
+
+import { docToGrade, gradeToDoc } from './firestoreMappers';
+import type { CourseGrade } from '../types';
+
+describe('grade mappers', () => {
+  const g: CourseGrade = {
+    id: 'g1', courseCode: 'CS 301', courseName: 'Algorithms', credits: 3, targetLetter: 'A', color: '#6366F1',
+    assessments: [{ id: 'a', name: 'Midterm', weight: 40, score: 82 }, { id: 'b', name: 'Final', weight: 60, score: undefined }]
+  };
+  it('omits undefined scores (Firestore rejects undefined) and round-trips', () => {
+    const doc = gradeToDoc(g);
+    expect(JSON.stringify(doc)).not.toContain('undefined');
+    expect((doc.assessments as Array<Record<string, unknown>>)[1]).not.toHaveProperty('score');
+    const back = docToGrade('g1', doc);
+    expect(back.assessments[0].score).toBe(82);
+    expect(back.assessments[1].score).toBeUndefined();
+  });
+  it('replaces non-finite numbers and survives hostile remote data', () => {
+    expect(gradeToDoc({ ...g, credits: NaN }).credits).toBe(0);
+    const hostile = docToGrade('x', { courseCode: 5, assessments: 'nope', credits: 'x' });
+    expect(hostile.assessments).toEqual([]);
+    expect(hostile.credits).toBe(0);
+  });
+  it('keeps the sample flag', () => {
+    expect(gradeToDoc({ ...g, sample: true }).sample).toBe(true);
+    expect(docToGrade('g1', gradeToDoc({ ...g, sample: true })).sample).toBe(true);
+  });
+});

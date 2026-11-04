@@ -25,6 +25,10 @@ service cloud.firestore {
     //   startedAt (server time; only while running),
     //   remainingSeconds (only while paused)
     //
+    // /users/{userId}/grades/{id}
+    //   id, courseCode, courseName, credits (0..30), targetLetter, color,
+    //   assessments (list, max 50), updatedAt (server time), sample? (bool)
+    //
     // /users/{userId}/focusSessions/run-{rev}
     //   Created only in a batch with the timer going running -> idle, and only
     //   after enough server time has elapsed since the timer started.
@@ -121,6 +125,20 @@ service cloud.firestore {
              isServerTime(data.updatedAt);
     }
 
+    function isValidGrade(data) {
+      return data.keys().hasAll(['id', 'courseCode', 'courseName', 'credits', 'targetLetter', 'color', 'assessments', 'updatedAt']) &&
+             data.keys().hasOnly(['id', 'courseCode', 'courseName', 'credits', 'targetLetter', 'color', 'assessments', 'updatedAt', 'sample']) &&
+             validString(data.id, 1, 100) &&
+             validString(data.courseCode, 1, 50) &&
+             validString(data.courseName, 1, 200) &&
+             data.credits is number && data.credits >= 0 && data.credits <= 30 &&
+             validString(data.targetLetter, 1, 3) &&
+             validString(data.color, 1, 50) &&
+             data.assessments is list && data.assessments.size() <= 50 &&
+             (!('sample' in data) || data.sample is bool) &&
+             isServerTime(data.updatedAt);
+    }
+
     function isValidTimer(data) {
       return data.keys().hasAll(['rev', 'status', 'mode', 'durationSeconds', 'updatedAt']) &&
              data.keys().hasOnly(['rev', 'status', 'mode', 'durationSeconds', 'updatedAt', 'startedAt', 'remainingSeconds']) &&
@@ -190,6 +208,18 @@ service cloud.firestore {
                          request.resource.data.id == sessionId;
         allow update: if isOwner(userId) &&
                          isValidSession(request.resource.data) &&
+                         immutable(['id']);
+        allow delete: if isOwner(userId);
+      }
+
+      match /grades/{gradeId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId) && request.query.limit <= 500;
+        allow create: if isOwner(userId) &&
+                         isValidGrade(request.resource.data) &&
+                         request.resource.data.id == gradeId;
+        allow update: if isOwner(userId) &&
+                         isValidGrade(request.resource.data) &&
                          immutable(['id']);
         allow delete: if isOwner(userId);
       }

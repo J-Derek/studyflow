@@ -215,7 +215,8 @@ export async function signInOrLinkWithGoogle(): Promise<User> {
       const state = useStudyFlowStore.getState();
       const guestData = {
         assignments: withoutSample(state.assignments),
-        sessions: withoutSample(state.sessions)
+        sessions: withoutSample(state.sessions),
+        grades: withoutSample(state.grades)
       };
       mergeInProgress = true;
       try {
