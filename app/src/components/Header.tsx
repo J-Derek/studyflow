@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
   const getPageTitle = () => {
     switch (activeTab) {
       case 'dashboard':
-        return 'Academic Command Center';
+        return 'Today';
       case 'assignments':
         return 'Coursework & Deadlines';
       case 'calendar':

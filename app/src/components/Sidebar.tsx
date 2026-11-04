@@ -66,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
   const pendingCount = assignments.filter((a) => a.status !== 'completed').length;
 
   const navItems = [
-    { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'dashboard' as const, label: 'Today', icon: LayoutDashboard },
     { id: 'assignments' as const, label: 'Assignments', icon: CheckSquare, badge: pendingCount },
     { id: 'calendar' as const, label: 'Schedule', icon: CalendarIcon },
     { id: 'timer' as const, label: 'Focus Timer', icon: Timer },

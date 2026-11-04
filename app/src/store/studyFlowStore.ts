@@ -18,6 +18,7 @@ import {
   deleteSessionFromFirestore
 } from '../services/firestoreSync';
 import { calculateSubtaskProgress } from '../utils/subtasks';
+import { syncThemeColor } from '../utils/themeColor';
 
 export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades';
 
@@ -369,6 +370,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           const next = state.theme === 'light' ? 'dark' : 'light';
           if (typeof document !== 'undefined') {
             document.documentElement.classList.toggle('dark', next === 'dark');
+            syncThemeColor(next === 'dark');
           }
           return { theme: next };
         });
@@ -377,6 +379,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         set({ theme });
         if (typeof document !== 'undefined') {
           document.documentElement.classList.toggle('dark', theme === 'dark');
+          syncThemeColor(theme === 'dark');
         }
       },
 

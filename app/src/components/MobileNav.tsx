@@ -8,7 +8,7 @@ export const MobileNav: React.FC = () => {
   const pendingCount = assignments.filter((a) => a.status !== 'completed').length;
 
   const items = [
-    { id: 'dashboard' as const, label: 'Home', icon: LayoutDashboard },
+    { id: 'dashboard' as const, label: 'Today', icon: LayoutDashboard },
     { id: 'assignments' as const, label: 'Tasks', icon: CheckSquare, badge: pendingCount },
     { id: 'calendar' as const, label: 'Calendar', icon: CalendarIcon },
     { id: 'timer' as const, label: 'Focus', icon: Timer },

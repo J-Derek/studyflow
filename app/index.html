@@ -22,8 +22,7 @@
     <meta name="twitter:description" content="High-performance academic command center with dynamic GPA modeling, deep work timer, and syllabus deliverable tracking." />
 
     <!-- Mobile & Theming -->
-    <meta name="theme-color" content="#F8F9FA" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#090A0C" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#F8F9FA" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -58,6 +57,8 @@
         const t = s?.state?.theme ?? 'system';
         const dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.classList.toggle('dark', dark);
+        const m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.content = dark ? '#090A0C' : '#F8F9FA';
       } catch {}
     </script>
   </head>

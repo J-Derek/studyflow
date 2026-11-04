@@ -7,7 +7,6 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com)
 [![Firebase Firestore](https://img.shields.io/badge/Database-Cloud%20Firestore-FFA000?style=flat-square&logo=firebase)](https://firebase.google.com)
 [![Vitest](https://img.shields.io/badge/Tests-Vitest%205.1-FCC72B?style=flat-square&logo=vitest)](https://vitest.dev)
-[![WCAG 2.2 AA](https://img.shields.io/badge/Accessibility-WCAG%202.2%20AA-059669?style=flat-square)](https://www.w3.org/WAI/standards-guidelines/wcag/)
 
 StudyFlow is a modern, distraction-free academic command center engineered for university students. It combines syllabus-aligned deliverable tracking, weekly timetable scheduling, a drift-free Pomodoro focus timer with ambient soundscapes, dynamic GPA simulation with what-if exam forecasting, and client-first disaster recovery portability.
 
@@ -166,6 +165,4 @@ StudyFlow enforces enterprise multi-tenant isolation:
 ## 👥 Team & Governance
 
 - **Product Owner**: 21
-- **Primary Engineering Agent**: Antigravity (Agy)
-- **Architectural Supervisor**: ChatGPT
-- **Security Auditor**: Claude Sonnet
+- **Engineering Squad**: Antigravity, Claude, ChatGPT

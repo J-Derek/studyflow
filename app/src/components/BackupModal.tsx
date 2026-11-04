@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Download, Upload, Cloud, CheckCircle2, AlertTriangle, Database } from 'lucide-react';
+import { X, Download, Upload, Cloud, CheckCircle2, AlertTriangle, Database, Copy } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { signInOrLinkWithGoogle } from '../lib/auth';
 import { validateBackupJson } from '../utils/backupValidator';
+import { inAppBrowser } from '../utils/inAppBrowser';
 
 interface BackupModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
   const { assignments, sessions, grades, isAnonymous, userEmail, setAuthUser } = useStudyFlowStore();
   const [isLinking, setIsLinking] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   if (!isOpen) return null;
 
@@ -166,14 +168,36 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                 Link your Google account to mirror your study plan across phone, tablet, and laptop with zero data loss.
               </p>
-              <button
-                onClick={handleGoogleAuth}
-                disabled={isLinking}
-                className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium shadow-2xs transition disabled:opacity-60"
-              >
-                <Cloud className="h-3.5 w-3.5" />
-                <span>{isLinking ? 'Linking Google Account...' : 'Link Google Account'}</span>
-              </button>
+              {inAppBrowser() ? (
+                <div className="space-y-2 pt-1">
+                  <div className="p-2.5 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-[11px] leading-relaxed">
+                    Google sign-in is blocked inside embedded browsers (WhatsApp, Instagram). Please open StudyFlow in Chrome or Safari to link your Google account.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                        navigator.clipboard.writeText(window.location.origin);
+                        setCopySuccess(true);
+                        setTimeout(() => setCopySuccess(false), 2500);
+                      }
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-md border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-medium shadow-2xs transition active:scale-95"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    <span>{copySuccess ? 'Link Copied to Clipboard!' : 'Copy Link for Chrome / Safari'}</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleGoogleAuth}
+                  disabled={isLinking}
+                  className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium shadow-2xs transition disabled:opacity-60"
+                >
+                  <Cloud className="h-3.5 w-3.5" />
+                  <span>{isLinking ? 'Linking Google Account...' : 'Link Google Account'}</span>
+                </button>
+              )}
             </div>
           ) : (
             <div className="p-3 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-between">
