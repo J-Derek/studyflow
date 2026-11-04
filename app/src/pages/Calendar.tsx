@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Clock, ChevronLeft, ChevronRight, Plus, X, Download, RotateCcw } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { downloadICalendarFile } from '../lib/icalExport';
+import { exportTimetable } from '../lib/exportTimetable';
 import type { StudySession } from '../types';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -74,7 +74,7 @@ export const CalendarPage: React.FC = () => {
         </div>
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <button
-            onClick={() => downloadICalendarFile(sessions)}
+            onClick={() => exportTimetable()}
             title="Export calendar to Apple Calendar, Google Calendar, or Outlook (.ics)"
             className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-surface-dark hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs transition shadow-2xs active:scale-95"
           >

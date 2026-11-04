@@ -15,7 +15,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { downloadICalendarFile } from '../lib/icalExport';
+import { exportTimetable } from '../lib/exportTimetable';
 
 interface CommandItem {
   id: string;
@@ -88,7 +88,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: 'act-new', label: 'Create New Deliverable', category: 'Actions', icon: Plus, action: () => { onClose(); onOpenAddModal(); } },
     { id: 'act-focus', label: 'Launch 25m Focus Session', category: 'Actions', icon: Sparkles, action: () => { setActiveTab('timer'); setTimerMode('focus'); startTimer(); onClose(); } },
     { id: 'act-theme', label: `Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`, category: 'Actions', icon: theme === 'light' ? Moon : Sun, action: () => { toggleTheme(); onClose(); } },
-    { id: 'act-ics', label: 'Export Timetable to Apple/Google (.ICS)', category: 'Actions', icon: Download, action: () => { downloadICalendarFile(sessions); onClose(); } },
+    { id: 'act-ics', label: 'Export Timetable to Apple/Google (.ICS)', category: 'Actions', icon: Download, action: () => { exportTimetable(); onClose(); } },
     {
       id: 'act-backup',
       label: 'Export Full Academic Ledger (.JSON Backup)',

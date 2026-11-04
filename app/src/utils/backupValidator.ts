@@ -14,11 +14,15 @@ export type ValidationResult =
   | { success: true; data: ValidatedBackupPayload }
   | { success: false; error: string };
 
-const MAX_ASSIGNMENTS = 1000;
+// Matches the 500-document list cap in firestore.rules, so an import can never exceed what syncs back.
+const MAX_ASSIGNMENTS = 500;
 const MAX_SESSIONS = 500;
 const MAX_GRADES = 100;
 const MAX_SUBTASKS_PER_ASSIGNMENT = 100;
 const MAX_ASSESSMENTS_PER_GRADE = 50;
+/** A realistic backup is well under 1 MB; anything near this is an attack or a mistake. */
+export const MAX_BACKUP_BYTES = 5 * 1024 * 1024;
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /**
  * Checks for prototype pollution attack vectors in raw JSON string or object keys.
@@ -35,7 +39,6 @@ export function hasPrototypePollution(input: unknown): boolean {
     if (seen.has(current)) continue;
     seen.add(current);
 
-    // Check dangerous properties
     if (
       Object.prototype.hasOwnProperty.call(current, '__proto__') ||
       Object.prototype.hasOwnProperty.call(current, 'constructor') ||
@@ -74,21 +77,22 @@ function isValidAssignment(item: unknown): item is Assignment {
   if (typeof a.title !== 'string' || a.title.trim().length === 0 || a.title.length > 250) return false;
   if (typeof a.course !== 'string' || a.course.trim().length === 0 || a.course.length > 200) return false;
   if (typeof a.dueDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(a.dueDate)) return false;
-  if (a.dueTime !== undefined && (typeof a.dueTime !== 'string' || a.dueTime.length > 10)) return false;
+  if (a.dueTime !== undefined && (typeof a.dueTime !== 'string' || !TIME_RE.test(a.dueTime))) return false;
   if (!VALID_PRIORITIES.has(a.priority as Priority)) return false;
   if (!VALID_STATUSES.has(a.status as AssignmentStatus)) return false;
   if (typeof a.progress !== 'number' || a.progress < 0 || a.progress > 100 || Number.isNaN(a.progress)) return false;
+  if (a.status === 'completed' && a.progress !== 100) return false;
   if (a.notes !== undefined && (typeof a.notes !== 'string' || a.notes.length > 5000)) return false;
-  if (typeof a.createdAt !== 'string') return false;
+  if (typeof a.createdAt !== 'string' || a.createdAt.length === 0 || a.createdAt.length > 50) return false;
 
   if (a.subtasks !== undefined) {
     if (!Array.isArray(a.subtasks) || a.subtasks.length > MAX_SUBTASKS_PER_ASSIGNMENT) return false;
     for (const st of a.subtasks) {
       if (!st || typeof st !== 'object') return false;
       const sub = st as Record<string, unknown>;
-      if (typeof sub.id !== 'string' || typeof sub.title !== 'string' || typeof sub.completed !== 'boolean') {
-        return false;
-      }
+      if (typeof sub.id !== 'string' || sub.id.length === 0 || sub.id.length > 100) return false;
+      if (typeof sub.title !== 'string' || sub.title.length > 200) return false;
+      if (typeof sub.completed !== 'boolean') return false;
     }
   }
 
@@ -103,7 +107,8 @@ function isValidSession(item: unknown): item is StudySession {
   if (typeof s.title !== 'string' || s.title.trim().length === 0 || s.title.length > 200) return false;
   if (typeof s.course !== 'string' || s.course.trim().length === 0 || s.course.length > 200) return false;
   if (typeof s.dayOfWeek !== 'number' || s.dayOfWeek < 0 || s.dayOfWeek > 6 || !Number.isInteger(s.dayOfWeek)) return false;
-  if (typeof s.startTime !== 'string' || typeof s.endTime !== 'string') return false;
+  if (typeof s.startTime !== 'string' || !TIME_RE.test(s.startTime)) return false;
+  if (typeof s.endTime !== 'string' || !TIME_RE.test(s.endTime)) return false;
   if (!['lecture', 'lab', 'study', 'review', 'exam'].includes(s.type as string)) return false;
 
   return true;
@@ -113,18 +118,18 @@ function isValidGrade(item: unknown): item is CourseGrade {
   if (!item || typeof item !== 'object') return false;
   const g = item as Record<string, unknown>;
 
-  if (typeof g.id !== 'string' || g.id.trim().length === 0) return false;
-  if (typeof g.courseCode !== 'string' || g.courseCode.trim().length === 0) return false;
-  if (typeof g.courseName !== 'string' || g.courseName.trim().length === 0) return false;
+  if (typeof g.id !== 'string' || g.id.trim().length === 0 || g.id.length > 100) return false;
+  if (typeof g.courseCode !== 'string' || g.courseCode.trim().length === 0 || g.courseCode.length > 50) return false;
+  if (typeof g.courseName !== 'string' || g.courseName.trim().length === 0 || g.courseName.length > 200) return false;
   if (typeof g.credits !== 'number' || g.credits < 0 || g.credits > 30 || Number.isNaN(g.credits)) return false;
-  if (typeof g.targetLetter !== 'string') return false;
-  if (typeof g.color !== 'string') return false;
+  if (typeof g.targetLetter !== 'string' || g.targetLetter.length > 3) return false;
+  if (typeof g.color !== 'string' || g.color.length > 50) return false;
 
   if (!Array.isArray(g.assessments) || g.assessments.length > MAX_ASSESSMENTS_PER_GRADE) return false;
   for (const asmt of g.assessments) {
     if (!asmt || typeof asmt !== 'object') return false;
     const a = asmt as Record<string, unknown>;
-    if (typeof a.id !== 'string' || typeof a.name !== 'string' || typeof a.weight !== 'number') return false;
+    if (typeof a.id !== 'string' || typeof a.name !== 'string' || a.name.length > 200 || typeof a.weight !== 'number') return false;
     if (a.weight < 0 || a.weight > 100 || Number.isNaN(a.weight)) return false;
     if (a.score !== undefined && a.score !== null) {
       if (typeof a.score !== 'number' || a.score < 0 || a.score > 200 || Number.isNaN(a.score)) return false;
@@ -132,6 +137,65 @@ function isValidGrade(item: unknown): item is CourseGrade {
   }
 
   return true;
+}
+
+function firstDuplicate(items: Array<{ id: string }>): string | null {
+  const seen = new Set<string>();
+  for (const { id } of items) {
+    if (seen.has(id)) return id;
+    seen.add(id);
+  }
+  return null;
+}
+
+/** Copies only known fields, so unexpected keys never reach the store or Firestore. `sample` is never imported. */
+function cleanAssignment(a: Assignment): Assignment {
+  return {
+    id: a.id,
+    title: a.title,
+    course: a.course,
+    dueDate: a.dueDate,
+    ...(a.dueTime !== undefined ? { dueTime: a.dueTime } : {}),
+    priority: a.priority,
+    status: a.status,
+    progress: a.progress,
+    ...(a.notes !== undefined ? { notes: a.notes } : {}),
+    ...(a.subtasks !== undefined
+      ? { subtasks: a.subtasks.map((t) => ({ id: t.id, title: t.title, completed: t.completed })) }
+      : {}),
+    createdAt: a.createdAt,
+    ...(typeof a.completedAt === 'string' ? { completedAt: a.completedAt.slice(0, 50) } : {})
+  };
+}
+
+function cleanSession(x: StudySession): StudySession {
+  return {
+    id: x.id,
+    title: x.title,
+    course: x.course,
+    dayOfWeek: x.dayOfWeek,
+    startTime: x.startTime,
+    endTime: x.endTime,
+    type: x.type,
+    ...(typeof x.color === 'string' ? { color: x.color.slice(0, 50) } : {})
+  };
+}
+
+function cleanGrade(g: CourseGrade): CourseGrade {
+  return {
+    id: g.id,
+    courseCode: g.courseCode,
+    courseName: g.courseName,
+    credits: g.credits,
+    targetLetter: g.targetLetter,
+    color: g.color,
+    assessments: g.assessments.map((m) => ({
+      id: m.id,
+      name: m.name,
+      weight: m.weight,
+      ...(m.score !== undefined && m.score !== null ? { score: m.score } : {})
+    }))
+  };
 }
 
 /**
@@ -142,16 +206,8 @@ export function validateBackupJson(rawJsonString: string): ValidationResult {
     return { success: false, error: 'Backup file is empty.' };
   }
 
-  // Pre-parse security check for prototype pollution strings
-  if (
-    rawJsonString.includes('"__proto__"') ||
-    rawJsonString.includes('"constructor"') ||
-    rawJsonString.includes('"prototype"')
-  ) {
-    return {
-      success: false,
-      error: 'Security alert: Disallowed prototype modification detected in backup payload.'
-    };
+  if (rawJsonString.length > MAX_BACKUP_BYTES) {
+    return { success: false, error: 'Backup file is too large to import.' };
   }
 
   let parsed: unknown;
@@ -161,6 +217,7 @@ export function validateBackupJson(rawJsonString: string): ValidationResult {
     return { success: false, error: 'Malformed JSON: Unable to parse backup file.' };
   }
 
+  // JSON.parse creates "__proto__" as an own key without polluting; the graph walk below rejects it.
   if (hasPrototypePollution(parsed)) {
     return {
       success: false,
@@ -179,7 +236,6 @@ export function validateBackupJson(rawJsonString: string): ValidationResult {
 
   const ledger = root.ledger as Record<string, unknown>;
 
-  // Assignments check
   if (!Array.isArray(ledger.assignments)) {
     return { success: false, error: 'Invalid ledger structure: "assignments" must be an array.' };
   }
@@ -192,7 +248,6 @@ export function validateBackupJson(rawJsonString: string): ValidationResult {
     }
   }
 
-  // Sessions check
   const sessions: StudySession[] = [];
   if (ledger.sessions !== undefined) {
     if (!Array.isArray(ledger.sessions)) {
@@ -209,7 +264,6 @@ export function validateBackupJson(rawJsonString: string): ValidationResult {
     }
   }
 
-  // Grades check
   const grades: CourseGrade[] = [];
   if (ledger.grades !== undefined) {
     if (!Array.isArray(ledger.grades)) {
@@ -226,15 +280,29 @@ export function validateBackupJson(rawJsonString: string): ValidationResult {
     }
   }
 
+  const cleanAssignments = (ledger.assignments as Assignment[]).map(cleanAssignment);
+  const cleanSessions = sessions.map(cleanSession);
+  const cleanGrades = grades.map(cleanGrade);
+
+  const lists: Array<[string, Array<{ id: string }>]> = [
+    ['assignment', cleanAssignments],
+    ['session', cleanSessions],
+    ['course', cleanGrades]
+  ];
+  for (const [label, list] of lists) {
+    const dup = firstDuplicate(list);
+    if (dup) return { success: false, error: `Duplicate ${label} id "${dup.slice(0, 40)}" in backup.` };
+  }
+
   return {
     success: true,
     data: {
-      version: typeof root.version === 'string' ? root.version : 'StudyFlow-v1.2',
-      exportedAt: typeof root.exportedAt === 'string' ? root.exportedAt : new Date().toISOString(),
+      version: typeof root.version === 'string' ? root.version.slice(0, 50) : 'StudyFlow-v1.2',
+      exportedAt: typeof root.exportedAt === 'string' ? root.exportedAt.slice(0, 50) : new Date().toISOString(),
       ledger: {
-        assignments: ledger.assignments as Assignment[],
-        sessions,
-        grades
+        assignments: cleanAssignments,
+        sessions: cleanSessions,
+        grades: cleanGrades
       }
     }
   };

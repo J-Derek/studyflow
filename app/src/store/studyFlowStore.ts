@@ -57,6 +57,9 @@ interface StudyFlowState {
   onboardingDismissed: boolean;
   dismissOnboarding: () => void;
   loadSampleData: () => void;
+  icsExportCount: number;
+  bumpIcsExport: () => void;
+  importLedger: (ledger: { assignments: Assignment[]; sessions: StudySession[]; grades: CourseGrade[] }) => void;
   clearSampleData: () => void;
   clearAllData: () => void;
 
@@ -184,6 +187,9 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (uid) syncOnboardingDismissed(uid).catch(console.warn);
       },
 
+      icsExportCount: 0,
+      bumpIcsExport: () => set((state) => ({ icsExportCount: state.icsExportCount + 1 })),
+
       loadSampleData: () => {
         const sample = buildSampleData();
         const state = get();
@@ -202,6 +208,23 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (uid) {
           newAssignments.forEach((x) => syncAssignmentToFirestore(uid, x).catch(console.warn));
           newSessions.forEach((x) => syncSessionToFirestore(uid, x).catch(console.warn));
+        }
+      },
+
+      importLedger: (ledger) => {
+        const state = get();
+        const uid = state.userId;
+        const keepA = new Set(ledger.assignments.map((x) => x.id));
+        const keepS = new Set(ledger.sessions.map((x) => x.id));
+        const removedA = state.assignments.filter((x) => !keepA.has(x.id));
+        const removedS = state.sessions.filter((x) => !keepS.has(x.id));
+        set({ assignments: ledger.assignments, sessions: ledger.sessions, grades: ledger.grades });
+        if (uid) {
+          // A restore replaces the account's data in the cloud too; otherwise the next snapshot undoes it.
+          ledger.assignments.forEach((x) => syncAssignmentToFirestore(uid, x).catch(console.warn));
+          ledger.sessions.forEach((x) => syncSessionToFirestore(uid, x).catch(console.warn));
+          removedA.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(console.warn));
+          removedS.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(console.warn));
         }
       },
 
@@ -620,6 +643,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       name: 'studyflow_storage_v1',
       partialize: (state) => ({
         dataOwnerUid: state.dataOwnerUid,
+        icsExportCount: state.icsExportCount,
         user: state.user,
         activeTab: state.activeTab,
         theme: state.theme,

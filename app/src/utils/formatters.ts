@@ -11,22 +11,40 @@ export function formatTimeLeft(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-export function getDaysRemaining(dateString?: string): { days: number; label: string; isUrgent: boolean } {
+const YMD = /^(\d{4})-(\d{2})-(\d{2})/;
+
+/** Calendar date (y, m, d) of `now` in the given IANA zone, or the device zone when omitted. */
+export function todayInZone(now: Date, timeZone?: string): { y: number; m: number; d: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(now);
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  return { y: get('year'), m: get('month'), d: get('day') };
+}
+
+/**
+ * Whole calendar days from today to the due date. Pure date arithmetic: a due date is a calendar
+ * day, not an instant, so daylight-saving shifts and the device zone cannot move it by a day.
+ */
+export function getDaysRemaining(
+  dateString?: string,
+  now: Date = new Date(),
+  timeZone?: string
+): { days: number; label: string; isUrgent: boolean } {
   if (!dateString) {
     return { days: 0, label: 'Pending date', isUrgent: false };
   }
-  const target = new Date(dateString);
-  if (isNaN(target.getTime())) {
+  const match = YMD.exec(dateString);
+  if (!match) {
     return { days: 0, label: 'Upcoming', isUrgent: false };
   }
-  const now = new Date();
-  
-  // Set to midnight for clean day calculation
-  target.setHours(23, 59, 59, 999);
-  now.setHours(0, 0, 0, 0);
-
-  const diffMs = target.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  const due = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  const t = todayInZone(now, timeZone);
+  const today = Date.UTC(t.y, t.m - 1, t.d);
+  const diffDays = Math.round((due - today) / 86_400_000);
 
   if (diffDays < 0) {
     return { days: diffDays, label: `${Math.abs(diffDays)}d overdue`, isUrgent: true };
@@ -34,7 +52,6 @@ export function getDaysRemaining(dateString?: string): { days: number; label: st
     return { days: 0, label: 'Due today', isUrgent: true };
   } else if (diffDays === 1) {
     return { days: 1, label: 'Due tomorrow', isUrgent: true };
-  } else {
-    return { days: diffDays, label: `Due in ${diffDays}d`, isUrgent: diffDays <= 3 };
   }
+  return { days: diffDays, label: `Due in ${diffDays}d`, isUrgent: diffDays <= 3 };
 }

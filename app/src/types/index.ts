@@ -70,6 +70,10 @@ export interface UserPreferences {
   program: string;
   semester: string;
   avatarUrl?: string;
+  /** Term dates and zone used by the .ics export. Stored on this device only. */
+  semesterStart?: string;
+  semesterEnd?: string;
+  timeZone?: string;
 }
 
 export type SoundscapeType = 'off' | 'rain' | 'brown' | 'white' | 'binaural';

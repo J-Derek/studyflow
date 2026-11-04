@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Download, Upload, Cloud, CheckCircle2, AlertTriangle, Database, Copy } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { friendlyAuthMessage, signInOrLinkWithGoogle } from '../lib/auth';
-import { validateBackupJson } from '../utils/backupValidator';
+import { MAX_BACKUP_BYTES, validateBackupJson } from '../utils/backupValidator';
 import { inAppBrowser } from '../utils/inAppBrowser';
 
 interface BackupModalProps {
@@ -42,6 +42,10 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
   const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_BACKUP_BYTES) {
+      setImportStatus('Validation failed: file is too large to be a StudyFlow backup.');
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -53,12 +57,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
         return;
       }
 
-      // Restore store with sanitized, validated data
-      useStudyFlowStore.setState({
-        assignments: validation.data.ledger.assignments,
-        sessions: validation.data.ledger.sessions,
-        grades: validation.data.ledger.grades
-      });
+      useStudyFlowStore.getState().importLedger(validation.data.ledger);
 
       setImportStatus('Academic ledger successfully verified and restored!');
       setTimeout(() => {

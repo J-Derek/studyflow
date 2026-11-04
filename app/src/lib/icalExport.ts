@@ -1,83 +1,236 @@
 import type { StudySession } from '../types';
 
-/**
- * Generates an RFC 5545 compliant iCalendar (.ics) string for recurring weekly study sessions
- */
-export function generateICalendarFeed(allSessions: StudySession[]): string {
-  const sessions = allSessions.filter((s) => !s.sample);
-  const dayNames = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
-  const now = new Date();
-  const timestamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-  const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+export interface IcsOptions {
+  /** IANA zone the lectures happen in, e.g. "Africa/Nairobi". Defaults to the device zone. */
+  timeZone?: string;
+  /** First and last day of term, YYYY-MM-DD. Events repeat weekly between them (inclusive). */
+  semesterStart?: string;
+  semesterEnd?: string;
+  /** Rises by one on every export so calendars treat re-imports as updates, not duplicates. */
+  sequence?: number;
+  now?: Date;
+}
 
-  // Compute standard 16-week academic semester endpoint for RRULE UNTIL
-  const semesterEnd = new Date(now.getTime() + 16 * 7 * 24 * 60 * 60 * 1000);
-  const untilStr = semesterEnd.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+const DAY_CODES = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+const DAY_MS = 86_400_000;
 
-  // Compute the upcoming dates corresponding to dayOfWeek (0-6)
-  const todayDay = now.getDay();
+// ---------- text helpers (RFC 5545) ----------
 
-  let icsLines: string[] = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//StudyFlow//Academic Schedule//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-    'X-WR-CALNAME:StudyFlow Academic Schedule',
-    `X-WR-TIMEZONE:${userTz}`
-  ];
+/** Escapes a TEXT value: backslash, semicolon, comma and newlines. */
+export function escapeIcsText(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r\n|\r|\n/g, '\\n');
+}
 
-  function escapeIcsText(str: string): string {
-    return str.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+const encoder = new TextEncoder();
+
+/** Folds a content line at 75 octets (UTF-8 bytes), never splitting a multi-byte character. */
+export function foldLine(line: string): string[] {
+  if (encoder.encode(line).length <= 75) return [line];
+  const out: string[] = [];
+  let current = '';
+  let currentBytes = 0;
+  for (const ch of line) {
+    const bytes = encoder.encode(ch).length;
+    if (currentBytes + bytes > 75) {
+      out.push(current);
+      current = ' '; // continuation lines start with one space, which counts toward their 75
+      currentBytes = 1;
+    }
+    current += ch;
+    currentBytes += bytes;
   }
+  out.push(current);
+  return out;
+}
 
-  function formatLocalDateTime(d: Date): string {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-  }
+// ---------- date / zone helpers ----------
 
-  sessions.forEach((s) => {
-    // Calculate reference start date for this weekday
-    const dayDiff = (s.dayOfWeek - todayDay + 7) % 7;
-    const sessionDate = new Date(now);
-    sessionDate.setDate(now.getDate() + dayDiff);
+const pad = (n: number, w = 2) => String(n).padStart(w, '0');
 
-    const [startH, startM] = s.startTime.split(':').map(Number);
-    const [endH, endM] = s.endTime.split(':').map(Number);
+function parseYmd(s: string): { y: number; m: number; d: number } | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  return m ? { y: Number(m[1]), m: Number(m[2]), d: Number(m[3]) } : null;
+}
 
-    sessionDate.setHours(startH, startM, 0, 0);
-    const dtStart = formatLocalDateTime(sessionDate);
+/** UTC offset (minutes east of UTC) of `zone` at the instant `ms`. */
+export function offsetMinutesAt(ms: number, zone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: zone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).formatToParts(new Date(ms));
+  const g = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  const asUtc = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'), g('second'));
+  return Math.round((asUtc - Math.floor(ms / 1000) * 1000) / 60_000);
+}
 
-    const sessionEndDate = new Date(sessionDate);
-    sessionEndDate.setHours(endH, endM, 0, 0);
-    const dtEnd = formatLocalDateTime(sessionEndDate);
+function formatOffset(minutes: number): string {
+  const sign = minutes < 0 ? '-' : '+';
+  const abs = Math.abs(minutes);
+  return `${sign}${pad(Math.floor(abs / 60))}${pad(abs % 60)}`;
+}
 
-    const byDay = dayNames[s.dayOfWeek] || 'MO';
+function localStamp(ms: number): string {
+  const d = new Date(ms);
+  return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}`;
+}
 
-    icsLines.push(
-      'BEGIN:VEVENT',
-      `UID:${s.id}@studyflow.app`,
-      `DTSTAMP:${timestamp}`,
-      `DTSTART;TZID=${userTz}:${dtStart}`,
-      `DTEND;TZID=${userTz}:${dtEnd}`,
-      `RRULE:FREQ=WEEKLY;BYDAY=${byDay};UNTIL=${untilStr}`,
-      `SUMMARY:${escapeIcsText(s.title + ' (' + s.course + ')')}`,
-      `DESCRIPTION:${escapeIcsText('StudyFlow scheduled ' + s.type + ' block for ' + s.course + '.')}`,
-      `CATEGORIES:${s.type.toUpperCase()}`,
-      'STATUS:CONFIRMED',
-      'END:VEVENT'
-    );
-  });
+const utcStamp = (ms: number) => `${localStamp(ms)}Z`;
 
-  icsLines.push('END:VCALENDAR');
-  return icsLines.join('\r\n');
+/** Instant at which the wall clock in `zone` reads the given local date and time. */
+function zonedWallToInstant(y: number, mo: number, d: number, hh: number, mm: number, zone: string): number {
+  const guess = Date.UTC(y, mo - 1, d, hh, mm);
+  let ms = guess - offsetMinutesAt(guess, zone) * 60_000;
+  ms = guess - offsetMinutesAt(ms, zone) * 60_000; // second pass settles times near a transition
+  return ms;
 }
 
 /**
- * Triggers a browser download of the .ics calendar file
+ * VTIMEZONE built from the zone's real offset changes inside the export window, so any importer
+ * resolves TZID without needing its own copy of the tz database.
  */
-export function downloadICalendarFile(sessions: StudySession[]): void {
-  const icsData = generateICalendarFeed(sessions);
+export function buildVTimezone(zone: string, fromMs: number, toMs: number): string[] {
+  const lines = ['BEGIN:VTIMEZONE', `TZID:${zone}`];
+  const transitions: Array<{ at: number; from: number; to: number }> = [];
+  let prevMs = fromMs;
+  let prevOff = offsetMinutesAt(prevMs, zone);
+  for (let t = fromMs + DAY_MS; t <= toMs + DAY_MS; t += DAY_MS) {
+    const off = offsetMinutesAt(t, zone);
+    if (off !== prevOff) {
+      let lo = prevMs;
+      let hi = t;
+      while (hi - lo > 60_000) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (offsetMinutesAt(mid, zone) === prevOff) lo = mid;
+        else hi = mid;
+      }
+      transitions.push({ at: hi, from: prevOff, to: off });
+      prevOff = off;
+    }
+    prevMs = t;
+  }
+
+  const initialOff = offsetMinutesAt(fromMs, zone);
+  if (transitions.length === 0) {
+    lines.push(
+      'BEGIN:STANDARD',
+      'DTSTART:19700101T000000',
+      `TZOFFSETFROM:${formatOffset(initialOff)}`,
+      `TZOFFSETTO:${formatOffset(initialOff)}`,
+      'END:STANDARD'
+    );
+  } else {
+    // The offset in force at the start, then each transition as an explicit onset (wall time of the old offset).
+    const first = transitions[0];
+    lines.push(
+      'BEGIN:STANDARD',
+      'DTSTART:19700101T000000',
+      `TZOFFSETFROM:${formatOffset(first.from)}`,
+      `TZOFFSETTO:${formatOffset(first.from)}`,
+      'END:STANDARD'
+    );
+    for (const tr of transitions) {
+      const kind = tr.to > tr.from ? 'DAYLIGHT' : 'STANDARD';
+      lines.push(
+        `BEGIN:${kind}`,
+        `DTSTART:${localStamp(tr.at + tr.from * 60_000)}`,
+        `TZOFFSETFROM:${formatOffset(tr.from)}`,
+        `TZOFFSETTO:${formatOffset(tr.to)}`,
+        `END:${kind}`
+      );
+    }
+  }
+  lines.push('END:VTIMEZONE');
+  return lines;
+}
+
+function addDays(y: number, m: number, d: number, n: number): { y: number; m: number; d: number } {
+  const dt = new Date(Date.UTC(y, m - 1, d + n));
+  return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() };
+}
+
+function parseTime(s: string): { h: number; m: number } | null {
+  const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(s);
+  return m ? { h: Number(m[1]), m: Number(m[2]) } : null;
+}
+
+/**
+ * Builds an RFC 5545 calendar. Sample sessions are excluded. Lines are CRLF-terminated, folded at
+ * 75 octets, and every text property is escaped.
+ */
+export function generateICalendarFeed(allSessions: StudySession[], options: IcsOptions = {}): string {
+  const sessions = allSessions.filter((s) => !s.sample);
+  const now = options.now ?? new Date();
+  const zone = options.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const sequence = Math.max(0, Math.floor(options.sequence ?? 0));
+
+  const today = { y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate() };
+  const start = parseYmd(options.semesterStart ?? '') ?? today;
+  const defaultEnd = addDays(start.y, start.m, start.d, 16 * 7 - 1);
+  let end = parseYmd(options.semesterEnd ?? '') ?? defaultEnd;
+  if (Date.UTC(end.y, end.m - 1, end.d) < Date.UTC(start.y, start.m - 1, start.d)) end = defaultEnd;
+
+  const windowFrom = Date.UTC(start.y, start.m - 1, start.d) - DAY_MS;
+  const windowTo = Date.UTC(end.y, end.m - 1, end.d) + DAY_MS;
+
+  const lines: string[] = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//StudyFlow//Timetable//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    `X-WR-CALNAME:${escapeIcsText('StudyFlow timetable')}`,
+    `X-WR-TIMEZONE:${escapeIcsText(zone)}`,
+    ...buildVTimezone(zone, windowFrom, windowTo)
+  ];
+
+  const dtstamp = utcStamp(now.getTime());
+  // UNTIL is the last second of the final day, in the stored zone, expressed in UTC.
+  const until = utcStamp(zonedWallToInstant(end.y, end.m, end.d, 23, 59, zone) + 59_000);
+
+  for (const s of sessions) {
+    const st = parseTime(s.startTime);
+    const en = parseTime(s.endTime);
+    if (!st || !en || !Number.isInteger(s.dayOfWeek) || s.dayOfWeek < 0 || s.dayOfWeek > 6) continue;
+
+    // First matching weekday on or after the semester start, by calendar arithmetic only.
+    const startDow = new Date(Date.UTC(start.y, start.m - 1, start.d)).getUTCDay();
+    const first = addDays(start.y, start.m, start.d, (s.dayOfWeek - startDow + 7) % 7);
+    if (Date.UTC(first.y, first.m - 1, first.d) > Date.UTC(end.y, end.m - 1, end.d)) continue;
+
+    const day = `${first.y}${pad(first.m)}${pad(first.d)}`;
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:${s.id.replace(/[^A-Za-z0-9._-]/g, '-')}@studyflow.app`,
+      `DTSTAMP:${dtstamp}`,
+      `SEQUENCE:${sequence}`,
+      `DTSTART;TZID=${zone}:${day}T${pad(st.h)}${pad(st.m)}00`,
+      `DTEND;TZID=${zone}:${day}T${pad(en.h)}${pad(en.m)}00`,
+      `RRULE:FREQ=WEEKLY;BYDAY=${DAY_CODES[s.dayOfWeek]};UNTIL=${until}`,
+      `SUMMARY:${escapeIcsText(`${s.title} (${s.course})`)}`,
+      `DESCRIPTION:${escapeIcsText(`StudyFlow ${s.type} block for ${s.course}.`)}`,
+      `CATEGORIES:${escapeIcsText(s.type.toUpperCase())}`,
+      'STATUS:CONFIRMED',
+      'END:VEVENT'
+    );
+  }
+
+  lines.push('END:VCALENDAR');
+  return lines.flatMap(foldLine).join('\r\n') + '\r\n';
+}
+
+/** Triggers a browser download of the .ics calendar file */
+export function downloadICalendarFile(sessions: StudySession[], options: IcsOptions = {}): void {
+  const icsData = generateICalendarFeed(sessions, options);
   const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
