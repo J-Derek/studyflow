@@ -246,7 +246,7 @@ export const CalendarPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/60 dark:bg-black/80 backdrop-blur-sm animate-fade-in motion-reduce:animate-none">
           <div className="bg-surface-light dark:bg-surface-dark rounded-xl w-full max-w-md shadow-2xl border border-zinc-200/80 dark:border-zinc-800/80 overflow-hidden transition-colors">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-850/40">
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">Schedule Academic Block</h3>
+              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">Add a block</h3>
               <button
                 onClick={() => setModalOpen(false)}
                 className="p-1 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"

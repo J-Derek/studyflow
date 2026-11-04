@@ -91,7 +91,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: 'act-ics', label: 'Export Timetable to Apple/Google (.ICS)', category: 'Actions', icon: Download, action: () => { exportTimetable(); onClose(); } },
     {
       id: 'act-backup',
-      label: 'Export Full Academic Data (.JSON Backup)',
+      label: 'Export all my data (JSON backup)',
       category: 'Actions',
       icon: Database,
       action: () => {

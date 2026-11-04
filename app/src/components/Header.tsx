@@ -183,7 +183,8 @@ export const Header: React.FC<HeaderProps> = ({
               className="flex items-center gap-1.5 px-3.5 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white/90 text-xs font-medium shadow-2xs transition-transform active:scale-95"
             >
               <Plus className="h-4 w-4" />
-              <span>Add assignment</span>
+              <span className="hidden sm:inline">Add assignment</span>
+              <span className="sm:hidden">Add</span>
             </button>
           )}
         </div>

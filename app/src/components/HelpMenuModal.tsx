@@ -20,7 +20,7 @@ interface HelpMenuModalProps {
 }
 
 export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose }) => {
-  const { loadSampleData, clearAllData, setActiveTab } = useStudyFlowStore();
+  const { loadSampleData, clearSampleData, clearAllData, setActiveTab } = useStudyFlowStore();
   const [activeTab, setActiveTabLocal] = useState<'tour' | 'sandbox' | 'shortcuts'>('tour');
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isSandboxSuccess, setIsSandboxSuccess] = useState<string | null>(null);
@@ -30,14 +30,14 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
   const slides = [
     {
       title: 'Assignments & Deadlines',
-      tagline: 'Track every assignment with milestone checklists',
+      tagline: 'Every deadline in one list',
       icon: CheckSquare,
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
-      description: 'Break down complex assignments into subtasks. Watch your progress auto-calculate as you complete milestones, with live countdowns warning you before due dates.',
+      description: 'Add an assignment with a due date. Break it into subtasks if it is big, and progress is worked out from what you tick off.',
       bulletPoints: [
-        'Hierarchical subtasks with progress math',
-        'Urgent countdown alerts (Due tomorrow, Due in 3d)',
+        'Subtasks that update progress',
+        'Days left on every deadline (Due tomorrow, Due in 3d)',
         'Filter by course, priority, or completion status'
       ],
       action: () => {
@@ -47,16 +47,16 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
       actionLabel: 'Go to Assignments'
     },
     {
-      title: '7-Day Class Timetable',
-      tagline: 'Your weekly lectures & study blocks in one view',
+      title: 'Timetable',
+      tagline: 'Your week of classes and study blocks',
       icon: Calendar,
       color: 'text-amber-500',
       bgColor: 'bg-amber-500/10',
-      description: 'Map out your lectures, labs, and review sessions for the week. Highlights current class periods in real time and exports directly to your phone calendar.',
+      description: 'Add your lectures, labs and study blocks once. Export them to Google, Apple or Outlook calendar as repeating weekly events.',
       bulletPoints: [
-        'Weekly grid with day-by-day navigation',
-        '1-click RFC 5545 iCalendar (.ics) export for Google & Apple Calendar',
-        'Lecture vs Lab vs Study session classification'
+        'Week view you can page through',
+        'One-click .ics export for Google, Apple and Outlook calendars',
+        'Lectures, labs, study blocks and exams in different colours'
       ],
       action: () => {
         setActiveTab('calendar');
@@ -65,16 +65,16 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
       actionLabel: 'Open timetable'
     },
     {
-      title: 'Focus Focus Timer',
-      tagline: 'Zero-drift Pomodoros with ambient soundscapes',
+      title: 'Focus timer',
+      tagline: 'Timed work blocks with optional background sound',
       icon: Timer,
       color: 'text-rose-500',
       bgColor: 'bg-rose-500/10',
-      description: 'Lock into deliberate study sprints with synthesized rain, waterfall, and binaural soundscapes generated natively with Web Audio. Zero external MP3 downloads.',
+      description: 'Work for 25 minutes, then rest. Pick rain, brown noise, white noise or binaural tones to play while you work. The sounds are generated in your browser, so nothing is downloaded.',
       bulletPoints: [
-        'Native Web Audio pink & brown noise generation',
-        'Screen Wake Lock keeps your display awake during focus',
-        'OS Media Session integration with lock-screen playback'
+        'Sounds are made in your browser, no audio files',
+        'Keeps the screen on while the timer runs, where your browser allows it',
+        'The timer catches up if you switch tabs and come back'
       ],
       action: () => {
         setActiveTab('timer');
@@ -83,35 +83,35 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
       actionLabel: 'Launch Timer'
     },
     {
-      title: 'GPA & Exam Score Predictor',
-      tagline: 'Real-time 4.0 scale math with "What-If" sliders',
+      title: 'Grades',
+      tagline: 'A projected GPA and a what-if calculator',
       icon: Award,
       color: 'text-emerald-500',
       bgColor: 'bg-emerald-500/10',
-      description: 'Know exactly what score you need on your upcoming final exam to secure an A or protect your Dean\'s honors standing. No manual spreadsheet guesswork.',
+      description: 'Enter your scores as you get them. Slide a hypothetical final exam score to see how it would change your course grade. Results are projections on a 4.0 scale, so check your university\'s own scale.',
       bulletPoints: [
-        'Credit-weighted 4.0 cumulative GPA calculation',
-        'Interactive final exam score simulator slider',
-        'Real-time Dean\'s List & Honor Roll standing brackets'
+        'GPA weighted by credits',
+        'What-if slider for an upcoming assessment',
+        'Honors ranges shown as projections, not official standing'
       ],
       action: () => {
         setActiveTab('grades');
         onClose();
       },
-      actionLabel: 'Open GPA Simulator'
+      actionLabel: 'Open grades'
     }
   ];
 
   const handleLoadDemo = () => {
     loadSampleData();
-    setIsSandboxSuccess('Demo assignments loaded successfully!');
+    setIsSandboxSuccess('Sample data added.');
     setTimeout(() => setIsSandboxSuccess(null), 3000);
   };
 
   const handleClearAll = () => {
-    if (window.confirm('Clear all assignments, schedule, and grade data for a fresh start?')) {
+    if (window.confirm('Delete ALL your assignments, timetable and grades? This cannot be undone. Make a backup first if you might want them back.')) {
       clearAllData();
-      setIsSandboxSuccess('All data cleared. You have a clean slate.');
+      setIsSandboxSuccess('All data deleted.');
       setTimeout(() => setIsSandboxSuccess(null), 3000);
     }
   };
@@ -135,17 +135,17 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
             </div>
             <div>
               <h2 id="help-modal-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                StudyFlow Playbook & Guide
+                Help
               </h2>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400 tabular-nums">
-                Everything you need to know in 45 seconds
+                A quick tour of what is here
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            aria-label="Close Playbook"
+            aria-label="Close help"
             className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
           >
             <X className="h-4 w-4" />
@@ -162,7 +162,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                 : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
             }`}
           >
-            Visual Tour
+            Tour
           </button>
           <button
             onClick={() => setActiveTabLocal('sandbox')}
@@ -172,7 +172,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                 : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
             }`}
           >
-            Demo Sandbox
+            Sample data
           </button>
           <button
             onClick={() => setActiveTabLocal('shortcuts')}
@@ -199,7 +199,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                     </div>
                     <div>
                       <span className="tabular-nums text-[10px] uppercase font-semibold text-zinc-400">
-                        Module {currentSlide + 1} of {slides.length}
+                        {currentSlide + 1} of {slides.length}
                       </span>
                       <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
                         {slide.title}
@@ -275,10 +275,10 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
             <div className="space-y-4">
               <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-750 bg-zinc-50/60 dark:bg-zinc-850/30">
                 <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                  Interactive Demo Sandbox
+                  Try it with sample data
                 </h4>
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  Want to explore StudyFlow with realistic university assignments, a weekly lecture schedule, and sample GPA grades before adding your own?
+                  Load a few example assignments, classes and a course. They are labelled Sample and are left out of your GPA, backups and calendar export.
                 </p>
 
                 <div className="flex items-center gap-2.5 mt-3.5 flex-wrap">
@@ -287,7 +287,18 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs cursor-pointer"
                   >
                     <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                    <span>Load Demo Assignments</span>
+                    <span>Add sample data</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      clearSampleData();
+                      setIsSandboxSuccess('Sample data removed.');
+                      setTimeout(() => setIsSandboxSuccess(null), 3000);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium transition cursor-pointer"
+                  >
+                    <span>Remove sample data</span>
                   </button>
 
                   <button
@@ -295,7 +306,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-lg border border-red-200 dark:border-red-900/60 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400 text-xs font-medium transition cursor-pointer"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    <span>Clear All Data</span>
+                    <span>Delete all my data</span>
                   </button>
                 </div>
 
@@ -308,10 +319,10 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
 
               <div className="p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 text-[11px] text-zinc-500 dark:text-zinc-400 space-y-1">
                 <span className="font-semibold text-zinc-700 dark:text-zinc-300 block">
-                  Data Privacy Guarantee
+                  Where your data lives
                 </span>
                 <p>
-                  StudyFlow operates locally on your machine with offline persistence. No tracking cookies, no personal telemetry, and no mandatory accounts. You control your data.
+                  You start as a guest with no sign-up. Your data is saved to a guest account on Google Firebase so it survives a refresh, and it is also kept on this device so the app works offline. Link a Google account to reach it from other devices. You can export everything from Backup.
                 </p>
               </div>
             </div>
@@ -320,13 +331,9 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
           {activeTab === 'shortcuts' && (
             <div className="space-y-2">
               {[
-                { key: '⌘ K / Ctrl K', desc: 'Open Command Palette & Assignments Search' },
-                { key: '⌘ 1', desc: 'Jump to Today & Dashboard' },
-                { key: '⌘ 2', desc: 'Jump to Assignments & Deadlines' },
-                { key: '⌘ 3', desc: 'Go to Timetable' },
-                { key: '⌘ 4', desc: 'Jump to Focus Focus Timer' },
-                { key: '⌘ 5', desc: 'Jump to GPA & Grade Predictor' },
-                { key: 'Space', desc: 'Start / Pause Active Focus Timer' }
+                { key: '⌘ K / Ctrl K', desc: 'Search and jump anywhere' },
+                { key: 'Esc', desc: 'Close a dialog or the search' },
+                { key: '↑ ↓ Enter', desc: 'Move through and pick search results' }
               ].map((sc, idx) => (
                 <div 
                   key={idx}
@@ -345,7 +352,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
         {/* Footer */}
         <div className="p-4 border-t border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/30 flex items-center justify-between">
           <span className="text-[11px] tabular-nums text-zinc-400">
-            StudyFlow · Academic Operating System
+            StudyFlow · Study planner
           </span>
           <button
             onClick={onClose}

@@ -60,10 +60,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
             </div>
             <div>
               <h3 id="profile-modal-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                Academic Profile
+                Profile
               </h3>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400 tabular-nums">
-                Customize your student identity and institutional affiliation
+                Your name and where you study.
               </p>
             </div>
           </div>
@@ -95,7 +95,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
               <Building2 className="h-3.5 w-3.5 text-zinc-400" />
-              <span>University / Institution</span>
+              <span>University</span>
             </label>
             <input
               type="text"
@@ -110,7 +110,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
               <BookOpen className="h-3.5 w-3.5 text-zinc-400" />
-              <span>Academic Program / Major</span>
+              <span>Programme</span>
             </label>
             <input
               type="text"

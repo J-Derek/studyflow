@@ -226,7 +226,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Right: Today's classes (1 col) */}
         <div className="space-y-3">
           <div className="flex items-center justify-between pb-1">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Today’s Schedule</h2>
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Today’s classes</h2>
             <button
               onClick={() => setActiveTab('calendar')}
               className="text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 min-h-[44px] inline-flex items-center py-2 px-1 transition-colors cursor-pointer"

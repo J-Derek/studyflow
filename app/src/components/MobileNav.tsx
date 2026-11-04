@@ -9,9 +9,9 @@ export const MobileNav: React.FC = () => {
 
   const items = [
     { id: 'dashboard' as const, label: 'Today', icon: LayoutDashboard },
-    { id: 'assignments' as const, label: 'Tasks', icon: CheckSquare, badge: pendingCount },
-    { id: 'calendar' as const, label: 'Calendar', icon: CalendarIcon },
-    { id: 'timer' as const, label: 'Focus', icon: Timer },
+    { id: 'assignments' as const, label: 'Assignments', icon: CheckSquare, badge: pendingCount },
+    { id: 'calendar' as const, label: 'Timetable', icon: CalendarIcon },
+    { id: 'timer' as const, label: 'Timer', icon: Timer },
     { id: 'grades' as const, label: 'Grades', icon: Award }
   ];
 

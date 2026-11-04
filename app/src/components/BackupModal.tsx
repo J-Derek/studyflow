@@ -98,7 +98,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
             </div>
             <div>
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                Academic Data & Data Durability
+                Backup and sync
               </h3>
               <p className="text-[11px] tabular-nums text-zinc-500">System Design: Zero lock-in, client-first portability</p>
             </div>
@@ -114,7 +114,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
         {/* Section 1: Offline Local JSON Portability */}
         <div className="space-y-3">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 tabular-nums">
-            Local Disaster Recovery (JSON)
+            Back up to a file (JSON)
           </h4>
           <p className="text-xs text-zinc-600 dark:text-zinc-400">
             Export a standalone, human-readable snapshot of all assignments, milestones, course syllabi, and GPA records.

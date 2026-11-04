@@ -132,13 +132,13 @@ export function App() {
           onOpenBackupModal={() => setIsBackupOpen(true)}
         />
 
-        {/* Disaster Recovery & Backup Modal */}
+        {/* Backup modal */}
         <BackupModal
           isOpen={isBackupOpen}
           onClose={() => setIsBackupOpen(false)}
         />
 
-        {/* Student Profile & Academic Settings Modal */}
+        {/* Profile modal */}
         <ProfileModal
           isOpen={isProfileOpen}
           onClose={() => setIsProfileOpen(false)}

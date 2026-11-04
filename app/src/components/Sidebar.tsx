@@ -156,7 +156,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
           <button
             type="button"
             onClick={onOpenProfile}
-            title="Edit student profile & institution"
+            title="Edit profile"
             className="flex items-center gap-2 overflow-hidden text-left hover:opacity-80 transition-opacity cursor-pointer group flex-1 min-w-0"
           >
             <div className="h-7 w-7 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 tabular-nums font-semibold flex items-center justify-center text-xs flex-shrink-0 group-hover:bg-zinc-300 dark:group-hover:bg-zinc-600 transition-colors">
