@@ -8,6 +8,7 @@ import {
 import { auth, googleProvider } from './firebase';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { unsubscribeAllFirestoreSync } from '../services/firestoreSync';
+import { inAppBrowser } from '../utils/inAppBrowser';
 
 const authBroadcast = typeof window !== 'undefined' && 'BroadcastChannel' in window
   ? new BroadcastChannel('studyflow_auth_channel')
@@ -60,6 +61,12 @@ export function isAnonymousUser(): boolean {
  * or signs into an existing Google account without losing student data.
  */
 export async function signInOrLinkWithGoogle(): Promise<User> {
+  if (inAppBrowser()) {
+    const error = new Error('Google OAuth is blocked inside embedded browsers (WhatsApp, Instagram). Please open StudyFlow in Chrome or Safari.');
+    (error as unknown as { code: string }).code = 'auth/in-app-browser-blocked';
+    throw error;
+  }
+
   const currentUser = auth.currentUser;
 
   if (currentUser && currentUser.isAnonymous) {

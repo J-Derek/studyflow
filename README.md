@@ -30,9 +30,9 @@ StudyFlow is a modern, distraction-free academic command center engineered for u
 ## 🎯 About The Project
 
 University students routinely juggle complex syllabi, overlapping course deadlines, and fragmented study habits. StudyFlow provides a cohesive, single-window academic workspace designed with human-computer interaction (HCI) principles:
-- **Low Cognitive Overhead**: Clean visual hierarchy that surfaces urgent obligations without artificial marketing badges or high-stress neon pills.
+- **Low Cognitive Overhead**: Clean visual hierarchy that surfaces urgent obligations without artificial badges or high-stress neon pills.
 - **Dual-Token Theme**: High-contrast paper palette for daylight library study and true dark obsidian slate for late-night focus sessions.
-- **Zero-Drift Timer**: Timestamp-anchored countdown scheduling that remains 100% accurate across backgrounded tabs and OS sleep states.
+- **Timestamp-Anchored Timer**: Anchors to system timestamps so remaining time is computed accurately upon tab refocus.
 - **Dynamic GPA Simulator**: Course-weighted quality points calculation with a what-if solver computing exact needed exam percentages to secure target honors tiers.
 - **Client-First Disaster Recovery**: Full JSON export and schema-validated import with prototype-pollution defense, ensuring zero vendor lock-in.
 
@@ -155,10 +155,10 @@ StudyFlow enforces enterprise multi-tenant isolation:
 - [x] **Phase 1: Production MVP** — Deployed live on Vercel.
 - [x] **Phase 2: UI/UX Audit & Anti-Slop Redesign** — Neutralized AI fingerprints, unified dual-token styling.
 - [x] **Phase 3: Front-End Remediations** — Real editable student profiles, week-switching schedule, What-If simulator, and responsive navigation.
-- [x] **Phase 4A: Backend Hardening & Automated Test Suites** — 29/29 Vitest tests passing, multi-tenant session isolation.
-- [x] **Phase 4B: Vercel Preview & Production Deployment** — Cold-load SPA HTML5 pushState rewrites verified.
-- [x] **Phase 4C: Multi-Device QA & Accessibility Audit** — 0 console errors, 100% WCAG 2.2 AA compliant $44\text{px}$ touch targets.
-- [x] **Phase 5: GitHub Push & Release Tagging** — Final repository synchronization to [github.com/J-Derek/studyflow](https://github.com/J-Derek/studyflow).
+- [ ] **Phase 4A: Backend Hardening & Automated Test Suites** — 41 Vitest unit tests active; Firestore emulator test suite in preparation.
+- [x] **Phase 4B: Vercel Preview & Production Deployment** — Verified with live pushState SPA rewrites.
+- [ ] **Phase 4C: Multi-Device QA & Accessibility Audit** — 0 console errors, mobile touch targets verified; full axe-core audit scheduled.
+- [x] **Phase 5: GitHub Push & Release Tagging** — Synchronized to [github.com/J-Derek/studyflow](https://github.com/J-Derek/studyflow).
 
 ---
 
