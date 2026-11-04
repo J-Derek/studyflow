@@ -76,11 +76,6 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2 text-xs">
                     <span className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <span>{getPageTitle()}</span>
-            {activeTab === 'grades' && (
-              <span className="text-[10px] tabular-nums px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60">
-                Simulator
-              </span>
-            )}
           </span>
         </div>
 

@@ -5,7 +5,6 @@ import {
   RotateCcw,
   Flame,
   CheckCircle,
-  ShieldCheck,
   Volume2,
   VolumeX,
   CloudRain,
@@ -142,11 +141,11 @@ export const FocusTimerPage: React.FC = () => {
   const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
   const soundscapesList: { id: SoundscapeType; label: string; icon: React.ReactNode }[] = [
-    { id: 'off', label: 'Mute', icon: <VolumeX className="w-5 h-5 text-zinc-400" /> },
-    { id: 'rain', label: 'Gentle Rain', icon: <CloudRain className="w-5 h-5 text-indigo-400" /> },
-    { id: 'brown', label: 'Deep Waterfall', icon: <Waves className="w-5 h-5 text-cyan-400" /> },
-    { id: 'white', label: 'White Noise', icon: <BookOpen className="w-5 h-5 text-amber-400" /> },
-    { id: 'binaural', label: '40Hz Gamma Focus', icon: <Brain className="w-5 h-5 text-purple-400" /> }
+    { id: 'off', label: 'Off', icon: <VolumeX className="w-5 h-5 text-zinc-400" /> },
+    { id: 'rain', label: 'Rain', icon: <CloudRain className="w-5 h-5 text-indigo-400" /> },
+    { id: 'brown', label: 'Brown noise', icon: <Waves className="w-5 h-5 text-cyan-400" /> },
+    { id: 'white', label: 'White noise', icon: <BookOpen className="w-5 h-5 text-amber-400" /> },
+    { id: 'binaural', label: 'Binaural tones', icon: <Brain className="w-5 h-5 text-purple-400" /> }
   ];
 
   return (
@@ -154,10 +153,10 @@ export const FocusTimerPage: React.FC = () => {
       {/* Header */}
       <div className="text-center space-y-1">
         <h1 className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-          Acoustic Focus Console
+          Focus timer
         </h1>
         <p className="text-xs text-zinc-500 dark:text-zinc-400 font-sans">
-          Calibrated concentration blocks with synthesized acoustic masking
+          Work in timed blocks, then take a break.
         </p>
       </div>
 
@@ -172,7 +171,7 @@ export const FocusTimerPage: React.FC = () => {
                 : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
-            Deep Focus (25m)
+            Focus (25m)
           </button>
           <button
             onClick={() => setTimerMode('shortBreak')}
@@ -238,7 +237,7 @@ export const FocusTimerPage: React.FC = () => {
               {formatTimeLeft(timerSecondsLeft)}
             </span>
             <span className="text-[11px] tabular-nums text-zinc-400 mt-2">
-              {timerMode === 'focus' ? 'CONCENTRATION BLOCK' : 'RECOVERY PERIOD'}
+              {timerMode === 'focus' ? 'Focus' : 'Break'}
             </span>
             {timerIsRunning && (
               <span className="mt-2 inline-flex items-center gap-1.5 text-[10px] tabular-nums font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/60">
@@ -271,7 +270,7 @@ export const FocusTimerPage: React.FC = () => {
               onClick={startTimer}
               className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition shadow-2xs flex items-center gap-2 active:scale-95"
             >
-              <Play className="h-3.5 w-3.5 fill-current" /> Start Focus
+              <Play className="h-3.5 w-3.5 fill-current" /> Start
             </button>
           )}
 
@@ -293,10 +292,7 @@ export const FocusTimerPage: React.FC = () => {
         </div>
 
         {/* Tab-inactive Accuracy Badge */}
-        <div className="mt-5 flex items-center gap-1.5 text-[11px] text-zinc-400 tabular-nums">
-          <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-          <span>Timestamp synchronized • Background resilient</span>
-        </div>
+        
       </div>
 
       {/* AMBIENT SOUNDSCAPES DEEP WORK AUDIO (Web Audio Synthesizer) */}
@@ -308,7 +304,7 @@ export const FocusTimerPage: React.FC = () => {
             </div>
             <div>
               <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                <span>Acoustic Masking Soundscapes</span>
+                <span>Background sound</span>
                 {soundscape !== 'off' && timerIsRunning && (
                   <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 tabular-nums">
                     <span className="h-2 w-0.5 bg-emerald-500 animate-pulse" />
@@ -318,7 +314,7 @@ export const FocusTimerPage: React.FC = () => {
                 )}
               </h3>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                Synthesized procedural white, pink, and waterfall frequencies
+                Optional. Plays while the timer runs. Binaural tones work best with headphones.
               </p>
             </div>
           </div>
@@ -361,7 +357,7 @@ export const FocusTimerPage: React.FC = () => {
               <div>
                 <p className="text-[11px] font-medium leading-tight">{item.label}</p>
                 <p className="text-[10px] tabular-nums text-zinc-400 mt-0.5">
-                  {soundscape === item.id ? (timerIsRunning ? 'Active' : 'Queued') : 'Select'}
+                  {soundscape === item.id ? (timerIsRunning ? 'Playing' : 'Selected') : ''}
                 </p>
               </div>
             </button>
@@ -372,9 +368,9 @@ export const FocusTimerPage: React.FC = () => {
       {/* Focus Session Counter & Milestones */}
       <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex items-center justify-between transition-colors">
         <div>
-          <h4 className="font-medium text-zinc-900 dark:text-zinc-100 text-xs">Completed Focus Rounds Today</h4>
+          <h4 className="font-medium text-zinc-900 dark:text-zinc-100 text-xs">Focus sessions completed</h4>
           <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-sans">
-            Every 4 sessions triggers a 15-minute restorative rest break
+            Counted on this device
           </p>
         </div>
         <div className="flex items-center gap-1.5">

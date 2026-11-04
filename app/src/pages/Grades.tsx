@@ -134,14 +134,14 @@ export const GradesPage: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                    Syllabus "What-If" Outcome Simulator
+                    What-if calculator
                   </h2>
                   <span className="tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
                     {selectedCourse.courseCode}
                   </span>
                 </div>
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  Simulate required assessment scores to guarantee your target course honors letter
+                  Try a score on your next assessment and see the grade it would give you.
                 </p>
               </div>
             </div>
@@ -188,10 +188,10 @@ export const GradesPage: React.FC = () => {
               />
 
               <div className="flex justify-between text-[10px] tabular-nums text-zinc-400">
-                <span>50% (Passing)</span>
-                <span>75% (Average)</span>
-                <span>85% (Target)</span>
-                <span>100% (Maximum)</span>
+                <span>50%</span>
+                <span>75%</span>
+                <span>85%</span>
+                <span>100%</span>
               </div>
             </div>
 
@@ -209,7 +209,7 @@ export const GradesPage: React.FC = () => {
                 </span>
               </div>
               <p className="text-[10px] tabular-nums text-zinc-400">
-                Target: {selectedCourse.targetLetter} (GPA: {percentageToGpa(simCoursePct).toFixed(1)})
+                Grade points at this score: {percentageToGpa(simCoursePct).toFixed(1)} · Your target: {selectedCourse.targetLetter}
               </p>
             </div>
           </div>
@@ -220,9 +220,9 @@ export const GradesPage: React.FC = () => {
       <div className="space-y-3">
         <div className="flex items-center justify-between pb-1">
           <div>
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Enrolled Course Portfolio</h2>
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Your courses</h2>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-              Edit individual assessment scores in real time to model course progression
+              Enter scores as you get them.
             </p>
           </div>
 
@@ -295,7 +295,7 @@ export const GradesPage: React.FC = () => {
                 {/* Assessments list with live score inputs */}
                 <div className="space-y-1.5 pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
                   <p className="text-[10px] tabular-nums text-zinc-400">
-                    Syllabus Weights ({gradedWeight}% Graded)
+                    Weights ({gradedWeight}% Graded)
                   </p>
 
                   <div className="space-y-1">
@@ -335,7 +335,7 @@ export const GradesPage: React.FC = () => {
                     onClick={() => setSelectedCourseId(course.id)}
                     className="text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1 text-[11px]"
                   >
-                    <span>Simulate Final</span>
+                    <span>Try the final</span>
                     <ChevronRight className="h-3 w-3" />
                   </button>
 

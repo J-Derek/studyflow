@@ -16,6 +16,7 @@ import { AssignmentModal } from '../components/AssignmentModal';
 export const AssignmentsPage: React.FC = () => {
   const { assignments, toggleAssignmentComplete, deleteAssignment, toggleSubtask, addSubtask } = useStudyFlowStore();
   const [newSubtaskInputs, setNewSubtaskInputs] = useState<Record<string, string>>({});
+  const [addingFor, setAddingFor] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
@@ -70,26 +71,12 @@ export const AssignmentsPage: React.FC = () => {
     setModalOpen(true);
   };
 
-  const handleCreate = () => {
-    setEditingAssignment(null);
-    setModalOpen(true);
-  };
 
   return (
     <div className="space-y-5 animate-fade-in pb-16">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Assignments Registry</h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-sans">Track course assignments, milestones, and grading deadlines</p>
-        </div>
-        <button
-          onClick={handleCreate}
-          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-xs transition shadow-2xs active:scale-95 self-start sm:self-auto"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          <span>New Assignment</span>
-        </button>
+      <div>
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Assignments</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">Everything due, in one list.</p>
       </div>
 
       {/* Filter and Search Bar */}
@@ -100,7 +87,7 @@ export const AssignmentsPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
             <input
               type="text"
-              placeholder="Search assignments by title, course code, or notes..."
+              aria-label="Search assignments" placeholder="Search by title, course or notes"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 transition"
@@ -298,51 +285,44 @@ export const AssignmentsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Subtasks Milestones (Linear style expandable list) */}
-                <div className="pl-7 pr-2 pt-1 border-t border-zinc-100 dark:border-zinc-800/60 space-y-1">
-                  <div className="flex items-center justify-between text-[10px] tabular-nums text-zinc-400 mb-1">
-                    <span>Milestones ({effectiveSubtasks.filter(s => s.completed).length}/{effectiveSubtasks.length})</span>
-                    {!isCompleted && (
-                      <span className="text-[10px] text-zinc-400">press enter to add</span>
+                {(effectiveSubtasks.length > 0 || addingFor === asg.id) && (
+                  <div className="pl-7 pr-2 pt-2 border-t border-zinc-100 dark:border-zinc-800/60 space-y-1.5">
+                    {effectiveSubtasks.length > 0 && (
+                      <>
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                          Subtasks · {effectiveSubtasks.filter((st) => st.completed).length} of {effectiveSubtasks.length} done
+                        </div>
+                        <ul className="grid grid-cols-1 sm:grid-cols-3 gap-1">
+                          {effectiveSubtasks.map((st) => (
+                            <li key={st.id}>
+                              <label className="flex items-center gap-2 p-1 rounded hover:bg-zinc-100/70 dark:hover:bg-zinc-800/60 cursor-pointer text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={st.completed}
+                                  onChange={() => toggleSubtask(asg.id, st.id)}
+                                  className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-700 text-blue-600 cursor-pointer"
+                                />
+                                <span
+                                  className={`truncate ${
+                                    st.completed ? 'line-through text-zinc-400 dark:text-zinc-500' : 'text-zinc-700 dark:text-zinc-300'
+                                  }`}
+                                >
+                                  {st.title}
+                                </span>
+                              </label>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
                     )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-                    {effectiveSubtasks.map((st) => (
-                      <div
-                        key={st.id}
-                        onClick={() => toggleSubtask(asg.id, st.id)}
-                        className="flex items-center gap-1.5 p-1 rounded hover:bg-zinc-100/70 dark:hover:bg-zinc-800/60 cursor-pointer text-xs transition"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={st.completed}
-                          onChange={() => {}}
-                          className="h-3 w-3 rounded border-zinc-300 dark:border-zinc-700 text-blue-600 focus:ring-0 cursor-pointer"
-                        />
-                        <span
-                          className={`truncate text-[11px] ${
-                            st.completed
-                              ? 'line-through text-zinc-400 dark:text-zinc-500'
-                              : 'text-zinc-700 dark:text-zinc-300'
-                          }`}
-                        >
-                          {st.title}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Inline Subtask Quick Add */}
-                  {!isCompleted && (
-                    <div className="pt-1 flex items-center gap-2 max-w-sm">
+                    {!isCompleted && (
                       <input
                         type="text"
-                        placeholder="+ Add milestone subtask..."
+                        aria-label={`Add a subtask to ${asg.title}`}
+                        placeholder="Add a subtask and press Enter"
+                        autoFocus={addingFor === asg.id && effectiveSubtasks.length === 0}
                         value={newSubtaskInputs[asg.id] || ''}
-                        onChange={(e) =>
-                          setNewSubtaskInputs((prev) => ({ ...prev, [asg.id]: e.target.value }))
-                        }
+                        onChange={(e) => setNewSubtaskInputs((prev) => ({ ...prev, [asg.id]: e.target.value }))}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && (newSubtaskInputs[asg.id] || '').trim()) {
                             e.preventDefault();
@@ -350,11 +330,22 @@ export const AssignmentsPage: React.FC = () => {
                             setNewSubtaskInputs((prev) => ({ ...prev, [asg.id]: '' }));
                           }
                         }}
-                        className="px-2 py-0.8 text-[11px] rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500 flex-1 tabular-nums"
+                        className="w-full max-w-sm px-2.5 py-1.5 text-sm rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
+                {!isCompleted && effectiveSubtasks.length === 0 && addingFor !== asg.id && (
+                  <div className="pl-7">
+                    <button
+                      type="button"
+                      onClick={() => setAddingFor(asg.id)}
+                      className="text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 underline-offset-2 hover:underline cursor-pointer"
+                    >
+                      Add subtasks
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })

@@ -43,7 +43,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Today's Day of Week (0 = Sun, 1 = Mon, ..., 6 = Sat)
   const currentDayOfWeek = new Date().getDay();
-  const todaysSessions = sessions.filter((s) => s.dayOfWeek === (currentDayOfWeek === 0 ? 7 : currentDayOfWeek));
+  const todaysSessions = sessions.filter((s) => s.dayOfWeek === currentDayOfWeek);
 
   return (
     <div className="space-y-6 animate-fade-in pb-16">
@@ -134,7 +134,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="lg:col-span-2 space-y-3">
           <div className="flex items-center justify-between pb-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Upcoming Deadlines</h2>
+              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Upcoming deadlines</h2>
               <span className="tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                 {urgentAssignments.length} in queue
               </span>

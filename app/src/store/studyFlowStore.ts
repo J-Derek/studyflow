@@ -645,7 +645,6 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         dataOwnerUid: state.dataOwnerUid,
         icsExportCount: state.icsExportCount,
         user: state.user,
-        activeTab: state.activeTab,
         theme: state.theme,
         assignments: state.assignments,
         sessions: state.sessions,
