@@ -74,7 +74,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
       bulletPoints: [
         'Sounds are made in your browser, no audio files',
         'Keeps the screen on while the timer runs, where your browser allows it',
-        'The timer catches up if you switch tabs and come back'
+        'Shows on your lock screen and media controls where your device supports it'
       ],
       action: () => {
         setActiveTab('timer');

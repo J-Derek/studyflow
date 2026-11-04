@@ -14,6 +14,7 @@ import {
 import { db } from '../lib/firebase';
 import type { Assignment, StudySession } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
+import { fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
 import { assignmentToDoc, docToAssignment, docToSession, sessionToDoc } from './firestoreMappers';
 import { isLegacySeedId } from '../utils/sampleData';
 
@@ -21,10 +22,21 @@ const LIST_CAP = 500;
 
 let activeUnsubscribes: Unsubscribe[] = [];
 
+// Cloud timer bookkeeping. `cloudRev` is the revision of the stored timer document; every write
+// must be exactly one higher (compare-and-swap in firestore.rules), so two devices cannot both win.
+let cloudRev = 0;
+let cloudStatus: 'idle' | 'running' | 'paused' | 'none' = 'none';
+let cloudMode: string | null = null;
+let lastLocalRev = 0;
+
 /**
  * Cleanly terminates all active Firestore snapshot listeners across collections.
  */
 export function unsubscribeAllFirestoreSync(): void {
+  cloudRev = 0;
+  cloudStatus = 'none';
+  cloudMode = null;
+  lastLocalRev = 0;
   activeUnsubscribes.forEach((unsub) => {
     try {
       unsub();
@@ -73,6 +85,35 @@ export function initFirestoreSync(uid: string): () => void {
     (err) => console.warn('Firestore profile listener warning:', err.message)
   );
   activeUnsubscribes.push(unsubUser);
+
+  // Timer: follow changes made on another device. Our own writes are recognised by revision number.
+  const unsubTimer = onSnapshot(
+    doc(db, 'users', uid, 'liveState', 'timer'),
+    (snap) => {
+      if (!isCurrentUser(uid)) return;
+      const d = snap.data();
+      if (!d || snap.metadata.hasPendingWrites) return;
+      cloudRev = typeof d.rev === 'number' ? d.rev : 0;
+      cloudStatus = d.status;
+      cloudMode = d.mode;
+      if (cloudRev <= lastLocalRev) return; // our own write echoing back
+      lastLocalRev = cloudRev;
+      const startedAtMs = d.startedAt && typeof d.startedAt.toMillis === 'function' ? d.startedAt.toMillis() : null;
+      const remote = fromCloud({
+        mode: d.mode,
+        status: d.status,
+        durationSeconds: d.durationSeconds,
+        startedAtMs,
+        remainingSeconds: d.remainingSeconds ?? null
+      });
+      // Our own timer (for example after a refresh) already matches; only follow a different run.
+      if (!sameRun(useStudyFlowStore.getState().timer, remote)) {
+        useStudyFlowStore.getState().adoptRemoteTimer(remote);
+      }
+    },
+    (err) => console.warn('Firestore timer listener warning:', err.message)
+  );
+  activeUnsubscribes.push(unsubTimer);
 
   // Assignments. Upload happens only once, on the first server snapshot, when the cloud is empty and
   // the device holds records made before sign-in. Never re-seed after the student deletes things.
@@ -213,4 +254,68 @@ export async function mergeGuestDataIntoAccount(
     batch.set(doc(db, 'users', uid, 'sessions', x.id), { ...sessionToDoc(x), updatedAt: serverTimestamp() })
   );
   await batch.commit();
+}
+
+function timerDocBody(t: TimerState, rev: number): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    rev,
+    status: t.status,
+    mode: t.mode,
+    durationSeconds: t.durationSec,
+    updatedAt: serverTimestamp()
+  };
+  if (t.status === 'running') body.startedAt = serverTimestamp();
+  if (t.status === 'paused') {
+    body.remainingSeconds = Math.max(0, Math.min(t.durationSec, Math.ceil((t.durationSec * 1000 - t.elapsedBeforeMs) / 1000)));
+  }
+  return body;
+}
+
+/**
+ * Publishes a timer transition. The first write creates the document at rev 1; later writes must be
+ * exactly one revision higher. If another device wrote first, the rules reject this write and the
+ * listener above brings us back in line, so a failure is not an error.
+ */
+export function pushTimerState(uid: string, t: TimerState): void {
+  const rev = cloudRev + 1;
+  cloudRev = rev;
+  lastLocalRev = rev;
+  cloudStatus = t.status;
+  cloudMode = t.mode;
+  setDoc(doc(db, 'users', uid, 'liveState', 'timer'), timerDocBody(t, rev)).catch((err) => {
+    console.warn('Timer sync skipped (another device wrote first, or offline):', err?.code ?? err);
+  });
+}
+
+function localDateString(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/**
+ * Records a finished focus block. The rules only allow this in the same batch that stops a running
+ * timer, with the session id tied to the timer revision, and only once enough server time has passed.
+ */
+export function completeFocusSession(uid: string, t: TimerState): void {
+  if (cloudStatus !== 'running' || cloudMode !== 'focus') {
+    // The cloud never saw this block running (offline start, or another device took over).
+    pushTimerState(uid, { ...t, status: 'idle', startedAtMs: null, elapsedBeforeMs: 0 });
+    return;
+  }
+  const runRev = cloudRev;
+  const nextRev = runRev + 1;
+  cloudRev = nextRev;
+  lastLocalRev = nextRev;
+  cloudStatus = 'idle';
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'users', uid, 'focusSessions', `run-${runRev}`), {
+    durationSeconds: t.durationSec,
+    mode: 'focus',
+    completedAt: serverTimestamp(),
+    localDate: localDateString(new Date())
+  });
+  batch.set(doc(db, 'users', uid, 'liveState', 'timer'), timerDocBody({ ...t, status: 'idle', startedAtMs: null, elapsedBeforeMs: 0 }, nextRev));
+  batch.commit().catch((err) => {
+    console.warn('Focus session not recorded in the cloud:', err?.code ?? err);
+  });
 }

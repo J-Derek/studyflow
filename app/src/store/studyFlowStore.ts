@@ -10,16 +10,19 @@ import type {
   SoundscapeType,
   Subtask
 } from '../types';
-import { playSoundscape, stopSoundscape, setSoundscapeVolume as setAudioVolume } from '../lib/soundscapes';
+import { playSoundscape, stopSoundscape, playCompletionChime, setSoundscapeVolume as setAudioVolume } from '../lib/soundscapes';
 import {
   syncAssignmentToFirestore,
   deleteAssignmentFromFirestore,
   syncSessionToFirestore,
   deleteSessionFromFirestore,
-  syncOnboardingDismissed
+  syncOnboardingDismissed,
+  pushTimerState,
+  completeFocusSession
 } from '../services/firestoreSync';
 import { calculateSubtaskProgress } from '../utils/subtasks';
 import { syncThemeColor } from '../utils/themeColor';
+import { complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 
 export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades';
@@ -95,10 +98,12 @@ interface StudyFlowState {
 
   // Focus Timer
   timerSettings: TimerSettings;
-  timerMode: TimerMode;
-  timerSecondsLeft: number;
-  timerIsRunning: boolean;
-  timerLastTimestamp: number | null;
+  /** Timestamps and durations only. Remaining time is derived with remainingSeconds(timer, nowMs). */
+  timer: TimerState;
+  /** Wall clock, refreshed once a second by the scheduler while a timer runs. */
+  nowMs: number;
+  /** Set when a focus block finishes, so the page can celebrate. */
+  focusCompletedAtMs: number | null;
   pomodorosCompleted: number;
   soundscape: SoundscapeType;
   soundscapeVolume: number;
@@ -106,8 +111,9 @@ interface StudyFlowState {
   startTimer: () => void;
   pauseTimer: () => void;
   resetTimer: () => void;
-  tickTimer: () => void;
-  syncInactiveTime: () => void;
+  completeTimer: () => void;
+  setNowMs: (ms: number) => void;
+  adoptRemoteTimer: (t: TimerState) => void;
   incrementPomodoros: () => void;
   updateTimerSettings: (settings: Partial<TimerSettings>) => void;
   setSoundscape: (type: SoundscapeType) => void;
@@ -121,6 +127,12 @@ const defaultSettings: TimerSettings = {
   autoStartBreaks: false,
   autoStartFocus: false
 };
+
+function durationFor(mode: TimerMode, settings: TimerSettings): number {
+  if (mode === 'shortBreak') return settings.shortBreakDuration;
+  if (mode === 'longBreak') return settings.longBreakDuration;
+  return settings.focusDuration;
+}
 
 export const useStudyFlowStore = create<StudyFlowState>()(
   persist(
@@ -155,10 +167,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           grades: [],
           onboardingDismissed: false,
           pomodorosCompleted: 0,
-          timerMode: 'focus',
-          timerSecondsLeft: defaultSettings.focusDuration,
-          timerIsRunning: false,
-          timerLastTimestamp: null,
+          timer: idleTimer('focus', defaultSettings.focusDuration),
+          focusCompletedAtMs: null,
           user: {
             name: 'Student',
             university: 'Academic Workspace',
@@ -513,105 +523,75 @@ export const useStudyFlowStore = create<StudyFlowState>()(
 
       // Focus Timer
       timerSettings: defaultSettings,
-      timerMode: 'focus',
-      timerSecondsLeft: defaultSettings.focusDuration,
-      timerIsRunning: false,
-      timerLastTimestamp: null,
+      timer: idleTimer('focus', defaultSettings.focusDuration),
+      nowMs: Date.now(),
+      focusCompletedAtMs: null,
       pomodorosCompleted: 0,
       soundscape: 'off',
       soundscapeVolume: 0.35,
 
       setTimerMode: (mode) => {
-        const { timerSettings } = get();
-        let seconds = timerSettings.focusDuration;
-        if (mode === 'shortBreak') seconds = timerSettings.shortBreakDuration;
-        if (mode === 'longBreak') seconds = timerSettings.longBreakDuration;
-
-        set({
-          timerMode: mode,
-          timerSecondsLeft: seconds,
-          timerIsRunning: false,
-          timerLastTimestamp: null
-        });
+        stopSoundscape();
+        const next = switchMode(mode, durationFor(mode, get().timerSettings));
+        set({ timer: next, nowMs: Date.now() });
+        const uid = get().userId;
+        if (uid) pushTimerState(uid, next);
       },
 
       startTimer: () => {
-        const { soundscape, soundscapeVolume } = get();
-        if (soundscape !== 'off') {
-          playSoundscape(soundscape, soundscapeVolume);
-        }
-        set({
-          timerIsRunning: true,
-          timerLastTimestamp: Date.now()
-        });
+        const { soundscape, soundscapeVolume, timer } = get();
+        if (timer.status === 'running') return;
+        if (soundscape !== 'off') playSoundscape(soundscape, soundscapeVolume);
+        const now = Date.now();
+        const next = startEngine(timer, now);
+        set({ timer: next, nowMs: now });
+        const uid = get().userId;
+        if (uid) pushTimerState(uid, next);
       },
 
       pauseTimer: () => {
         stopSoundscape();
-        set({
-          timerIsRunning: false,
-          timerLastTimestamp: null
-        });
+        const now = Date.now();
+        const next = pauseEngine(get().timer, now);
+        set({ timer: next, nowMs: now });
+        const uid = get().userId;
+        if (uid) pushTimerState(uid, next);
       },
 
       resetTimer: () => {
         stopSoundscape();
-        const { timerMode, timerSettings } = get();
-        let seconds = timerSettings.focusDuration;
-        if (timerMode === 'shortBreak') seconds = timerSettings.shortBreakDuration;
-        if (timerMode === 'longBreak') seconds = timerSettings.longBreakDuration;
-
-        set({
-          timerSecondsLeft: seconds,
-          timerIsRunning: false,
-          timerLastTimestamp: null
-        });
+        const next = resetEngine(get().timer);
+        set({ timer: next, nowMs: Date.now() });
+        const uid = get().userId;
+        if (uid) pushTimerState(uid, next);
       },
 
-      tickTimer: () => {
-        const { timerSecondsLeft, timerIsRunning, timerLastTimestamp } = get();
-        if (!timerIsRunning) return;
-
+      /** Called by the scheduler when a running block has used all of its time. Safe to call twice. */
+      completeTimer: () => {
+        const { timer, userId } = get();
+        if (timer.status !== 'running') return;
+        stopSoundscape();
+        const wasFocus = timer.mode === 'focus';
         const now = Date.now();
-        const elapsedSeconds = timerLastTimestamp
-          ? Math.max(1, Math.round((now - timerLastTimestamp) / 1000))
-          : 1;
-
-        if (timerSecondsLeft <= elapsedSeconds) {
-          get().pauseTimer();
-          set({ timerSecondsLeft: 0 });
-
-          if (get().timerMode === 'focus') {
-            get().incrementPomodoros();
-          }
-        } else {
-          set({
-            timerSecondsLeft: timerSecondsLeft - elapsedSeconds,
-            timerLastTimestamp: now
-          });
+        const next = completeEngine(timer);
+        set((state) => ({
+          timer: next,
+          nowMs: now,
+          pomodorosCompleted: wasFocus ? state.pomodorosCompleted + 1 : state.pomodorosCompleted,
+          focusCompletedAtMs: wasFocus ? now : state.focusCompletedAtMs
+        }));
+        if (wasFocus) playCompletionChime();
+        if (userId) {
+          if (wasFocus) completeFocusSession(userId, timer);
+          else pushTimerState(userId, next);
         }
       },
 
-      syncInactiveTime: () => {
-        const { timerIsRunning, timerLastTimestamp, timerSecondsLeft } = get();
-        if (!timerIsRunning || !timerLastTimestamp) return;
+      setNowMs: (ms) => set({ nowMs: ms }),
 
-        const now = Date.now();
-        const elapsed = Math.round((now - timerLastTimestamp) / 1000);
-        if (elapsed > 2) {
-          if (elapsed >= timerSecondsLeft) {
-            get().pauseTimer();
-            set({ timerSecondsLeft: 0 });
-            if (get().timerMode === 'focus') {
-              get().incrementPomodoros();
-            }
-          } else {
-            set({
-              timerSecondsLeft: timerSecondsLeft - elapsed,
-              timerLastTimestamp: now
-            });
-          }
-        }
+      adoptRemoteTimer: (t) => {
+        if (get().timer.status === 'running' && t.status !== 'running') stopSoundscape();
+        set({ timer: t, nowMs: Date.now() });
       },
 
       incrementPomodoros: () =>
@@ -625,9 +605,9 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         })),
 
       setSoundscape: (type) => {
-        const { timerIsRunning, soundscapeVolume } = get();
+        const { timer, soundscapeVolume } = get();
         set({ soundscape: type });
-        if (type === 'off' || !timerIsRunning) {
+        if (type === 'off' || timer.status !== 'running') {
           stopSoundscape();
         } else {
           playSoundscape(type, soundscapeVolume);
@@ -650,6 +630,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         sessions: state.sessions,
         grades: state.grades,
         pomodorosCompleted: state.pomodorosCompleted,
+        timer: state.timer,
         timerSettings: state.timerSettings,
         soundscapeVolume: state.soundscapeVolume
       }),

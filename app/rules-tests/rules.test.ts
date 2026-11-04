@@ -293,6 +293,16 @@ describe('timer state (liveState/timer) compare-and-swap', () => {
     await assertSucceeds(setDoc(timerDoc(asAlice()), idle()));
     await assertFails(setDoc(timerDoc(asAlice()), running(2, { startedAt: Timestamp.fromMillis(1) })));
   });
+  it('accepts a paused timer only with remainingSeconds, and never with startedAt', async () => {
+    await assertSucceeds(setDoc(timerDoc(asAlice()), idle()));
+    await assertFails(setDoc(timerDoc(asAlice()), { rev: 2, status: 'paused', mode: 'focus', durationSeconds: 1500, updatedAt: serverTimestamp() }));
+    await assertFails(setDoc(timerDoc(asAlice()), { rev: 2, status: 'paused', mode: 'focus', durationSeconds: 1500, remainingSeconds: 1501, updatedAt: serverTimestamp() }));
+    await assertFails(setDoc(timerDoc(asAlice()), { rev: 2, status: 'paused', mode: 'focus', durationSeconds: 1500, remainingSeconds: 600, startedAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+    await assertSucceeds(setDoc(timerDoc(asAlice()), { rev: 2, status: 'paused', mode: 'focus', durationSeconds: 1500, remainingSeconds: 600, updatedAt: serverTimestamp() }));
+  });
+  it('rejects remainingSeconds on an idle timer', async () => {
+    await assertFails(setDoc(timerDoc(asAlice()), idle({ remainingSeconds: 5 })));
+  });
   it('rejects bad mode, bad duration, extra keys', async () => {
     await assertFails(setDoc(timerDoc(asAlice()), idle({ mode: 'nap' })));
     await assertFails(setDoc(timerDoc(asAlice()), idle({ durationSeconds: 0 })));

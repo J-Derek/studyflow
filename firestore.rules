@@ -20,9 +20,10 @@ service cloud.firestore {
     //   updatedAt (server time), color?, sample? (bool)
     //
     // /users/{userId}/liveState/timer        (single document)
-    //   rev (int, compare-and-swap counter), status ('idle' | 'running'),
+    //   rev (int, compare-and-swap counter), status ('idle' | 'running' | 'paused'),
     //   mode, durationSeconds, updatedAt (server time),
-    //   startedAt (server time; present only while running)
+    //   startedAt (server time; only while running),
+    //   remainingSeconds (only while paused)
     //
     // /users/{userId}/focusSessions/run-{rev}
     //   Created only in a batch with the timer going running -> idle, and only
@@ -122,15 +123,18 @@ service cloud.firestore {
 
     function isValidTimer(data) {
       return data.keys().hasAll(['rev', 'status', 'mode', 'durationSeconds', 'updatedAt']) &&
-             data.keys().hasOnly(['rev', 'status', 'mode', 'durationSeconds', 'updatedAt', 'startedAt']) &&
+             data.keys().hasOnly(['rev', 'status', 'mode', 'durationSeconds', 'updatedAt', 'startedAt', 'remainingSeconds']) &&
              data.rev is int && data.rev >= 1 &&
-             data.status in ['idle', 'running'] &&
+             data.status in ['idle', 'running', 'paused'] &&
              data.mode in ['focus', 'shortBreak', 'longBreak'] &&
              data.durationSeconds is int && data.durationSeconds >= 1 && data.durationSeconds <= 86400 &&
              isServerTime(data.updatedAt) &&
              (data.status == 'running'
-               ? isServerTime(data.get('startedAt', null))
-               : !('startedAt' in data));
+               ? (isServerTime(data.get('startedAt', null)) && !('remainingSeconds' in data))
+               : !('startedAt' in data)) &&
+             (data.status == 'paused'
+               ? (data.get('remainingSeconds', -1) is int && data.remainingSeconds >= 0 && data.remainingSeconds <= data.durationSeconds)
+               : !('remainingSeconds' in data));
     }
 
     function timerPath(userId) {

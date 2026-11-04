@@ -15,52 +15,29 @@ import {
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { formatTimeLeft } from '../utils/formatters';
+import { remainingSeconds } from '../lib/timerEngine';
 import type { SoundscapeType } from '../types';
-import { playCompletionChime } from '../lib/soundscapes';
 import confetti from 'canvas-confetti';
 
 export const FocusTimerPage: React.FC = () => {
   const {
-    timerMode,
-    timerSecondsLeft,
-    timerIsRunning,
+    timer,
+    nowMs,
+    focusCompletedAtMs,
     pomodorosCompleted,
-    timerSettings,
     soundscape,
     soundscapeVolume,
     setTimerMode,
     startTimer,
     pauseTimer,
     resetTimer,
-    tickTimer,
-    syncInactiveTime,
     setSoundscape,
     setSoundscapeVolume
   } = useStudyFlowStore();
 
-  // Background interval tick + visibility change sync (inactive tab resilience)
-  useEffect(() => {
-    let interval: any = null;
-
-    if (timerIsRunning) {
-      interval = setInterval(() => {
-        tickTimer();
-      }, 1000);
-    }
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        syncInactiveTime();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      if (interval) clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [timerIsRunning, tickTimer, syncInactiveTime]);
+  const timerMode = timer.mode;
+  const timerIsRunning = timer.status === 'running';
+  const timerSecondsLeft = remainingSeconds(timer, nowMs);
 
   // Screen Wake Lock API — keeps display awake during active deep work and recovers on tab focus
   useEffect(() => {
@@ -101,8 +78,8 @@ export const FocusTimerPage: React.FC = () => {
     if ('mediaSession' in navigator && window.MediaMetadata) {
       try {
         navigator.mediaSession.metadata = new window.MediaMetadata({
-          title: timerMode === 'focus' ? 'Focus Focus Session' : 'Rest & Recovery Break',
-          artist: 'StudyFlow Ambient Productivity',
+          title: timerMode === 'focus' ? 'Focus session' : 'Break',
+          artist: 'StudyFlow',
           album: `${formatTimeLeft(timerSecondsLeft)} remaining`
         });
         navigator.mediaSession.playbackState = timerIsRunning ? 'playing' : 'paused';
@@ -113,27 +90,16 @@ export const FocusTimerPage: React.FC = () => {
   }, [timerIsRunning, timerMode, timerSecondsLeft]);
 
   // Calculate duration and progress ratio
-  const totalDuration =
-    timerMode === 'focus'
-      ? timerSettings.focusDuration
-      : timerMode === 'shortBreak'
-      ? timerSettings.shortBreakDuration
-      : timerSettings.longBreakDuration;
+  const totalDuration = timer.durationSec;
 
   const progressPercent = Math.max(0, Math.min(100, ((totalDuration - timerSecondsLeft) / totalDuration) * 100));
 
-  // Trigger acoustic chime and subtle celebration on session complete
+  // Celebrate once per finished focus block (the store sets the time; the chime plays there).
   useEffect(() => {
-    if (timerSecondsLeft === 0 && timerMode === 'focus') {
-      playCompletionChime();
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.6 },
-        disableForReducedMotion: true
-      });
+    if (focusCompletedAtMs && Date.now() - focusCompletedAtMs < 5000) {
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 }, disableForReducedMotion: true });
     }
-  }, [timerSecondsLeft, timerMode]);
+  }, [focusCompletedAtMs]);
 
   // SVG Circular parameters
   const radius = 120;
