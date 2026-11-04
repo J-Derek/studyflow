@@ -13,7 +13,7 @@ import {
   Award
 } from 'lucide-react';
 import { useStudyFlowStore, getPathFromTab } from '../store/studyFlowStore';
-import { signInOrLinkWithGoogle, signOutUser } from '../lib/auth';
+import { friendlyAuthMessage, signInOrLinkWithGoogle, signOutUser } from '../lib/auth';
 import { cn } from '../utils/formatters';
 
 interface SidebarProps {
@@ -29,7 +29,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
     assignments, 
     isAnonymous, 
     userEmail, 
-    setAuthUser,
     theme,
     setTheme
   } = useStudyFlowStore();
@@ -38,15 +37,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
   const handleGoogleAuth = async () => {
     try {
       setIsAuthLoading(true);
-      const firebaseUser = await signInOrLinkWithGoogle();
-      setAuthUser(
-        firebaseUser.uid,
-        firebaseUser.isAnonymous,
-        firebaseUser.email,
-        firebaseUser.displayName
-      );
-    } catch (err: any) {
-      console.error('Google account linking error:', err);
+      await signInOrLinkWithGoogle();
+    } catch (err) {
+      console.error('Google sign-in error:', friendlyAuthMessage(err) ?? err);
     } finally {
       setIsAuthLoading(false);
     }

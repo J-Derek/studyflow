@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Download, Upload, Cloud, CheckCircle2, AlertTriangle, Database, Copy } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { signInOrLinkWithGoogle } from '../lib/auth';
+import { friendlyAuthMessage, signInOrLinkWithGoogle } from '../lib/auth';
 import { validateBackupJson } from '../utils/backupValidator';
 import { inAppBrowser } from '../utils/inAppBrowser';
 
@@ -11,7 +11,8 @@ interface BackupModalProps {
 }
 
 export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
-  const { assignments, sessions, grades, isAnonymous, userEmail, setAuthUser } = useStudyFlowStore();
+  const { assignments, sessions, grades, isAnonymous, userEmail } = useStudyFlowStore();
+  const [authError, setAuthError] = useState<string | null>(null);
   const [isLinking, setIsLinking] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -71,16 +72,11 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
   const handleGoogleAuth = async () => {
     try {
       setIsLinking(true);
-      const firebaseUser = await signInOrLinkWithGoogle();
-      setAuthUser(
-        firebaseUser.uid,
-        firebaseUser.isAnonymous,
-        firebaseUser.email,
-        firebaseUser.displayName
-      );
+      setAuthError(null);
+      await signInOrLinkWithGoogle();
       onClose();
     } catch (err) {
-      console.error('Account linking error:', err);
+      setAuthError(friendlyAuthMessage(err));
     } finally {
       setIsLinking(false);
     }
@@ -197,6 +193,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
                   <Cloud className="h-3.5 w-3.5" />
                   <span>{isLinking ? 'Linking Google Account...' : 'Link Google Account'}</span>
                 </button>
+              )}
+              {authError && (
+                <p role="alert" className="text-[11px] text-red-600 dark:text-red-400">{authError}</p>
               )}
             </div>
           ) : (

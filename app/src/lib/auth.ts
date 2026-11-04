@@ -1,41 +1,81 @@
 import {
-  signInAnonymously,
-  signInWithPopup,
+  GoogleAuthProvider,
   linkWithPopup,
+  onAuthStateChanged,
+  signInAnonymously,
+  signInWithCredential,
+  signInWithPopup,
   signOut as firebaseSignOut,
   type User
 } from 'firebase/auth';
-import { auth, googleProvider } from './firebase';
+import { clearIndexedDbPersistence, terminate, waitForPendingWrites } from 'firebase/firestore';
+import { auth, db, googleProvider } from './firebase';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { unsubscribeAllFirestoreSync } from '../services/firestoreSync';
+import { initFirestoreSync, mergeGuestDataIntoAccount, unsubscribeAllFirestoreSync } from '../services/firestoreSync';
 import { inAppBrowser } from '../utils/inAppBrowser';
+import { withoutSample } from '../utils/sampleData';
 
-const authBroadcast = typeof window !== 'undefined' && 'BroadcastChannel' in window
-  ? new BroadcastChannel('studyflow_auth_channel')
-  : null;
+export const STORAGE_KEY = 'studyflow_storage_v1';
+
+const authBroadcast =
+  typeof window !== 'undefined' && 'BroadcastChannel' in window ? new BroadcastChannel('studyflow_auth_channel') : null;
 
 if (authBroadcast) {
   authBroadcast.onmessage = (event) => {
     if (event.data === 'signout') {
-      localStorage.removeItem('studyflow_storage_v1');
-      window.location.reload();
+      // Another tab signed out: stop listening, release the offline cache, drop local data, reload.
+      void wipeLocalUserData({ clearFirestoreCache: false }).finally(() => window.location.reload());
     }
   };
 }
 
+/**
+ * Removes everything this browser holds for the previous user: listeners, in-memory store,
+ * localStorage, sessionStorage, Cache Storage and (optionally) the Firestore IndexedDB cache.
+ */
+export async function wipeLocalUserData(opts: { clearFirestoreCache: boolean }): Promise<void> {
+  unsubscribeAllFirestoreSync();
+  useStudyFlowStore.getState().resetStore();
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.clear();
+  } catch {
+    /* storage unavailable */
+  }
+  try {
+    if (typeof caches !== 'undefined') {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch {
+    /* Cache Storage unavailable */
+  }
+  try {
+    await terminate(db);
+    if (opts.clearFirestoreCache) {
+      // Other tabs may still hold the cache for a moment after they receive the sign-out message.
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          await clearIndexedDbPersistence(db);
+          break;
+        } catch (e) {
+          if (attempt === 4) throw e;
+          await new Promise((r) => setTimeout(r, 300));
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Could not clear the offline cache:', err);
+  }
+}
+
 let authInFlightPromise: Promise<User> | null = null;
 
-/**
- * Ensures an active user session exists without prompting for credentials.
- * If no session is active, provisions a fast anonymous guest session.
- * Protects against multi-tab race conditions via an in-flight promise.
- */
+/** Ensures a session exists; provisions an anonymous guest if none. Safe across tabs. */
 export async function ensureAuthenticatedUser(): Promise<User> {
   await auth.authStateReady();
-  if (auth.currentUser) {
-    return auth.currentUser;
-  }
-  
+  if (auth.currentUser) return auth.currentUser;
+
   if (!authInFlightPromise) {
     authInFlightPromise = (async () => {
       try {
@@ -49,58 +89,159 @@ export async function ensureAuthenticatedUser(): Promise<User> {
   return authInFlightPromise;
 }
 
-/**
- * Checks whether current user is an unlinked anonymous guest.
- */
 export function isAnonymousUser(): boolean {
   return !!auth.currentUser?.isAnonymous;
 }
 
 /**
- * Upgrades current anonymous guest account to a persistent Google account,
- * or signs into an existing Google account without losing student data.
+ * Single place that ties Firebase Auth to the store and to Firestore sync.
+ * Whenever the signed-in uid changes (sign-in, switch, link) the previous user's data is cleared
+ * before the new user's listeners start, so one student never sees another's records.
+ */
+let syncedUid: string | null = null;
+let mergeInProgress = false;
+let wiping = false;
+
+/** Flushes in-flight writes, deletes every local trace of the previous user, then reloads clean. */
+async function wipeAndReload(): Promise<void> {
+  wiping = true; // the page is about to reload; ignore any further auth events
+  await waitForPendingWrites(db).catch(() => undefined);
+  await wipeLocalUserData({ clearFirestoreCache: true });
+  window.location.reload();
+}
+
+/**
+ * Points the store and the Firestore listeners at `user`. Idempotent. Called from the auth listener
+ * and directly after link/sign-in, because linking an anonymous user does not fire onAuthStateChanged.
+ */
+function bindUser(user: User | null): void {
+  if (wiping) return;
+  if (!user) {
+    syncedUid = null;
+    unsubscribeAllFirestoreSync();
+    return;
+  }
+  const store = useStudyFlowStore.getState();
+  const owner = store.dataOwnerUid;
+  if (owner && owner !== user.uid) {
+    // Data on this device belongs to someone else. Never show it, never upload it.
+    unsubscribeAllFirestoreSync();
+    store.resetStore();
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    syncedUid = null;
+    // The Firestore offline cache still holds the previous user's documents. Drop it.
+    if (!mergeInProgress) {
+      void wipeAndReload();
+      return;
+    }
+  }
+  useStudyFlowStore.getState().setAuthUser(user.uid, user.isAnonymous, user.email, user.displayName);
+  if (syncedUid !== user.uid) {
+    syncedUid = user.uid;
+    initFirestoreSync(user.uid);
+  }
+}
+
+/**
+ * Single place that ties Firebase Auth to the store and to Firestore sync.
+ * Whenever the signed-in uid changes (sign-in, switch, link) the previous user's data is cleared
+ * before the new user's listeners start, so one student never sees another's records.
+ */
+export function startAuthSession(): () => void {
+  const unsubscribe = onAuthStateChanged(auth, bindUser);
+  ensureAuthenticatedUser().catch((err) => console.error('Firebase guest authentication error:', err));
+  return () => {
+    unsubscribe();
+    unsubscribeAllFirestoreSync();
+    syncedUid = null;
+  };
+}
+
+export class AuthGuidanceError extends Error {
+  code: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
+/** Turns a Firebase auth error into text a student can act on. Returns null for silent cancels. */
+export function friendlyAuthMessage(err: unknown): string | null {
+  const code = (err as { code?: string })?.code ?? '';
+  switch (code) {
+    case 'auth/popup-closed-by-user':
+    case 'auth/cancelled-popup-request':
+      return null;
+    case 'auth/in-app-browser-blocked':
+      return 'Google sign-in does not work inside this app. Open StudyFlow in Chrome or Safari and try again.';
+    case 'auth/popup-blocked':
+      return 'Your browser blocked the Google sign-in window. Allow pop-ups for this site, then try again.';
+    case 'auth/operation-not-supported-in-this-environment':
+      return 'This browser cannot open Google sign-in. Open StudyFlow in Chrome or Safari and try again.';
+    case 'auth/network-request-failed':
+      return 'No connection. Check your internet and try again.';
+    default:
+      return 'Could not sign in with Google. Please try again.';
+  }
+}
+
+/**
+ * Upgrades a guest to a Google account, or signs in to an existing one.
+ * If the Google account already exists, the guest's own records are merged into it before the
+ * switch completes (records that already exist in the account are never overwritten).
  */
 export async function signInOrLinkWithGoogle(): Promise<User> {
   if (inAppBrowser()) {
-    const error = new Error('Google OAuth is blocked inside embedded browsers (WhatsApp, Instagram). Please open StudyFlow in Chrome or Safari.');
-    (error as unknown as { code: string }).code = 'auth/in-app-browser-blocked';
-    throw error;
+    throw new AuthGuidanceError('auth/in-app-browser-blocked', 'Google sign-in is blocked inside embedded browsers.');
   }
 
   const currentUser = auth.currentUser;
 
   if (currentUser && currentUser.isAnonymous) {
     try {
-      // Seamlessly upgrade guest to Google account with data preserved
       const result = await linkWithPopup(currentUser, googleProvider);
+      bindUser(result.user);
       return result.user;
-    } catch (error: any) {
-      if (error?.code === 'auth/credential-already-in-use') {
-        // The Google account already has an existing profile; sign in directly
-        const result = await signInWithPopup(auth, googleProvider);
+    } catch (error: unknown) {
+      if ((error as { code?: string })?.code !== 'auth/credential-already-in-use') throw error;
+      const credential = GoogleAuthProvider.credentialFromError(error as never);
+      if (!credential) throw error;
+
+      // Capture the guest's records before the account switch clears the store.
+      const state = useStudyFlowStore.getState();
+      const guestData = {
+        assignments: withoutSample(state.assignments),
+        sessions: withoutSample(state.sessions)
+      };
+      mergeInProgress = true;
+      try {
+        const result = await signInWithCredential(auth, credential);
+        bindUser(result.user);
+        await mergeGuestDataIntoAccount(result.user.uid, guestData);
         return result.user;
+      } finally {
+        mergeInProgress = false;
+        // The guest's cached records are now in the account; remove the guest copy from this device.
+        void wipeAndReload();
       }
-      throw error;
     }
   }
-
-  // Direct Google Sign-In
   const result = await signInWithPopup(auth, googleProvider);
+  bindUser(result.user);
   return result.user;
 }
 
-
 /**
- * Signs out the current user, broadcasts the event to all active tabs,
- * purges in-memory and local session state, and initializes clean guest session.
+ * Signs out, broadcasts to other tabs, wipes everything stored for this user on the device,
+ * then reloads into a clean guest session.
  */
 export async function signOutUser(): Promise<void> {
-  if (authBroadcast) {
-    authBroadcast.postMessage('signout');
-  }
-  unsubscribeAllFirestoreSync();
+  authBroadcast?.postMessage('signout');
   await firebaseSignOut(auth);
-  localStorage.removeItem('studyflow_storage_v1');
-  useStudyFlowStore.getState().resetStore();
-  await ensureAuthenticatedUser();
+  await wipeLocalUserData({ clearFirestoreCache: true });
+  window.location.reload();
 }

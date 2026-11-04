@@ -20,3 +20,8 @@ Thumbs.db
 graphify-out/
 .gemini/
 .agents/
+
+# Test output
+test-results/
+playwright-report/
+playwright-install.log

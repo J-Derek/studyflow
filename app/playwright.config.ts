@@ -1,0 +1,19 @@
+import { defineConfig } from '@playwright/test';
+
+// Runs against the Firebase Auth + Firestore emulators (see `npm run test:e2e`).
+export default defineConfig({
+  testDir: './e2e',
+  timeout: 60_000,
+  fullyParallel: false,
+  workers: 1,
+  retries: 0,
+  reporter: [['list']],
+  use: { baseURL: 'http://127.0.0.1:5199', trace: 'retain-on-failure' },
+  webServer: {
+    command: 'npx vite --port 5199 --host 127.0.0.1 --strictPort',
+    url: 'http://127.0.0.1:5199',
+    reuseExistingServer: false,
+    env: { VITE_USE_EMULATORS: 'true', VITE_FIREBASE_PROJECT_ID: 'studyflow-e2e' },
+    timeout: 60_000
+  }
+});

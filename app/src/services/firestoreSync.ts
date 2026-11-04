@@ -5,6 +5,7 @@ import {
   deleteDoc,
   writeBatch,
   onSnapshot,
+  getDocs,
   limit,
   query,
   serverTimestamp,
@@ -182,4 +183,34 @@ export async function syncOnboardingDismissed(uid: string): Promise<void> {
     { onboarding: { dismissed: true }, updatedAt: serverTimestamp() },
     { merge: true }
   );
+}
+
+/**
+ * Copies a guest's own records into an existing account. Records whose id already exists in the
+ * account are left untouched, so a merge can never overwrite what the account already holds.
+ */
+export function planMerge<T extends { id: string }>(existingIds: Set<string>, guestItems: T[]): T[] {
+  return guestItems.filter((item) => !existingIds.has(item.id));
+}
+
+export async function mergeGuestDataIntoAccount(
+  uid: string,
+  guest: { assignments: Assignment[]; sessions: StudySession[] }
+): Promise<void> {
+  if (guest.assignments.length === 0 && guest.sessions.length === 0) return;
+  const [asgSnap, sesSnap] = await Promise.all([
+    getDocs(query(collection(db, 'users', uid, 'assignments'), limit(LIST_CAP))),
+    getDocs(query(collection(db, 'users', uid, 'sessions'), limit(LIST_CAP)))
+  ]);
+  const newAssignments = planMerge(new Set(asgSnap.docs.map((d) => d.id)), guest.assignments);
+  const newSessions = planMerge(new Set(sesSnap.docs.map((d) => d.id)), guest.sessions);
+
+  const batch = writeBatch(db);
+  newAssignments.slice(0, LIST_CAP).forEach((a) =>
+    batch.set(doc(db, 'users', uid, 'assignments', a.id), { ...assignmentToDoc(a), updatedAt: serverTimestamp() })
+  );
+  newSessions.slice(0, LIST_CAP).forEach((x) =>
+    batch.set(doc(db, 'users', uid, 'sessions', x.id), { ...sessionToDoc(x), updatedAt: serverTimestamp() })
+  );
+  await batch.commit();
 }

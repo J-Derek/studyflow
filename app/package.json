@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "test": "vitest run",
     "preview": "vite preview",
-    "test:rules": "firebase emulators:exec --config ../firebase.json --only firestore --project studyflow-rules-test \"vitest run --config vitest.rules.config.ts\""
+    "test:rules": "firebase emulators:exec --config ../firebase.json --only firestore --project studyflow-rules-test \"vitest run --config vitest.rules.config.ts\"",
+    "test:e2e": "firebase emulators:exec --config ../firebase.json --only auth,firestore --project studyflow-e2e \"playwright test\""
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",

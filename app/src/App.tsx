@@ -8,8 +8,7 @@ import { BackupModal } from './components/BackupModal';
 import { ProfileModal } from './components/ProfileModal';
 import { HelpMenuModal } from './components/HelpMenuModal';
 import { useStudyFlowStore, getTabFromPath } from './store/studyFlowStore';
-import { ensureAuthenticatedUser } from './lib/auth';
-import { initFirestoreSync } from './services/firestoreSync';
+import { startAuthSession } from './lib/auth';
 
 // Code-split pages for performance optimization
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
@@ -19,36 +18,15 @@ const FocusTimerPage = lazy(() => import('./pages/FocusTimer').then((m) => ({ de
 const GradesPage = lazy(() => import('./pages/Grades').then((m) => ({ default: m.GradesPage })));
 
 export function App() {
-  const { activeTab, setAuthUser, theme } = useStudyFlowStore();
+  const { activeTab, theme } = useStudyFlowStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-  // Initialize guest-first anonymous authentication & live Firestore sync
-  useEffect(() => {
-    let cleanupSync: (() => void) | null = null;
-
-    ensureAuthenticatedUser()
-      .then((firebaseUser) => {
-        setAuthUser(
-          firebaseUser.uid,
-          firebaseUser.isAnonymous,
-          firebaseUser.email,
-          firebaseUser.displayName
-        );
-
-        cleanupSync = initFirestoreSync(firebaseUser.uid);
-      })
-      .catch((err) => {
-        console.error('Firebase guest authentication error:', err);
-      });
-
-    return () => {
-      if (cleanupSync) cleanupSync();
-    };
-  }, [setAuthUser]);
+  // Guest-first anonymous auth and live Firestore sync, rebound whenever the signed-in user changes
+  useEffect(() => startAuthSession(), []);
 
   // Synchronize dark mode class, colorScheme, and dynamic theme-color meta
   useEffect(() => {

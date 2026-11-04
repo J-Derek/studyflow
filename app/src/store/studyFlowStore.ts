@@ -41,6 +41,8 @@ export function getPathFromTab(tab: NavigationTab): string {
 interface StudyFlowState {
   // Authentication & Sync State
   userId: string | null;
+  /** uid that the persisted records on this device belong to. */
+  dataOwnerUid: string | null;
   isAnonymous: boolean;
   userEmail: string | null;
   isSyncing: boolean;
@@ -121,12 +123,14 @@ export const useStudyFlowStore = create<StudyFlowState>()(
   persist(
     (set, get) => ({
       userId: null,
+      dataOwnerUid: null,
       isAnonymous: true,
       userEmail: null,
       isSyncing: false,
       setAuthUser: (uid, isAnonymous, email, displayName) => {
         set((state) => ({
           userId: uid,
+          dataOwnerUid: uid,
           isAnonymous,
           userEmail: email || null,
           user: {
@@ -139,6 +143,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       resetStore: () => {
         set({
           userId: null,
+          dataOwnerUid: null,
           isAnonymous: true,
           userEmail: null,
           isSyncing: false,
@@ -614,6 +619,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
     {
       name: 'studyflow_storage_v1',
       partialize: (state) => ({
+        dataOwnerUid: state.dataOwnerUid,
         user: state.user,
         activeTab: state.activeTab,
         theme: state.theme,
