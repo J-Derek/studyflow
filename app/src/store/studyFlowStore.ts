@@ -59,6 +59,8 @@ interface StudyFlowState {
   // Onboarding & Demo Sandbox
   onboardingDismissed: boolean;
   dismissOnboarding: () => void;
+  guestNoticeDismissed: boolean;
+  dismissGuestNotice: () => void;
   loadSampleData: () => void;
   icsExportCount: number;
   bumpIcsExport: () => void;
@@ -166,6 +168,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           sessions: [],
           grades: [],
           onboardingDismissed: false,
+          guestNoticeDismissed: false,
           pomodorosCompleted: 0,
           timer: idleTimer('focus', defaultSettings.focusDuration),
           focusCompletedAtMs: null,
@@ -189,6 +192,9 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         set((state) => ({
           user: { ...state.user, ...updates }
         })),
+
+      guestNoticeDismissed: false,
+      dismissGuestNotice: () => set({ guestNoticeDismissed: true }),
 
       onboardingDismissed: false,
       dismissOnboarding: () => {
@@ -623,6 +629,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       name: 'studyflow_storage_v1',
       partialize: (state) => ({
         dataOwnerUid: state.dataOwnerUid,
+        guestNoticeDismissed: state.guestNoticeDismissed,
         icsExportCount: state.icsExportCount,
         user: state.user,
         theme: state.theme,

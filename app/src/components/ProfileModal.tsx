@@ -13,6 +13,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
   const [university, setUniversity] = useState(user.university);
   const [program, setProgram] = useState(user.program);
   const [semester, setSemester] = useState(user.semester);
+  const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const [semesterStart, setSemesterStart] = useState(user.semesterStart ?? '');
+  const [semesterEnd, setSemesterEnd] = useState(user.semesterEnd ?? '');
+  const [timeZone, setTimeZone] = useState(user.timeZone ?? deviceZone);
+  const zones = (typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : [deviceZone]).concat(
+    typeof Intl.supportedValuesOf === 'function' && Intl.supportedValuesOf('timeZone').includes(deviceZone) ? [] : [deviceZone]
+  );
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -21,6 +28,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
       setUniversity(user.university);
       setProgram(user.program);
       setSemester(user.semester);
+      setSemesterStart(user.semesterStart ?? '');
+      setSemesterEnd(user.semesterEnd ?? '');
+      setTimeZone(user.timeZone ?? deviceZone);
       setSaved(false);
     }
   }, [isOpen, user]);
@@ -30,10 +40,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateUser({
-      name: name.trim() || 'Guest',
-      university: university.trim() || 'StudyFlow',
-      program: program.trim() || 'General Studies',
-      semester: semester.trim() || 'Fall 2026'
+      name: name.trim() || 'Student',
+      university: university.trim() || 'My university',
+      program: program.trim() || 'My programme',
+      semester: semester.trim() || 'Current Term',
+      semesterStart: semesterStart || undefined,
+      semesterEnd: semesterEnd && semesterEnd >= semesterStart ? semesterEnd : undefined,
+      timeZone
     });
     setSaved(true);
     setTimeout(() => {
@@ -125,7 +138,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-zinc-400" />
-              <span>Current Term / Semester</span>
+              <span>Current term</span>
             </label>
             <input
               type="text"
@@ -136,6 +149,29 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
+
+          <fieldset className="space-y-2 pt-1">
+            <legend className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Calendar export</legend>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Your timetable repeats weekly between these dates when you export it to a calendar app.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block text-[11px] text-zinc-600 dark:text-zinc-400">
+                Term starts
+                <input type="date" value={semesterStart} onChange={(e) => setSemesterStart(e.target.value)} className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              </label>
+              <label className="block text-[11px] text-zinc-600 dark:text-zinc-400">
+                Term ends
+                <input type="date" value={semesterEnd} min={semesterStart || undefined} onChange={(e) => setSemesterEnd(e.target.value)} className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              </label>
+            </div>
+            <label className="block text-[11px] text-zinc-600 dark:text-zinc-400">
+              Time zone
+              <select value={timeZone} onChange={(e) => setTimeZone(e.target.value)} className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                {Array.from(new Set(zones)).map((z) => (
+                  <option key={z} value={z}>{z}</option>
+                ))}
+              </select>
+            </label>
+          </fieldset>
 
           <div className="pt-2 flex items-center justify-end gap-2 border-t border-zinc-100 dark:border-zinc-800">
             <button

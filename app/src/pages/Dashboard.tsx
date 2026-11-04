@@ -21,7 +21,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenAddModal,
   onOpenBackup
 }) => {
-  const { assignments, sessions, grades, pomodorosCompleted, setActiveTab, toggleAssignmentComplete } = useStudyFlowStore();
+  const { isAnonymous, guestNoticeDismissed, dismissGuestNotice, assignments, sessions, grades, pomodorosCompleted, setActiveTab, toggleAssignmentComplete } = useStudyFlowStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Statistics Computations
@@ -70,6 +70,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </button>
         </div>
       </div>
+
+      {isAnonymous && !guestNoticeDismissed && assignments.some((a) => !a.sample) && (
+        <div role="note" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+          <p>Your assignments are saved to a guest account. Sign in with Google so you keep them if you clear this browser or switch phones.</p>
+          <div className="flex items-center gap-2 shrink-0">
+            {onOpenBackup && (
+              <button type="button" onClick={onOpenBackup} className="px-3 py-1.5 min-h-[44px] rounded-md bg-amber-900 dark:bg-amber-200 text-white dark:text-amber-950 font-medium text-xs cursor-pointer">Back up now</button>
+            )}
+            <button type="button" onClick={dismissGuestNotice} className="px-3 py-1.5 min-h-[44px] rounded-md text-xs font-medium cursor-pointer hover:underline">Not now</button>
+          </div>
+        </div>
+      )}
 
       {/* Zero State Activation Hero: Quick First Deadline Input */}
       {assignments.length === 0 && (
