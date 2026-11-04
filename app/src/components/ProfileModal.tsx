@@ -62,7 +62,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               <h3 id="profile-modal-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                 Academic Profile
               </h3>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono">
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 tabular-nums">
                 Customize your scholar identity and institutional affiliation
               </p>
             </div>

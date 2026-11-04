@@ -74,12 +74,12 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center justify-between gap-4 w-full">
         {/* Left: Dynamic Page Breadcrumb */}
         <div className="flex items-center gap-2 text-xs">
-          <span className="font-mono text-zinc-400 dark:text-zinc-500 hidden sm:inline">Workspace</span>
+          <span className="tabular-nums text-zinc-400 dark:text-zinc-500 hidden sm:inline">Workspace</span>
           <span className="text-zinc-300 dark:text-zinc-700 hidden sm:inline">/</span>
           <span className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <span>{getPageTitle()}</span>
             {activeTab === 'grades' && (
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60">
+              <span className="text-[10px] tabular-nums px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60">
                 Simulator
               </span>
             )}
@@ -96,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Search className="h-3 w-3" />
               <span>Search coursework…</span>
-              <kbd className="inline-flex items-center gap-0.5 px-1 py-0.2 text-[10px] font-mono bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-400">
+              <kbd className="inline-flex items-center gap-0.5 px-1 py-0.2 text-[10px] tabular-nums bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-400">
                 <Command className="h-2.5 w-2.5" /> K
               </kbd>
             </button>
@@ -120,7 +120,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onOpenProfile}
               title={`Scholar Profile (${user.name})`}
               aria-label="Edit scholar profile"
-              className="flex md:hidden items-center justify-center min-h-[44px] min-w-[44px] p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 font-mono font-semibold text-xs"
+              className="flex md:hidden items-center justify-center min-h-[44px] min-w-[44px] p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 tabular-nums font-semibold text-xs"
             >
               {isAnonymous ? 'GS' : user.name.split(' ').map((n) => n[0]).join('')}
             </button>
@@ -128,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Real Network & Sync Status Badge */}
           <div
-            className={`hidden sm:flex items-center gap-1.5 px-2 py-0.8 rounded-md border text-[11px] font-mono transition-colors ${
+            className={`hidden sm:flex items-center gap-1.5 px-2 py-0.8 rounded-md border text-[11px] tabular-nums transition-colors ${
               !isOnline
                 ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-400'
                 : isSyncing

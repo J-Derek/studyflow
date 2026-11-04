@@ -182,7 +182,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             }}
             className="w-full bg-transparent text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
           />
-          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] tabular-nums rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border border-zinc-200 dark:border-zinc-700">
             ESC
           </kbd>
         </div>
@@ -190,7 +190,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         {/* Command Results List */}
         <div className="max-h-80 overflow-y-auto p-1.5 space-y-0.5">
           {filteredItems.length === 0 ? (
-            <div className="py-8 text-center text-xs text-zinc-400 font-mono">
+            <div className="py-8 text-center text-xs text-zinc-400 tabular-nums">
               No matching commands or coursework found.
             </div>
           ) : (
@@ -215,11 +215,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
                   <div className="flex items-center gap-2 shrink-0">
                     {item.badge && (
-                      <span className="font-mono text-[9px] px-1.5 py-0.2 rounded bg-zinc-200/60 dark:bg-zinc-700/60 text-zinc-600 dark:text-zinc-300">
+                      <span className="tabular-nums text-[9px] px-1.5 py-0.2 rounded bg-zinc-200/60 dark:bg-zinc-700/60 text-zinc-600 dark:text-zinc-300">
                         {item.badge}
                       </span>
                     )}
-                    <span className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
+                    <span className="tabular-nums text-[10px] text-zinc-400 uppercase tracking-wider">
                       {item.category}
                     </span>
                     {isSelected && <ArrowRight className="h-3 w-3 text-zinc-400" />}
@@ -231,7 +231,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         </div>
 
         {/* Footer info bar */}
-        <div className="px-3.5 py-2 border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/60 dark:bg-zinc-850/60 flex items-center justify-between text-[11px] font-mono text-zinc-400">
+        <div className="px-3.5 py-2 border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/60 dark:bg-zinc-850/60 flex items-center justify-between text-[11px] tabular-nums text-zinc-400">
           <span>Navigate with <kbd className="px-1 py-0.2 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-500">↑</kbd> <kbd className="px-1 py-0.2 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-500">↓</kbd></span>
           <span>Select with <kbd className="px-1 py-0.2 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-500">↵</kbd></span>
         </div>

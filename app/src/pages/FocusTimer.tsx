@@ -234,14 +234,14 @@ export const FocusTimerPage: React.FC = () => {
 
           {/* Inner Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-4xl md:text-5xl font-light text-zinc-900 dark:text-zinc-50 tracking-tight font-mono tabular-nums">
+            <span className="text-4xl md:text-5xl font-light text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums ">
               {formatTimeLeft(timerSecondsLeft)}
             </span>
-            <span className="text-[11px] font-mono text-zinc-400 mt-2">
+            <span className="text-[11px] tabular-nums text-zinc-400 mt-2">
               {timerMode === 'focus' ? 'CONCENTRATION BLOCK' : 'RECOVERY PERIOD'}
             </span>
             {timerIsRunning && (
-              <span className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-mono font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/60">
+              <span className="mt-2 inline-flex items-center gap-1.5 text-[10px] tabular-nums font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/60">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> ACTIVE
               </span>
             )}
@@ -293,7 +293,7 @@ export const FocusTimerPage: React.FC = () => {
         </div>
 
         {/* Tab-inactive Accuracy Badge */}
-        <div className="mt-5 flex items-center gap-1.5 text-[11px] text-zinc-400 font-mono">
+        <div className="mt-5 flex items-center gap-1.5 text-[11px] text-zinc-400 tabular-nums">
           <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
           <span>Timestamp synchronized • Background resilient</span>
         </div>
@@ -310,7 +310,7 @@ export const FocusTimerPage: React.FC = () => {
               <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <span>Acoustic Masking Soundscapes</span>
                 {soundscape !== 'off' && timerIsRunning && (
-                  <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
+                  <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 tabular-nums">
                     <span className="h-2 w-0.5 bg-emerald-500 animate-pulse" />
                     <span className="h-3 w-0.5 bg-emerald-500 animate-pulse delay-75" />
                     Active
@@ -336,7 +336,7 @@ export const FocusTimerPage: React.FC = () => {
                 onChange={(e) => setSoundscapeVolume(Number(e.target.value))}
                 className="w-20 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
-              <span className="font-mono text-[10px] text-zinc-400 w-6">
+              <span className="tabular-nums text-[10px] text-zinc-400 w-6">
                 {Math.round(soundscapeVolume * 100)}%
               </span>
             </div>
@@ -360,7 +360,7 @@ export const FocusTimerPage: React.FC = () => {
               </div>
               <div>
                 <p className="text-[11px] font-medium leading-tight">{item.label}</p>
-                <p className="text-[10px] font-mono text-zinc-400 mt-0.5">
+                <p className="text-[10px] tabular-nums text-zinc-400 mt-0.5">
                   {soundscape === item.id ? (timerIsRunning ? 'Active' : 'Queued') : 'Select'}
                 </p>
               </div>
@@ -381,7 +381,7 @@ export const FocusTimerPage: React.FC = () => {
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className={`h-6 w-6 rounded-md flex items-center justify-center font-mono text-xs ${
+              className={`h-6 w-6 rounded-md flex items-center justify-center tabular-nums text-xs ${
                 i < pomodorosCompleted % 4 || pomodorosCompleted >= 4
                   ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600'
@@ -390,7 +390,7 @@ export const FocusTimerPage: React.FC = () => {
               <Flame className="h-3 w-3" />
             </div>
           ))}
-          <span className="text-xs font-mono font-semibold text-zinc-900 dark:text-zinc-100 ml-1.5">
+          <span className="text-xs tabular-nums font-semibold text-zinc-900 dark:text-zinc-100 ml-1.5">
             {pomodorosCompleted} total
           </span>
         </div>

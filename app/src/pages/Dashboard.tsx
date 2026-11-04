@@ -60,15 +60,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onClick={onOpenProfile}
                 title="Edit scholar profile & institution"
                 aria-label="Edit scholar profile & institution"
-                className="font-mono text-[11px] px-2.5 py-1 min-h-[44px] inline-flex items-center rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition cursor-pointer"
+                className="tabular-nums text-[11px] px-2.5 py-1 min-h-[44px] inline-flex items-center rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition cursor-pointer"
               >
                 {user.university.toUpperCase()}
               </button>
-              <span className="font-mono text-[11px] text-zinc-400">/</span>
-              <span className="font-mono text-[11px] text-zinc-500 dark:text-zinc-400">
+              <span className="tabular-nums text-[11px] text-zinc-400">/</span>
+              <span className="tabular-nums text-[11px] text-zinc-500 dark:text-zinc-400">
                 {user.semester.toUpperCase()}
               </span>
-              <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500">WK 10</span>
+              <span className="tabular-nums text-[10px] text-zinc-400 dark:text-zinc-500">WK 10</span>
             </div>
             
             <h1 className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
@@ -76,7 +76,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </h1>
             
             <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-sans">
-              <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">{pendingAssignments.length} deliverables pending</span> across {sessions.length} weekly course modules. Track progress and keep coursework on schedule.
+              <span className="tabular-nums font-medium text-zinc-900 dark:text-zinc-100">{pendingAssignments.length} deliverables pending</span> across {sessions.length} weekly course modules. Track progress and keep coursework on schedule.
             </p>
           </div>
 
@@ -131,13 +131,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="my-2.5">
             <div className="flex items-baseline gap-2">
-              <span className="font-mono text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums">
+              <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight ">
                 {pendingAssignments.length}
               </span>
-              <span className="text-[11px] font-mono text-zinc-400">active</span>
+              <span className="text-[11px] tabular-nums text-zinc-400">active</span>
             </div>
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-zinc-500">
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] tabular-nums text-zinc-500">
             <span>{urgentAssignments.length} pending</span>
             <span>{completedAssignments} completed</span>
           </div>
@@ -150,10 +150,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="my-2.5">
             <div className="flex items-baseline gap-2">
-              <span className="font-mono text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums">
+              <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight ">
                 {completionRate}%
               </span>
-              <span className="text-[11px] font-mono text-zinc-400">cleared</span>
+              <span className="text-[11px] tabular-nums text-zinc-400">cleared</span>
             </div>
           </div>
           <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
@@ -173,13 +173,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="my-2.5">
             <div className="flex items-baseline gap-2">
-              <span className="font-mono text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums">
+              <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight ">
                 {pomodorosCompleted}
               </span>
-              <span className="text-[11px] font-mono text-zinc-400">blocks</span>
+              <span className="text-[11px] tabular-nums text-zinc-400">blocks</span>
             </div>
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-zinc-500">
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] tabular-nums text-zinc-500">
             <span>Cumulative</span>
             <span className="text-zinc-700 dark:text-zinc-300">
               ~{((pomodorosCompleted * 25) / 60).toFixed(1)} hrs logged
@@ -194,13 +194,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="my-2.5">
             <div className="flex items-baseline gap-2">
-              <span className="font-mono text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums">
+              <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight ">
                 {gpaString}
               </span>
-              <span className="text-[11px] font-mono text-zinc-400">GPA</span>
+              <span className="text-[11px] tabular-nums text-zinc-400">GPA</span>
             </div>
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-mono">
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] tabular-nums">
             <span className="text-zinc-600 dark:text-zinc-400 font-medium">{academicStanding.standing}</span>
             <span className="text-zinc-400 dark:text-zinc-500">{academicStanding.tier}</span>
           </div>
@@ -214,7 +214,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="flex items-center justify-between pb-1">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Upcoming Deadlines</h2>
-              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+              <span className="tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                 {urgentAssignments.length} in queue
               </span>
             </div>
@@ -262,7 +262,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       </button>
 
                       <div className="flex items-center gap-2 overflow-hidden min-w-0">
-                        <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+                        <span className="tabular-nums text-[11px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
                           {asg.course.split('—')[0].trim()}
                         </span>
                         
@@ -280,13 +280,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                     <div className="flex items-center gap-3 shrink-0">
                       {/* Priority — monochrome text only, no color coding */}
-                      <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500 hidden sm:inline capitalize">
+                      <span className="tabular-nums text-[10px] text-zinc-400 dark:text-zinc-500 hidden sm:inline capitalize">
                         {asg.priority}
                       </span>
 
                       {/* Due Countdown — plain monospace, red only if overdue */}
                       <span
-                        className={`font-mono text-[11px] tabular-nums ${
+                        className={`tabular-nums text-[11px]  ${
                           isUrgent
                             ? 'text-red-500 dark:text-red-400'
                             : 'text-zinc-500 dark:text-zinc-400'
@@ -317,22 +317,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 space-y-3.5 shadow-2xs">
             {todaysSessions.length === 0 ? (
               <div className="py-6 text-center">
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">No lecture sessions scheduled today.</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">No lecture sessions scheduled today.</p>
               </div>
             ) : (
               todaysSessions.map((session) => (
                 <div key={session.id} className="flex items-start gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 last:border-0 last:pb-0">
-                  <div className="w-14 shrink-0 text-right font-mono">
+                  <div className="w-14 shrink-0 text-right tabular-nums">
                     <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">{session.startTime}</span>
                     <span className="block text-[10px] text-zinc-400 dark:text-zinc-500">{session.endTime}</span>
                   </div>
                   <div className="h-full w-0.5 bg-zinc-400 dark:bg-zinc-600 shrink-0 self-stretch rounded-full" />
                   <div className="overflow-hidden min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
+                      <span className="tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
                         {session.course}
                       </span>
-                      <span className="text-[10px] capitalize text-zinc-400 font-mono">{session.type}</span>
+                      <span className="text-[10px] capitalize text-zinc-400 tabular-nums">{session.type}</span>
                     </div>
                     <h5 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">{session.title}</h5>
                   </div>

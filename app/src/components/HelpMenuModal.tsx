@@ -137,7 +137,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
               <h2 id="help-modal-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 StudyFlow Playbook & Guide
               </h2>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono">
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 tabular-nums">
                 Everything you need to know in 45 seconds
               </p>
             </div>
@@ -198,7 +198,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                       <Icon className="h-6 w-6" />
                     </div>
                     <div>
-                      <span className="font-mono text-[10px] uppercase font-semibold text-zinc-400">
+                      <span className="tabular-nums text-[10px] uppercase font-semibold text-zinc-400">
                         Module {currentSlide + 1} of {slides.length}
                       </span>
                       <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
@@ -207,7 +207,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                     </div>
                   </div>
 
-                  <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500">
+                  <span className="text-[11px] tabular-nums text-zinc-400 dark:text-zinc-500">
                     {currentSlide + 1} / {slides.length}
                   </span>
                 </div>
@@ -333,7 +333,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                   className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-850/50 border border-zinc-200/60 dark:border-zinc-800 text-xs"
                 >
                   <span className="text-zinc-600 dark:text-zinc-300">{sc.desc}</span>
-                  <kbd className="font-mono text-[11px] px-2 py-0.5 rounded bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 shadow-2xs">
+                  <kbd className="tabular-nums text-[11px] px-2 py-0.5 rounded bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 shadow-2xs">
                     {sc.key}
                   </kbd>
                 </div>
@@ -344,7 +344,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
 
         {/* Footer */}
         <div className="p-4 border-t border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/30 flex items-center justify-between">
-          <span className="text-[11px] font-mono text-zinc-400">
+          <span className="text-[11px] tabular-nums text-zinc-400">
             StudyFlow · Academic Operating System
           </span>
           <button

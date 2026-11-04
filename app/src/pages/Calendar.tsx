@@ -79,7 +79,7 @@ export const CalendarPage: React.FC = () => {
             className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-surface-dark hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs transition shadow-2xs active:scale-95"
           >
             <Download className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-            <span className="hidden sm:inline font-mono">Export .ICS</span>
+            <span className="hidden sm:inline tabular-nums">Export .ICS</span>
           </button>
 
           <div className="flex items-center gap-1 bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-lg p-0.5 shadow-2xs">
@@ -91,7 +91,7 @@ export const CalendarPage: React.FC = () => {
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
-            <span className="text-xs font-mono font-medium text-zinc-800 dark:text-zinc-200 px-2 min-w-[140px] text-center">
+            <span className="text-xs tabular-nums font-medium text-zinc-800 dark:text-zinc-200 px-2 min-w-[140px] text-center">
               {weekRangeLabel}
             </span>
             <button
@@ -164,11 +164,11 @@ export const CalendarPage: React.FC = () => {
                   {/* Day Header */}
                   <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800/80 mb-2.5">
                     <div>
-                      <span className="text-[11px] font-mono font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{day.dayName}</span>
+                      <span className="text-[11px] tabular-nums font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{day.dayName}</span>
                       <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                         <span>{day.monthName} {day.dateNumber}</span>
                         {day.isToday && (
-                          <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400 font-semibold">Today</span>
+                          <span className="text-[10px] tabular-nums px-1 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400 font-semibold">Today</span>
                         )}
                       </h4>
                     </div>
@@ -181,7 +181,7 @@ export const CalendarPage: React.FC = () => {
                   <div className="space-y-2">
                     {daySessions.length === 0 ? (
                       <div className="py-12 text-center text-zinc-300 dark:text-zinc-700">
-                        <p className="text-[11px] font-mono">No blocks</p>
+                        <p className="text-[11px] tabular-nums">No blocks</p>
                       </div>
                     ) : (
                       daySessions.map((session) => (
@@ -198,7 +198,7 @@ export const CalendarPage: React.FC = () => {
                           }`}
                         >
                           <div className="flex items-center justify-between mb-0.5">
-                            <span className="font-mono text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+                            <span className="tabular-nums text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
                               {session.course.split('—')[0].trim()}
                             </span>
                             <button
@@ -213,7 +213,7 @@ export const CalendarPage: React.FC = () => {
                           
                           <h5 className="font-medium text-zinc-900 dark:text-zinc-100 text-xs leading-snug line-clamp-2">{session.title}</h5>
                           
-                          <div className="mt-1 flex items-center gap-1 text-[10px] font-mono text-zinc-400">
+                          <div className="mt-1 flex items-center gap-1 text-[10px] tabular-nums text-zinc-400">
                             <Clock className="h-2.5 w-2.5" />
                             <span>
                               {session.startTime} - {session.endTime}
@@ -231,7 +231,7 @@ export const CalendarPage: React.FC = () => {
                     setDayOfWeek(day.dayNumber);
                     setModalOpen(true);
                   }}
-                  className="mt-3 w-full py-1 rounded-md border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 text-[10px] font-mono transition"
+                  className="mt-3 w-full py-1 rounded-md border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 text-[10px] tabular-nums transition"
                 >
                   + Add Block
                 </button>
@@ -282,7 +282,7 @@ export const CalendarPage: React.FC = () => {
                   placeholder="e.g. CS 4400"
                   value={course}
                   onChange={(e) => setCourse(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                  className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
                 />
               </div>
 
@@ -294,7 +294,7 @@ export const CalendarPage: React.FC = () => {
                   <select
                     value={dayOfWeek}
                     onChange={(e) => setDayOfWeek(Number(e.target.value))}
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
                   >
                     {DAYS.map((d, i) => (
                       <option key={d} value={i + 1}>
@@ -311,7 +311,7 @@ export const CalendarPage: React.FC = () => {
                   <select
                     value={sessionType}
                     onChange={(e) => setSessionType(e.target.value as any)}
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
                   >
                     <option value="lecture">Lecture</option>
                     <option value="lab">Lab</option>
@@ -332,7 +332,7 @@ export const CalendarPage: React.FC = () => {
                     required
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
                 <div>
@@ -344,7 +344,7 @@ export const CalendarPage: React.FC = () => {
                     required
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
               </div>

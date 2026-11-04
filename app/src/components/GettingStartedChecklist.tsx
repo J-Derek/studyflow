@@ -86,7 +86,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
             <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
               Getting Started Checklist
             </h3>
-            <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+            <span className="tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
               {completedCount} / {steps.length} completed
             </span>
           </div>

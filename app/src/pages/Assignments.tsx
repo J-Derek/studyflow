@@ -130,11 +130,11 @@ export const AssignmentsPage: React.FC = () => {
           <div className="flex items-center gap-3">
             {/* Course filter */}
             <div className="flex items-center gap-1.5">
-              <span className="text-zinc-400 font-mono text-[11px]">Course:</span>
+              <span className="text-zinc-400 tabular-nums text-[11px]">Course:</span>
               <select
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
-                className="px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-mono text-zinc-700 dark:text-zinc-200 focus:outline-none"
+                className="px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
               >
                 <option value="all">All Courses ({assignments.length})</option>
                 {courses.map((c) => (
@@ -147,11 +147,11 @@ export const AssignmentsPage: React.FC = () => {
 
             {/* Priority filter */}
             <div className="flex items-center gap-1.5">
-              <span className="text-zinc-400 font-mono text-[11px]">Priority:</span>
+              <span className="text-zinc-400 tabular-nums text-[11px]">Priority:</span>
               <select
                 value={selectedPriority}
                 onChange={(e) => setSelectedPriority(e.target.value)}
-                className="px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-mono text-zinc-700 dark:text-zinc-200 focus:outline-none"
+                className="px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
               >
                 <option value="all">All Priorities</option>
                 <option value="high">High Priority</option>
@@ -161,7 +161,7 @@ export const AssignmentsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="text-[11px] font-mono text-zinc-400">
+          <div className="text-[11px] tabular-nums text-zinc-400">
             {filteredAssignments.length} of {assignments.length} deliverables
           </div>
         </div>
@@ -222,7 +222,7 @@ export const AssignmentsPage: React.FC = () => {
                     </button>
 
                     <div className="flex items-center gap-2 overflow-hidden min-w-0">
-                      <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+                      <span className="tabular-nums text-[11px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
                         {asg.course.split('—')[0].trim()}
                       </span>
 
@@ -250,12 +250,12 @@ export const AssignmentsPage: React.FC = () => {
                   {/* Right Metadata & Controls */}
                   <div className="flex items-center gap-3 shrink-0">
                     {/* Priority — monochrome text only */}
-                    <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500 hidden sm:inline capitalize">
+                    <span className="tabular-nums text-[10px] text-zinc-400 dark:text-zinc-500 hidden sm:inline capitalize">
                       {asg.priority}
                     </span>
 
                     {/* Progress Percentage */}
-                    <div className="hidden lg:flex items-center gap-1.5 font-mono text-[11px] text-zinc-400">
+                    <div className="hidden lg:flex items-center gap-1.5 tabular-nums text-[11px] text-zinc-400">
                       <div className="w-12 bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
                         <div
                           className="bg-zinc-400 dark:bg-zinc-500 h-full rounded-full"
@@ -267,7 +267,7 @@ export const AssignmentsPage: React.FC = () => {
 
                     {/* Due Date — clean monospace */}
                     <span
-                      className={`font-mono text-[11px] tabular-nums ${
+                      className={`tabular-nums text-[11px]  ${
                         isUrgent && !isCompleted
                           ? 'text-red-500 dark:text-red-400'
                           : 'text-zinc-500 dark:text-zinc-400'
@@ -300,7 +300,7 @@ export const AssignmentsPage: React.FC = () => {
 
                 {/* Subtasks Milestones (Linear style expandable list) */}
                 <div className="pl-7 pr-2 pt-1 border-t border-zinc-100 dark:border-zinc-800/60 space-y-1">
-                  <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400 mb-1">
+                  <div className="flex items-center justify-between text-[10px] tabular-nums text-zinc-400 mb-1">
                     <span>Milestones ({effectiveSubtasks.filter(s => s.completed).length}/{effectiveSubtasks.length})</span>
                     {!isCompleted && (
                       <span className="text-[10px] text-zinc-400">press enter to add</span>
@@ -350,7 +350,7 @@ export const AssignmentsPage: React.FC = () => {
                             setNewSubtaskInputs((prev) => ({ ...prev, [asg.id]: '' }));
                           }
                         }}
-                        className="px-2 py-0.8 text-[11px] rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500 flex-1 font-mono"
+                        className="px-2 py-0.8 text-[11px] rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500 flex-1 tabular-nums"
                       />
                     </div>
                   )}
@@ -362,7 +362,7 @@ export const AssignmentsPage: React.FC = () => {
 
         {/* Linear-Grade Pagination Footer */}
         {filteredAssignments.length > ITEMS_PER_PAGE && (
-          <div className="p-3 bg-zinc-50/50 dark:bg-zinc-850/40 border-t border-zinc-200/70 dark:border-zinc-800/70 flex items-center justify-between text-xs font-mono text-zinc-500 dark:text-zinc-400">
+          <div className="p-3 bg-zinc-50/50 dark:bg-zinc-850/40 border-t border-zinc-200/70 dark:border-zinc-800/70 flex items-center justify-between text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
             <span>
               Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredAssignments.length)} of {filteredAssignments.length}
             </span>

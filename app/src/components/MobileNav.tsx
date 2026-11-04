@@ -44,7 +44,7 @@ export const MobileNav: React.FC = () => {
             <div className="relative">
               <Icon className={cn('h-4 w-4', isActive ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400 dark:text-zinc-500')} />
               {item.badge !== undefined && item.badge > 0 && (
-                <span className="absolute -top-1 -right-2 h-3.5 min-w-3.5 px-0.5 bg-blue-600 text-white text-[9px] font-mono rounded-full flex items-center justify-center font-semibold">
+                <span className="absolute -top-1 -right-2 h-3.5 min-w-3.5 px-0.5 bg-blue-600 text-white text-[9px] tabular-nums rounded-full flex items-center justify-center font-semibold">
                   {item.badge}
                 </span>
               )}

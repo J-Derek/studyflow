@@ -106,10 +106,10 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <span className="tabular-nums text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                   Deliverable Saved
                 </span>
-                <span className="text-xs text-zinc-500 font-mono">Live countdown active</span>
+                <span className="text-xs text-zinc-500 tabular-nums">Live countdown active</span>
               </div>
               <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mt-1">
                 "{savedAssignment.title}" is locked in.
@@ -148,11 +148,11 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
   return (
     <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark p-5 md:p-6 transition-colors shadow-2xs">
       <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-medium">
+        <span className="inline-flex items-center gap-1 tabular-nums text-[11px] px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-medium">
           <Sparkles className="h-3 w-3 text-amber-500" />
           <span>Quick Start</span>
         </span>
-        <span className="text-[11px] font-mono text-zinc-400">Step 1 of 1 · 30 seconds</span>
+        <span className="text-[11px] tabular-nums text-zinc-400">Step 1 of 1 · 30 seconds</span>
       </div>
 
       <div className="space-y-1 mb-4">
@@ -204,7 +204,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             <button
               type="button"
               onClick={() => handleChipClick('today')}
-              className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-mono transition cursor-pointer ${
+              className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs tabular-nums transition cursor-pointer ${
                 activeChip === 'today'
                   ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
@@ -215,7 +215,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             <button
               type="button"
               onClick={() => handleChipClick('tomorrow')}
-              className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-mono transition cursor-pointer ${
+              className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs tabular-nums transition cursor-pointer ${
                 activeChip === 'tomorrow'
                   ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
@@ -226,7 +226,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             <button
               type="button"
               onClick={() => handleChipClick('friday')}
-              className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-mono transition cursor-pointer ${
+              className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs tabular-nums transition cursor-pointer ${
                 activeChip === 'friday'
                   ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
@@ -237,7 +237,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             <button
               type="button"
               onClick={() => handleChipClick('nextWeek')}
-              className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-mono transition cursor-pointer ${
+              className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs tabular-nums transition cursor-pointer ${
                 activeChip === 'nextWeek'
                   ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
@@ -255,7 +255,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
                   setDueDate(e.target.value);
                   setActiveChip('custom');
                 }}
-                className="px-2.5 py-1.5 min-h-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-xs font-mono text-zinc-800 dark:text-zinc-200 focus:outline-none"
+                className="px-2.5 py-1.5 min-h-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-xs tabular-nums text-zinc-800 dark:text-zinc-200 focus:outline-none"
               />
             </div>
           </div>
@@ -270,7 +270,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
                 key={p}
                 type="button"
                 onClick={() => setPriority(p)}
-                className={`text-[11px] font-mono px-2.5 py-1 min-h-[44px] rounded capitalize transition cursor-pointer ${
+                className={`text-[11px] tabular-nums px-2.5 py-1 min-h-[44px] rounded capitalize transition cursor-pointer ${
                   priority === p
                     ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold'
                     : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'

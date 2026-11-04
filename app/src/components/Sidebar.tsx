@@ -76,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
           </div>
           <div>
             <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 tracking-tight">StudyFlow</span>
-            <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-mono">Academic Workspace</p>
+            <p className="text-[11px] text-zinc-400 dark:text-zinc-500 tabular-nums">Academic Workspace</p>
           </div>
         </div>
 
@@ -136,7 +136,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
                 {item.badge !== undefined && item.badge > 0 && (
                   <span
                     className={cn(
-                      'text-[10px] font-mono px-1.5 py-0.2 rounded font-medium tabular-nums',
+                      'text-[10px] tabular-nums px-1.5 py-0.2 rounded font-medium ',
                       isActive 
                         ? 'bg-blue-600 text-white' 
                         : 'bg-zinc-200/70 dark:bg-zinc-700/70 text-zinc-700 dark:text-zinc-300'
@@ -160,14 +160,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
             title="Edit scholar profile & institution"
             className="flex items-center gap-2 overflow-hidden text-left hover:opacity-80 transition-opacity cursor-pointer group flex-1 min-w-0"
           >
-            <div className="h-7 w-7 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 font-mono font-semibold flex items-center justify-center text-xs flex-shrink-0 group-hover:bg-zinc-300 dark:group-hover:bg-zinc-600 transition-colors">
+            <div className="h-7 w-7 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 tabular-nums font-semibold flex items-center justify-center text-xs flex-shrink-0 group-hover:bg-zinc-300 dark:group-hover:bg-zinc-600 transition-colors">
               {isAnonymous ? 'GS' : user.name.split(' ').map((n) => n[0]).join('')}
             </div>
             <div className="truncate flex-1 min-w-0">
               <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {isAnonymous ? 'Guest Scholar' : user.name}
               </p>
-              <p className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 truncate">
+              <p className="text-[10px] tabular-nums text-zinc-400 dark:text-zinc-500 truncate">
                 {isAnonymous ? 'Local Session' : (userEmail || 'Cloud Student')}
               </p>
             </div>
@@ -186,7 +186,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
         </div>
 
         {/* Sync Status Banner */}
-        <div className="pt-1.5 border-t border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-between text-[11px] font-mono">
+        <div className="pt-1.5 border-t border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-between text-[11px] tabular-nums">
           <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="h-3 w-3" />
             <span>Synced</span>

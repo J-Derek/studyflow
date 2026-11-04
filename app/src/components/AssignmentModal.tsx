@@ -117,7 +117,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
               placeholder="e.g. CS 4400 — Distributed Systems"
               value={course}
               onChange={(e) => setCourse(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
             />
           </div>
 
@@ -131,7 +131,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
                 required
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
               />
             </div>
             <div>
@@ -142,7 +142,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
                 type="time"
                 value={dueTime}
                 onChange={(e) => setDueTime(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
               />
             </div>
           </div>
@@ -159,7 +159,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
                     type="button"
                     key={p}
                     onClick={() => setPriority(p)}
-                    className={`py-1.5 rounded-md text-xs font-mono capitalize border transition-colors ${
+                    className={`py-1.5 rounded-md text-xs tabular-nums capitalize border transition-colors ${
                       isSelected
                         ? p === 'high'
                           ? 'bg-rose-50 dark:bg-rose-950/80 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-semibold'
@@ -179,7 +179,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
           {assignmentToEdit && (
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 font-mono">
+                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 tabular-nums">
                   Progress ({progress}%)
                 </label>
               </div>

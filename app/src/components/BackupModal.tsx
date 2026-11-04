@@ -100,7 +100,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 Academic Ledger & Data Durability
               </h3>
-              <p className="text-[11px] font-mono text-zinc-500">System Design: Zero lock-in, client-first portability</p>
+              <p className="text-[11px] tabular-nums text-zinc-500">System Design: Zero lock-in, client-first portability</p>
             </div>
           </div>
           <button
@@ -113,7 +113,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
 
         {/* Section 1: Offline Local JSON Portability */}
         <div className="space-y-3">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-mono">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 tabular-nums">
             Local Disaster Recovery (JSON)
           </h4>
           <p className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -142,7 +142,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
           </div>
 
           {importStatus && (
-            <p className="text-xs font-mono text-center text-blue-600 dark:text-blue-400">
+            <p className="text-xs tabular-nums text-center text-blue-600 dark:text-blue-400">
               {importStatus}
             </p>
           )}
@@ -150,7 +150,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
 
         {/* Section 2: Multi-Device Cloud Sync */}
         <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-mono">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 tabular-nums">
             Multi-Device Cloud Synchronization
           </h4>
 
@@ -203,10 +203,10 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                 <div>
                   <p className="text-xs font-medium text-emerald-900 dark:text-emerald-100">Cloud Sync Active</p>
-                  <p className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">{userEmail}</p>
+                  <p className="text-[10px] tabular-nums text-emerald-600 dark:text-emerald-400">{userEmail}</p>
                 </div>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">
+              <span className="text-[10px] tabular-nums px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">
                 Auto-Save
               </span>
             </div>
