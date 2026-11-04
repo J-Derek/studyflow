@@ -1,3 +1,4 @@
+import { useDialog } from '../lib/useDialog';
 import React, { useState } from 'react';
 import { X, Download, Upload, Cloud, CheckCircle2, AlertTriangle, Database, Copy } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
@@ -16,6 +17,8 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
   const [isLinking, setIsLinking] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
+
+  const dialogRef = useDialog(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -89,6 +92,10 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
       <div
         className="w-full max-w-lg bg-surface-light dark:bg-surface-dark border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-5 space-y-5 animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="backup-modal-title"
       >
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
@@ -97,15 +104,17 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
               <Database className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <h3 id="backup-modal-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 Backup and sync
               </h3>
-              <p className="text-[11px] tabular-nums text-zinc-500">System Design: Zero lock-in, client-first portability</p>
+              <p className="text-[11px] tabular-nums text-zinc-600 dark:text-zinc-400">System Design: Zero lock-in, client-first portability</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            aria-label="Close backup"
+            className="p-2 rounded-md text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             <X className="h-4 w-4" />
           </button>
@@ -113,7 +122,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
 
         {/* Section 1: Offline Local JSON Portability */}
         <div className="space-y-3">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 tabular-nums">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 tabular-nums">
             Back up to a file (JSON)
           </h4>
           <p className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -150,17 +159,17 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
 
         {/* Section 2: Multi-Device Cloud Sync */}
         <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 tabular-nums">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 tabular-nums">
             Multi-Device Cloud Synchronization
           </h4>
 
           {isAnonymous ? (
             <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-850 border border-zinc-200/70 dark:border-zinc-800 space-y-2">
-              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs">
+              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 text-xs">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 <span>Currently running in local guest session.</span>
               </div>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
                 Link your Google account to mirror your study plan across phone, tablet, and laptop with zero data loss.
               </p>
               {inAppBrowser() ? (

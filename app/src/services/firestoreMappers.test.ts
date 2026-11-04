@@ -55,7 +55,7 @@ import type { CourseGrade } from '../types';
 
 describe('grade mappers', () => {
   const g: CourseGrade = {
-    id: 'g1', courseCode: 'CS 301', courseName: 'Algorithms', credits: 3, targetLetter: 'A', color: '#6366F1',
+    id: 'g1', courseCode: 'CS 301', courseName: 'Algorithms', credits: 3, targetLetter: 'A', color: '#4F46E5',
     assessments: [{ id: 'a', name: 'Midterm', weight: 40, score: 82 }, { id: 'b', name: 'Final', weight: 60, score: undefined }]
   };
   it('omits undefined scores (Firestore rejects undefined) and round-trips', () => {

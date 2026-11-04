@@ -65,7 +65,7 @@ export const GradesPage: React.FC = () => {
       courseName: newName.trim(),
       credits: Number(newCredits) || 3,
       targetLetter: newTarget,
-      color: '#6366F1',
+      color: '#4F46E5',
       assessments: [
         { id: `a-${Date.now()}-1`, name: 'Midterm exam', weight: 30, score: undefined },
         { id: `a-${Date.now()}-2`, name: 'Coursework', weight: 30, score: undefined },
@@ -82,42 +82,42 @@ export const GradesPage: React.FC = () => {
     <div className="space-y-6 animate-fade-in pb-16">
       <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-1 md:grid-cols-3 overflow-hidden">
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Projected GPA</span>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Projected GPA</span>
           <div className="my-2.5 flex items-baseline gap-2">
             <span className="text-3xl md:text-4xl tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
               {hasGpa ? termGpa : '—'}
             </span>
-            {hasGpa && <span className="text-xs text-zinc-400">out of 4.00</span>}
+            {hasGpa && <span className="text-xs text-zinc-600 dark:text-zinc-400">out of 4.00</span>}
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-500">
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-600 dark:text-zinc-400">
             {hasGpa ? 'Based on the grades you have entered so far.' : 'Enter a score for any assessment to see it.'}
           </div>
         </div>
 
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center justify-between text-zinc-600 dark:text-zinc-400">
             <span className="text-xs font-medium">Credits</span>
-            <BookOpen className="h-3.5 w-3.5 text-zinc-400" />
+            <BookOpen className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" />
           </div>
           <div className="my-2.5 flex items-baseline gap-2">
             <span className="text-3xl md:text-4xl tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
               {totalCredits}
             </span>
-            <span className="text-xs text-zinc-400">counted in GPA</span>
+            <span className="text-xs text-zinc-600 dark:text-zinc-400">counted in GPA</span>
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-500">
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-600 dark:text-zinc-400">
             {grades.length} {grades.length === 1 ? 'course' : 'courses'} added
           </div>
         </div>
 
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Where that lands</span>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Where that lands</span>
           <div className="my-2.5">
             <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
               {hasGpa ? standing.standing.replace('Projected: ', '') : '—'}
             </span>
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-500">
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-600 dark:text-zinc-400">
             Cut-offs are a common default (3.8, 3.5, 3.0). Your university may differ.
           </div>
         </div>
@@ -140,7 +140,7 @@ export const GradesPage: React.FC = () => {
                     {selectedCourse.courseCode}
                   </span>
                 </div>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
                   Try a score on your next assessment and see the grade it would give you.
                 </p>
               </div>
@@ -148,6 +148,7 @@ export const GradesPage: React.FC = () => {
 
             {/* Course Selector Dropdown */}
             <select
+              aria-label="Course to simulate"
               value={selectedCourse.id}
               onChange={(e) => setSelectedCourseId(e.target.value)}
               className="px-2.5 py-1 rounded-md text-xs tabular-nums bg-zinc-50 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 focus:outline-none"
@@ -180,6 +181,7 @@ export const GradesPage: React.FC = () => {
 
               <input
                 type="range"
+                aria-label="Score on the next assessment, percent"
                 min="50"
                 max="100"
                 value={simulatedFinalScore}
@@ -187,7 +189,7 @@ export const GradesPage: React.FC = () => {
                 className="w-full h-1 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
 
-              <div className="flex justify-between text-[10px] tabular-nums text-zinc-400">
+              <div className="flex justify-between text-[10px] tabular-nums text-zinc-600 dark:text-zinc-400">
                 <span>50%</span>
                 <span>75%</span>
                 <span>85%</span>
@@ -197,7 +199,7 @@ export const GradesPage: React.FC = () => {
 
             {/* Projected Result Callout */}
             <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-850 border border-zinc-200/80 dark:border-zinc-800 text-center space-y-1">
-              <p className="text-[11px] tabular-nums text-zinc-500 dark:text-zinc-400">
+              <p className="text-[11px] tabular-nums text-zinc-600 dark:text-zinc-400">
                 Projected Course Grade
               </p>
               <div className="flex items-center justify-center gap-2">
@@ -208,7 +210,7 @@ export const GradesPage: React.FC = () => {
                   {percentageToLetter(simCoursePct)}
                 </span>
               </div>
-              <p className="text-[10px] tabular-nums text-zinc-400">
+              <p className="text-[10px] tabular-nums text-zinc-600 dark:text-zinc-400">
                 Grade points at this score: {percentageToGpa(simCoursePct).toFixed(1)} · Your target: {selectedCourse.targetLetter}
               </p>
             </div>
@@ -221,7 +223,7 @@ export const GradesPage: React.FC = () => {
         <div className="flex items-center justify-between pb-1">
           <div>
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Your courses</h2>
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
               Enter scores as you get them.
             </p>
           </div>
@@ -237,9 +239,9 @@ export const GradesPage: React.FC = () => {
 
         {grades.length === 0 ? (
           <div className="p-8 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-surface-light dark:bg-surface-dark text-center">
-            <Calculator className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
+            <Calculator className="h-8 w-8 text-zinc-600 dark:text-zinc-400 mx-auto mb-2" />
             <h3 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">No courses enrolled</h3>
-            <p className="text-[11px] text-zinc-400 max-w-sm mx-auto mt-0.5">
+            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mt-0.5">
               Add your classes and course grade weights to calculate your cumulative GPA and simulate target final exam scores.
             </p>
             <div className="mt-3">
@@ -278,7 +280,7 @@ export const GradesPage: React.FC = () => {
                           {course.credits} Credits
                         </span>
                       </div>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate max-w-[200px]">
+                      <p className="text-[11px] text-zinc-600 dark:text-zinc-400 truncate max-w-[200px]">
                         {course.courseName}
                       </p>
                     </div>
@@ -294,7 +296,7 @@ export const GradesPage: React.FC = () => {
 
                 {/* Assessments list with live score inputs */}
                 <div className="space-y-1.5 pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
-                  <p className="text-[10px] tabular-nums text-zinc-400">
+                  <p className="text-[10px] tabular-nums text-zinc-600 dark:text-zinc-400">
                     Weights ({gradedWeight}% Graded)
                   </p>
 
@@ -306,12 +308,13 @@ export const GradesPage: React.FC = () => {
                       >
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs text-zinc-700 dark:text-zinc-300">{a.name}</span>
-                          <span className="text-[10px] tabular-nums text-zinc-400">({a.weight}%)</span>
+                          <span className="text-[10px] tabular-nums text-zinc-600 dark:text-zinc-400">({a.weight}%)</span>
                         </div>
 
                         <div className="flex items-center gap-1">
                           <input
                             type="number"
+                            aria-label={`Score for ${a.name}, percent`}
                             min="0"
                             max="100"
                             value={a.score !== undefined ? a.score : ''}
@@ -322,7 +325,7 @@ export const GradesPage: React.FC = () => {
                             }}
                             className="w-14 px-1.5 py-0.5 text-right tabular-nums text-xs font-semibold rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                           />
-                          <span className="text-[11px] tabular-nums text-zinc-400">%</span>
+                          <span className="text-[11px] tabular-nums text-zinc-600 dark:text-zinc-400">%</span>
                         </div>
                       </div>
                     ))}
@@ -342,7 +345,7 @@ export const GradesPage: React.FC = () => {
                   {grades.length > 1 && (
                     <button
                       onClick={() => deleteCourseGrade(course.id)}
-                      className="text-zinc-400 hover:text-rose-500 transition-colors p-1"
+                      className="text-zinc-600 dark:text-zinc-400 hover:text-rose-500 transition-colors p-1"
                       title={`Delete ${course.courseCode} from portfolio`}
                       aria-label={`Delete ${course.courseCode} from portfolio`}
                     >
@@ -365,7 +368,7 @@ export const GradesPage: React.FC = () => {
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Add a course</h3>
               <button
                 onClick={() => setShowAddCourseModal(false)}
-                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs tabular-nums p-1"
+                className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs tabular-nums p-1"
                 title="Close modal"
                 aria-label="Close modal"
               >
@@ -381,7 +384,7 @@ export const GradesPage: React.FC = () => {
                   placeholder="e.g. CS 240"
                   value={newCode}
                   onChange={(e) => setNewCode(e.target.value)}
-                  className="mt-1 w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -393,7 +396,7 @@ export const GradesPage: React.FC = () => {
                   placeholder="e.g. Advanced Operating Systems"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="mt-1 w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -403,6 +406,7 @@ export const GradesPage: React.FC = () => {
                   <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Credits</label>
                   <input
                     type="number"
+                    aria-label="Credits"
                     min="1"
                     max="6"
                     value={newCredits}
@@ -414,6 +418,7 @@ export const GradesPage: React.FC = () => {
                 <div>
                   <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Target Grade</label>
                   <select
+                    aria-label="Target grade"
                     value={newTarget}
                     onChange={(e) => setNewTarget(e.target.value)}
                     className="mt-1 w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500"

@@ -89,6 +89,17 @@ export const FocusTimerPage: React.FC = () => {
     }
   }, [timerIsRunning, timerMode, timerSecondsLeft]);
 
+
+  // Screen readers hear changes of state and each remaining minute, not every tick.
+  const minutesLeft = Math.ceil(timerSecondsLeft / 60);
+  const modeLabel = timerMode === 'focus' ? 'Focus' : timerMode === 'shortBreak' ? 'Short break' : 'Long break';
+  const announcement =
+    timer.status === 'running'
+      ? `${modeLabel} running, ${minutesLeft} ${minutesLeft === 1 ? 'minute' : 'minutes'} left`
+      : timer.status === 'paused'
+      ? `${modeLabel} paused, ${minutesLeft} ${minutesLeft === 1 ? 'minute' : 'minutes'} left`
+      : `${modeLabel} ready, ${Math.round(timer.durationSec / 60)} minutes`;
+
   // Calculate duration and progress ratio
   const totalDuration = timer.durationSec;
 
@@ -107,7 +118,7 @@ export const FocusTimerPage: React.FC = () => {
   const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
   const soundscapesList: { id: SoundscapeType; label: string; icon: React.ReactNode }[] = [
-    { id: 'off', label: 'Off', icon: <VolumeX className="w-5 h-5 text-zinc-400" /> },
+    { id: 'off', label: 'Off', icon: <VolumeX className="w-5 h-5 text-zinc-600 dark:text-zinc-400" /> },
     { id: 'rain', label: 'Rain', icon: <CloudRain className="w-5 h-5 text-indigo-400" /> },
     { id: 'brown', label: 'Brown noise', icon: <Waves className="w-5 h-5 text-cyan-400" /> },
     { id: 'white', label: 'White noise', icon: <BookOpen className="w-5 h-5 text-amber-400" /> },
@@ -121,10 +132,12 @@ export const FocusTimerPage: React.FC = () => {
         <h1 className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
           Focus timer
         </h1>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 font-sans">
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 font-sans">
           Work in timed blocks, then take a break.
         </p>
       </div>
+
+      <div role="status" aria-live="polite" className="sr-only">{announcement}</div>
 
       {/* Mode Selector Tabs */}
       <div className="flex justify-center">
@@ -134,7 +147,7 @@ export const FocusTimerPage: React.FC = () => {
             className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
               timerMode === 'focus'
                 ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold shadow-2xs'
-                : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             Focus (25m)
@@ -144,7 +157,7 @@ export const FocusTimerPage: React.FC = () => {
             className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
               timerMode === 'shortBreak'
                 ? 'bg-emerald-600 text-white font-semibold shadow-2xs'
-                : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             Short Break (5m)
@@ -154,7 +167,7 @@ export const FocusTimerPage: React.FC = () => {
             className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
               timerMode === 'longBreak'
                 ? 'bg-blue-600 text-white font-semibold shadow-2xs'
-                : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             Long Break (15m)
@@ -200,9 +213,9 @@ export const FocusTimerPage: React.FC = () => {
           {/* Inner Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
             <span className="text-4xl md:text-5xl font-light text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums ">
-              {formatTimeLeft(timerSecondsLeft)}
+              <span role="timer" aria-live="off" aria-label={`${timerMode === 'focus' ? 'Focus' : 'Break'} timer`}>{formatTimeLeft(timerSecondsLeft)}</span>
             </span>
-            <span className="text-[11px] tabular-nums text-zinc-400 mt-2">
+            <span className="text-[11px] tabular-nums text-zinc-600 dark:text-zinc-400 mt-2">
               {timerMode === 'focus' ? 'Focus' : 'Break'}
             </span>
             {timerIsRunning && (
@@ -279,7 +292,7 @@ export const FocusTimerPage: React.FC = () => {
                   </span>
                 )}
               </h3>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
                 Optional. Plays while the timer runs. Binaural tones work best with headphones.
               </p>
             </div>
@@ -288,9 +301,10 @@ export const FocusTimerPage: React.FC = () => {
           {/* Volume slider */}
           {soundscape !== 'off' && (
             <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
-              <Volume2 className="h-3 w-3 text-zinc-400" />
+              <Volume2 className="h-3 w-3 text-zinc-600 dark:text-zinc-400" />
               <input
                 type="range"
+                aria-label="Sound volume"
                 min="0.05"
                 max="0.8"
                 step="0.05"
@@ -298,7 +312,7 @@ export const FocusTimerPage: React.FC = () => {
                 onChange={(e) => setSoundscapeVolume(Number(e.target.value))}
                 className="w-20 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
-              <span className="tabular-nums text-[10px] text-zinc-400 w-6">
+              <span className="tabular-nums text-[10px] text-zinc-600 dark:text-zinc-400 w-6">
                 {Math.round(soundscapeVolume * 100)}%
               </span>
             </div>
@@ -322,7 +336,7 @@ export const FocusTimerPage: React.FC = () => {
               </div>
               <div>
                 <p className="text-[11px] font-medium leading-tight">{item.label}</p>
-                <p className="text-[10px] tabular-nums text-zinc-400 mt-0.5">
+                <p className="text-[10px] tabular-nums text-zinc-600 dark:text-zinc-400 mt-0.5">
                   {soundscape === item.id ? (timerIsRunning ? 'Playing' : 'Selected') : ''}
                 </p>
               </div>
@@ -335,7 +349,7 @@ export const FocusTimerPage: React.FC = () => {
       <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex items-center justify-between transition-colors">
         <div>
           <h4 className="font-medium text-zinc-900 dark:text-zinc-100 text-xs">Focus sessions completed</h4>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-sans">
+          <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-sans">
             Counted on this device
           </p>
         </div>
@@ -346,7 +360,7 @@ export const FocusTimerPage: React.FC = () => {
               className={`h-6 w-6 rounded-md flex items-center justify-center tabular-nums text-xs ${
                 i < pomodorosCompleted % 4 || pomodorosCompleted >= 4
                   ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
               }`}
             >
               <Flame className="h-3 w-3" />

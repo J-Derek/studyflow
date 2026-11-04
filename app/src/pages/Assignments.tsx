@@ -76,7 +76,7 @@ export const AssignmentsPage: React.FC = () => {
     <div className="space-y-5 animate-fade-in pb-16">
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Assignments</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Everything due, in one list.</p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">Everything due, in one list.</p>
       </div>
 
       {/* Filter and Search Bar */}
@@ -84,13 +84,13 @@ export const AssignmentsPage: React.FC = () => {
         <div className="flex flex-col md:flex-row items-center gap-2.5">
           {/* Search Box */}
           <div className="relative w-full md:flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" />
             <input
               type="text"
               aria-label="Search assignments" placeholder="Search by title, course or notes"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 transition"
+              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 transition"
             />
           </div>
 
@@ -103,7 +103,7 @@ export const AssignmentsPage: React.FC = () => {
                 className={`flex-1 md:flex-none px-2.5 py-1 rounded-md text-xs font-medium capitalize transition-colors ${
                   selectedStatus === s 
                     ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-2xs font-semibold' 
-                    : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                    : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
                 }`}
               >
                 {s}
@@ -117,8 +117,9 @@ export const AssignmentsPage: React.FC = () => {
           <div className="flex items-center gap-3">
             {/* Course filter */}
             <div className="flex items-center gap-1.5">
-              <span className="text-zinc-400 tabular-nums text-[11px]">Course:</span>
+              <span className="text-zinc-600 dark:text-zinc-400 tabular-nums text-[11px]">Course:</span>
               <select
+                aria-label="Filter by course"
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
                 className="px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
@@ -134,8 +135,9 @@ export const AssignmentsPage: React.FC = () => {
 
             {/* Priority filter */}
             <div className="flex items-center gap-1.5">
-              <span className="text-zinc-400 tabular-nums text-[11px]">Priority:</span>
+              <span className="text-zinc-600 dark:text-zinc-400 tabular-nums text-[11px]">Priority:</span>
               <select
+                aria-label="Filter by priority"
                 value={selectedPriority}
                 onChange={(e) => setSelectedPriority(e.target.value)}
                 className="px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
@@ -148,7 +150,7 @@ export const AssignmentsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="text-[11px] tabular-nums text-zinc-400">
+          <div className="text-[11px] tabular-nums text-zinc-600 dark:text-zinc-400">
             {filteredAssignments.length} of {assignments.length} assignments
           </div>
         </div>
@@ -158,11 +160,11 @@ export const AssignmentsPage: React.FC = () => {
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark overflow-hidden divide-y divide-zinc-200/70 dark:divide-zinc-800/70 shadow-2xs">
         {filteredAssignments.length === 0 ? (
           <div className="py-12 text-center p-6">
-            <CheckSquare className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
+            <CheckSquare className="h-8 w-8 text-zinc-600 dark:text-zinc-400 mx-auto mb-2" />
             <h3 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
               {assignments.length === 0 ? 'Your assignments data is empty' : 'No assignments match filters'}
             </h3>
-            <p className="text-[11px] text-zinc-400 max-w-sm mx-auto mt-0.5">
+            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mt-0.5">
               {assignments.length === 0 
                 ? 'Add your first problem set, paper, or lab report to start tracking your deadlines.' 
                 : 'Adjust your search filters or click "New Assignment" to add an assignments milestone.'}
@@ -197,7 +199,7 @@ export const AssignmentsPage: React.FC = () => {
                   <div className="flex items-center gap-3 overflow-hidden min-w-0">
                     <button
                       onClick={() => toggleAssignmentComplete(asg.id)}
-                      className="text-zinc-300 dark:text-zinc-600 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shrink-0"
+                      className="text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shrink-0"
                       title={isCompleted ? `Mark "${asg.title}" incomplete` : `Mark "${asg.title}" complete`}
                       aria-label={isCompleted ? `Mark "${asg.title}" incomplete` : `Mark "${asg.title}" complete`}
                     >
@@ -215,19 +217,19 @@ export const AssignmentsPage: React.FC = () => {
 
                       <span
                         className={`text-xs font-medium truncate ${
-                          isCompleted ? 'line-through text-zinc-400 dark:text-zinc-500' : 'text-zinc-900 dark:text-zinc-100'
+                          isCompleted ? 'line-through text-zinc-600 dark:text-zinc-400' : 'text-zinc-900 dark:text-zinc-100'
                         }`}
                       >
                         {asg.title}
                       </span>
                       {asg.sample && (
-                        <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded border border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400">
+                        <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded border border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400">
                           Sample
                         </span>
                       )}
 
                       {asg.notes && (
-                        <span className="text-[11px] text-zinc-400 truncate hidden md:inline">
+                        <span className="text-[11px] text-zinc-600 dark:text-zinc-400 truncate hidden md:inline">
                           — {asg.notes}
                         </span>
                       )}
@@ -237,12 +239,12 @@ export const AssignmentsPage: React.FC = () => {
                   {/* Right Metadata & Controls */}
                   <div className="flex items-center gap-3 shrink-0">
                     {/* Priority — monochrome text only */}
-                    <span className="tabular-nums text-[10px] text-zinc-400 dark:text-zinc-500 hidden sm:inline capitalize">
+                    <span className="tabular-nums text-[10px] text-zinc-600 dark:text-zinc-400 hidden sm:inline capitalize">
                       {asg.priority}
                     </span>
 
                     {/* Progress Percentage */}
-                    <div className="hidden lg:flex items-center gap-1.5 tabular-nums text-[11px] text-zinc-400">
+                    <div className="hidden lg:flex items-center gap-1.5 tabular-nums text-[11px] text-zinc-600 dark:text-zinc-400">
                       <div className="w-12 bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
                         <div
                           className="bg-zinc-400 dark:bg-zinc-500 h-full rounded-full"
@@ -256,8 +258,8 @@ export const AssignmentsPage: React.FC = () => {
                     <span
                       className={`tabular-nums text-[11px]  ${
                         isUrgent && !isCompleted
-                          ? 'text-red-500 dark:text-red-400'
-                          : 'text-zinc-500 dark:text-zinc-400'
+                          ? 'text-red-600 dark:text-red-400'
+                          : 'text-zinc-600 dark:text-zinc-400'
                       }`}
                     >
                       {label}
@@ -267,7 +269,7 @@ export const AssignmentsPage: React.FC = () => {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleEdit(asg)}
-                        className="p-1 rounded text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                        className="p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                         title="Edit Assignment"
                         aria-label={`Edit assignment "${asg.title}"`}
                       >
@@ -275,7 +277,7 @@ export const AssignmentsPage: React.FC = () => {
                       </button>
                       <button
                         onClick={() => deleteAssignment(asg.id)}
-                        className="p-1 rounded text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                        className="p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                         title="Delete Assignment"
                         aria-label={`Delete assignment "${asg.title}"`}
                       >
@@ -289,7 +291,7 @@ export const AssignmentsPage: React.FC = () => {
                   <div className="pl-7 pr-2 pt-2 border-t border-zinc-100 dark:border-zinc-800/60 space-y-1.5">
                     {effectiveSubtasks.length > 0 && (
                       <>
-                        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                        <div className="text-xs text-zinc-600 dark:text-zinc-400">
                           Subtasks · {effectiveSubtasks.filter((st) => st.completed).length} of {effectiveSubtasks.length} done
                         </div>
                         <ul className="grid grid-cols-1 sm:grid-cols-3 gap-1">
@@ -304,7 +306,7 @@ export const AssignmentsPage: React.FC = () => {
                                 />
                                 <span
                                   className={`truncate ${
-                                    st.completed ? 'line-through text-zinc-400 dark:text-zinc-500' : 'text-zinc-700 dark:text-zinc-300'
+                                    st.completed ? 'line-through text-zinc-600 dark:text-zinc-400' : 'text-zinc-700 dark:text-zinc-300'
                                   }`}
                                 >
                                   {st.title}
@@ -330,7 +332,7 @@ export const AssignmentsPage: React.FC = () => {
                             setNewSubtaskInputs((prev) => ({ ...prev, [asg.id]: '' }));
                           }
                         }}
-                        className="w-full max-w-sm px-2.5 py-1.5 text-sm rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full max-w-sm px-2.5 py-1.5 text-sm rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                     )}
                   </div>
@@ -340,7 +342,7 @@ export const AssignmentsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setAddingFor(asg.id)}
-                      className="text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 underline-offset-2 hover:underline cursor-pointer"
+                      className="text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 underline-offset-2 hover:underline cursor-pointer"
                     >
                       Add subtasks
                     </button>
@@ -353,7 +355,7 @@ export const AssignmentsPage: React.FC = () => {
 
         {/* Linear-Grade Pagination Footer */}
         {filteredAssignments.length > ITEMS_PER_PAGE && (
-          <div className="p-3 bg-zinc-50/50 dark:bg-zinc-850/40 border-t border-zinc-200/70 dark:border-zinc-800/70 flex items-center justify-between text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
+          <div className="p-3 bg-zinc-50/50 dark:bg-zinc-850/40 border-t border-zinc-200/70 dark:border-zinc-800/70 flex items-center justify-between text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
             <span>
               Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredAssignments.length)} of {filteredAssignments.length}
             </span>
@@ -366,7 +368,7 @@ export const AssignmentsPage: React.FC = () => {
               >
                 Previous
               </button>
-              <span className="px-2 text-zinc-400">
+              <span className="px-2 text-zinc-600 dark:text-zinc-400">
                 {currentPage} / {totalPages}
               </span>
               <button

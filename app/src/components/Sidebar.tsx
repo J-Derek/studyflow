@@ -75,7 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
           </div>
           <div>
             <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 tracking-tight">StudyFlow</span>
-            <p className="text-[11px] text-zinc-400 dark:text-zinc-500 tabular-nums">Study planner</p>
+            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 tabular-nums">Study planner</p>
           </div>
         </div>
 
@@ -87,10 +87,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
               "flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium transition-colors duration-150",
               theme === 'light'
                 ? "bg-white text-zinc-900 shadow-2xs border border-zinc-200/60"
-                : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                : "text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
             )}
           >
-            <Sun className={cn("h-3 w-3", theme === 'light' ? "text-amber-500 fill-amber-500" : "text-zinc-400")} />
+            <Sun className={cn("h-3 w-3", theme === 'light' ? "text-amber-500 fill-amber-500" : "text-zinc-600 dark:text-zinc-400")} />
             <span>Light</span>
           </button>
           <button
@@ -99,10 +99,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
               "flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium transition-colors duration-150",
               theme === 'dark'
                 ? "bg-zinc-900 text-zinc-100 shadow-2xs border border-zinc-700/80"
-                : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                : "text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
             )}
           >
-            <Moon className={cn("h-3 w-3", theme === 'dark' ? "text-blue-400 fill-blue-400" : "text-zinc-400")} />
+            <Moon className={cn("h-3 w-3", theme === 'dark' ? "text-blue-400 fill-blue-400" : "text-zinc-600 dark:text-zinc-400")} />
             <span>Dark</span>
           </button>
         </div>
@@ -129,7 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
                 )}
               >
                 <div className="flex items-center gap-2.5">
-                  <Icon className={cn('h-3.5 w-3.5', isActive ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400 dark:text-zinc-500')} />
+                  <Icon className={cn('h-3.5 w-3.5', isActive ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-600 dark:text-zinc-400')} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge !== undefined && item.badge > 0 && (
@@ -166,10 +166,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
               <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {isAnonymous ? 'Guest' : user.name}
               </p>
-              <p className="text-[10px] tabular-nums text-zinc-400 dark:text-zinc-500 truncate">
+              <p className="text-[10px] tabular-nums text-zinc-600 dark:text-zinc-400 truncate">
                 {isAnonymous ? 'Not signed in' : (userEmail || 'Cloud Student')}
               </p>
             </div>
+            <span className="sr-only">, edit profile</span>
           </button>
 
           {!isAnonymous && (
@@ -177,7 +178,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
               onClick={handleSignOut}
               disabled={isAuthLoading}
               title="Sign out"
-              className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              className="p-1 rounded-md text-zinc-600 dark:text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
             >
               <LogOut className="h-3 w-3" />
             </button>
@@ -186,7 +187,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
 
         {/* Sync Status Banner */}
         <div className="pt-1.5 border-t border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-between text-[11px] tabular-nums">
-          <span className="text-zinc-500 dark:text-zinc-400">{isAnonymous ? 'Guest account' : 'Signed in'}</span>
+          <span className="text-zinc-600 dark:text-zinc-400">{isAnonymous ? 'Guest account' : 'Signed in'}</span>
 
           <button
             onClick={() => {

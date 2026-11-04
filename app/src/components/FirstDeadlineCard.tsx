@@ -108,7 +108,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
                 <span className="tabular-nums text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                   Assignment Saved
                 </span>
-                <span className="text-xs text-zinc-500 tabular-nums">Live countdown active</span>
+                <span className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">Live countdown active</span>
               </div>
               <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mt-1">
                 "{savedAssignment.title}" is locked in.
@@ -150,7 +150,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
         <h2 className="text-lg md:text-xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
           What is your next deadline?
         </h2>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="text-xs text-zinc-600 dark:text-zinc-400">
           Add an exam, paper or homework. StudyFlow shows how many days are left.
         </p>
       </div>
@@ -167,7 +167,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Problem Set 2 or Chapter 4 Summary"
-              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
+              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
             />
           </div>
 
@@ -181,7 +181,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               value={course}
               onChange={(e) => setCourse(e.target.value)}
               placeholder="e.g. CS 101 or Physics"
-              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
+              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
             />
           </div>
         </div>
@@ -241,6 +241,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             <div className="relative inline-flex items-center min-h-[44px]">
               <input
                 type="date"
+                aria-label="Due date"
                 value={dueDate}
                 onChange={(e) => {
                   setDueDate(e.target.value);
@@ -255,7 +256,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
         {/* Priority & Submit */}
         <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-zinc-100 dark:border-zinc-800/80">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-zinc-500 font-medium">Priority:</span>
+            <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium">Priority:</span>
             {(['low', 'medium', 'high'] as Priority[]).map((p) => (
               <button
                 key={p}
@@ -264,7 +265,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
                 className={`text-[11px] tabular-nums px-2.5 py-1 min-h-[44px] rounded capitalize transition cursor-pointer ${
                   priority === p
                     ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold'
-                    : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
                 }`}
               >
                 {p}

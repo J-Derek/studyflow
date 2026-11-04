@@ -65,7 +65,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onClick={() => setActiveTab('timer')}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 font-medium text-sm border border-zinc-200/80 dark:border-zinc-700/80 transition-colors active:scale-95 cursor-pointer"
           >
-            <Flame className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+            <Flame className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
             <span>Start focus timer</span>
           </button>
         </div>
@@ -95,45 +95,45 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-2 lg:grid-cols-4 overflow-hidden">
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">To do</span>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">To do</span>
           <div className="my-2.5 flex items-baseline gap-2">
             <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{pendingAssignments.length}</span>
             
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500">
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
             <span>{completedAssignments} done</span>
             
           </div>
         </div>
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Completed</span>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Completed</span>
           <div className="my-2.5 flex items-baseline gap-2">
             <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{completionRate}%</span>
             
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500">
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
             <span>{completedAssignments} of {totalAssignments}</span>
             
           </div>
         </div>
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Focus sessions</span>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Focus sessions</span>
           <div className="my-2.5 flex items-baseline gap-2">
             <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{pomodorosCompleted}</span>
-            <span className="text-xs text-zinc-400">completed</span>
+            <span className="text-xs text-zinc-600 dark:text-zinc-400">completed</span>
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500">
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
             <span>About {focusHours} h of focus</span>
             
           </div>
         </div>
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Projected GPA</span>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Projected GPA</span>
           <div className="my-2.5 flex items-baseline gap-2">
             <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{hasGpa ? gpaString : "—"}</span>
             
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500">
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
             <span>{hasGpa ? academicStanding.standing : "Add graded work in Grades"}</span>
             
           </div>
@@ -166,13 +166,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {assignments.length === 0 ? (
                   <>
                     <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">No deadlines scheduled yet</h4>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">Use the quick start card above or click "Add assignment" to begin.</p>
+                    <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5">Use the quick start card above or click "Add assignment" to begin.</p>
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
                     <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">All assignments cleared</h4>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">No urgent deadlines pending on your course.</p>
+                    <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5">No urgent deadlines pending on your course.</p>
                   </>
                 )}
               </div>
@@ -187,7 +187,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <div className="flex items-center gap-2 overflow-hidden min-w-0">
                       <button
                         onClick={() => toggleAssignmentComplete(asg.id)}
-                        className="min-h-[44px] min-w-[44px] flex items-center justify-center -my-2 -ml-2 text-zinc-300 dark:text-zinc-600 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shrink-0 cursor-pointer"
+                        className="min-h-[44px] min-w-[44px] flex items-center justify-center -my-2 -ml-2 text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shrink-0 cursor-pointer"
                         title={`Mark "${asg.title}" complete`}
                         aria-label={`Mark "${asg.title}" complete`}
                       >
@@ -204,7 +204,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         </span>
 
                         {asg.notes && (
-                          <span className="text-[11px] text-zinc-400 dark:text-zinc-500 truncate hidden md:inline">
+                          <span className="text-[11px] text-zinc-600 dark:text-zinc-400 truncate hidden md:inline">
                             — {asg.notes}
                           </span>
                         )}
@@ -213,7 +213,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                     <div className="flex items-center gap-3 shrink-0">
                       {/* Priority — monochrome text only, no color coding */}
-                      <span className="tabular-nums text-[10px] text-zinc-400 dark:text-zinc-500 hidden sm:inline capitalize">
+                      <span className="tabular-nums text-[10px] text-zinc-600 dark:text-zinc-400 hidden sm:inline capitalize">
                         {asg.priority}
                       </span>
 
@@ -221,8 +221,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       <span
                         className={`tabular-nums text-[11px]  ${
                           isUrgent
-                            ? 'text-red-500 dark:text-red-400'
-                            : 'text-zinc-500 dark:text-zinc-400'
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-zinc-600 dark:text-zinc-400'
                         }`}
                       >
                         {label}
@@ -241,7 +241,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Today’s classes</h2>
             <button
               onClick={() => setActiveTab('calendar')}
-              className="text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 min-h-[44px] inline-flex items-center py-2 px-1 transition-colors cursor-pointer"
+              className="text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 min-h-[44px] inline-flex items-center py-2 px-1 transition-colors cursor-pointer"
             >
               Full week →
             </button>
@@ -250,14 +250,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 space-y-3.5 shadow-2xs">
             {todaysSessions.length === 0 ? (
               <div className="py-6 text-center">
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">No lecture sessions scheduled today.</p>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">No lecture sessions scheduled today.</p>
               </div>
             ) : (
               todaysSessions.map((session) => (
                 <div key={session.id} className="flex items-start gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 last:border-0 last:pb-0">
                   <div className="w-14 shrink-0 text-right tabular-nums">
                     <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">{session.startTime}</span>
-                    <span className="block text-[10px] text-zinc-400 dark:text-zinc-500">{session.endTime}</span>
+                    <span className="block text-[10px] text-zinc-600 dark:text-zinc-400">{session.endTime}</span>
                   </div>
                   <div className="h-full w-0.5 bg-zinc-400 dark:bg-zinc-600 shrink-0 self-stretch rounded-full" />
                   <div className="overflow-hidden min-w-0">
@@ -265,7 +265,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       <span className="tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
                         {session.course}
                       </span>
-                      <span className="text-[10px] capitalize text-zinc-400 tabular-nums">{session.type}</span>
+                      <span className="text-[10px] capitalize text-zinc-600 dark:text-zinc-400 tabular-nums">{session.type}</span>
                     </div>
                     <h5 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">{session.title}</h5>
                   </div>

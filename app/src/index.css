@@ -9,6 +9,29 @@
   }
 }
 
+/* Keyboard focus: always visible, never shown for mouse clicks */
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[role='button']:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #1d4ed8 !important;
+  outline-offset: 2px;
+}
+.dark a:focus-visible,
+.dark button:focus-visible,
+.dark select:focus-visible,
+.dark input:focus-visible,
+.dark textarea:focus-visible,
+.dark summary:focus-visible,
+.dark [role='button']:focus-visible,
+.dark [tabindex]:focus-visible {
+  outline-color: #93c5fd !important;
+}
+
 /* Custom scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;

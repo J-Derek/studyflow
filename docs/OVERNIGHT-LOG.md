@@ -19,3 +19,12 @@ Started after the plan in OVERNIGHT-PLAN.md was approved.
 - Guest notice: absent on first load, appears after the first real (non-sample) assignment, remembered when dismissed. Sample data alone does not trigger it. Playwright covers all three.
 - Grades now sync: new `grades` rules (+4 rules tests, 44 total), mappers (undefined scores omitted), listener with one-time upload, add/edit/delete, sample/clear/import/guest-merge all include grades. Playwright proves create, edit and delete reach the emulator.
 - Evidence: unit 101, rules 44, Playwright 13, build ok.
+
+## Step 4: accessibility (done)
+- Added axe-core to Playwright (WCAG 2.0/2.1/2.2 A + AA tags). First scan: **all 20 page scans failed** (192 contrast nodes, 12 unnamed selects, 4 unlabeled sliders, nav name mismatches).
+- Fixes: systematic colour remap (light `zinc-400/500` -> `zinc-600`, dark `zinc-500` -> `zinc-400`, red/blue/amber/indigo tweaks); aria-labels on every select, slider, number/date/time input; nav link names match visible text; icon-only close buttons named; tour dots get a 24px hit area.
+- Dialogs: only Help had role="dialog". New `useDialog` hook gives all five modals (Help, Backup, Profile, Add assignment, Search) role/aria-modal/name, Escape to close, focus trap, focus restored to the opener.
+- Keyboard: skip link + focused `main`, global visible focus ring (light and dark) incl. inputs/sliders, which had none. 80 Tab stops per route checked.
+- Timer: `role="timer"` with a name, and a polite live region that announces state changes and each remaining minute, not every second.
+- Evidence: Playwright 56 passed (20 page scans = 5 routes x light/dark x desktop/375px mobile; 10 dialog tests; 10 keyboard walks + skip link + keyboard add + timer announcements), all axe violations 0.
+- Not covered: a real screen reader (NVDA/VoiceOver) was not run; axe cannot judge reading order or meaningful labels. Contrast was measured by axe only; text on gradient/image backgrounds would be flagged as "incomplete" and none appeared.

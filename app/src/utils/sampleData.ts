@@ -76,7 +76,7 @@ export function buildSampleData(now: Date = new Date()): {
       courseName: 'Algorithms (sample)',
       credits: 3,
       targetLetter: 'A',
-      color: '#6366F1',
+      color: '#4F46E5',
       sample: true,
       assessments: [
         { id: 'sample-a-1', name: 'Midterm', weight: 40, score: 82 },

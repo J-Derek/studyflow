@@ -32,24 +32,24 @@ export const MobileNav: React.FC = () => {
               e.preventDefault();
               setActiveTab(item.id);
             }}
-            aria-label={item.label}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
               'flex flex-col items-center justify-center min-h-[48px] min-w-[48px] px-2 py-1 rounded-lg transition-colors duration-150 relative cursor-pointer select-none',
               isActive 
                 ? 'text-zinc-950 dark:text-zinc-50 font-medium' 
-                : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
             )}
           >
             <div className="relative">
-              <Icon className={cn('h-4 w-4', isActive ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400 dark:text-zinc-500')} />
+              <Icon className={cn('h-4 w-4', isActive ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-600 dark:text-zinc-400')} />
               {item.badge !== undefined && item.badge > 0 && (
-                <span className="absolute -top-1 -right-2 h-3.5 min-w-3.5 px-0.5 bg-blue-600 text-white text-[9px] tabular-nums rounded-full flex items-center justify-center font-semibold">
+                <span aria-hidden="true" className="absolute -top-1 -right-2 h-3.5 min-w-3.5 px-0.5 bg-blue-600 text-white text-[9px] tabular-nums rounded-full flex items-center justify-center font-semibold">
                   {item.badge}
                 </span>
               )}
             </div>
             <span className="text-[10px] mt-0.5 tracking-tight">{item.label}</span>
+            {item.badge !== undefined && item.badge > 0 && <span className="sr-only">, {item.badge} to do</span>}
           </a>
         );
       })}

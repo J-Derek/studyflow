@@ -65,6 +65,16 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-canvas-light dark:bg-canvas-dark text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row font-sans transition-colors duration-150">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:px-3 focus:py-2 focus:rounded-md focus:bg-zinc-900 focus:text-white dark:focus:bg-zinc-100 dark:focus:text-zinc-900 text-sm font-medium"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('main')?.focus();
+        }}
+      >
+        Skip to content
+      </a>
       {/* Desktop Navigation Sidebar */}
       <Sidebar
         onOpenBackup={() => setIsBackupOpen(true)}
@@ -83,7 +93,7 @@ export function App() {
         />
 
         {/* Page Content Viewport with Accessible Suspense Fallback */}
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8">
+        <main id="main" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 focus:outline-none">
           <Suspense
             fallback={
               <div

@@ -1,3 +1,4 @@
+import { useDialog } from '../lib/useDialog';
 import React, { useState } from 'react';
 import { 
   X, 
@@ -24,6 +25,8 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
   const [activeTab, setActiveTabLocal] = useState<'tour' | 'sandbox' | 'shortcuts'>('tour');
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isSandboxSuccess, setIsSandboxSuccess] = useState<string | null>(null);
+
+  const dialogRef = useDialog(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -123,6 +126,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in select-none">
       <div 
         className="w-full max-w-xl bg-surface-light dark:bg-surface-dark border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="help-modal-title"
@@ -137,7 +141,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
               <h2 id="help-modal-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 Help
               </h2>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 tabular-nums">
+              <p className="text-[11px] text-zinc-600 dark:text-zinc-400 tabular-nums">
                 A quick tour of what is here
               </p>
             </div>
@@ -146,7 +150,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
           <button
             onClick={onClose}
             aria-label="Close help"
-            className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+            className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -159,7 +163,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
             className={`px-3 py-2 text-xs font-medium border-b-2 transition min-h-[44px] cursor-pointer ${
               activeTab === 'tour'
                 ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100'
-                : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+                : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-300'
             }`}
           >
             Tour
@@ -169,7 +173,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
             className={`px-3 py-2 text-xs font-medium border-b-2 transition min-h-[44px] cursor-pointer ${
               activeTab === 'sandbox'
                 ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100'
-                : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+                : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-300'
             }`}
           >
             Sample data
@@ -179,7 +183,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
             className={`px-3 py-2 text-xs font-medium border-b-2 transition min-h-[44px] cursor-pointer ${
               activeTab === 'shortcuts'
                 ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100'
-                : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+                : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-300'
             }`}
           >
             Shortcuts
@@ -198,7 +202,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                       <Icon className="h-6 w-6" />
                     </div>
                     <div>
-                      <span className="tabular-nums text-[10px] uppercase font-semibold text-zinc-400">
+                      <span className="tabular-nums text-[10px] uppercase font-semibold text-zinc-600 dark:text-zinc-400">
                         {currentSlide + 1} of {slides.length}
                       </span>
                       <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
@@ -207,7 +211,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                     </div>
                   </div>
 
-                  <span className="text-[11px] tabular-nums text-zinc-400 dark:text-zinc-500">
+                  <span className="text-[11px] tabular-nums text-zinc-600 dark:text-zinc-400">
                     {currentSlide + 1} / {slides.length}
                   </span>
                 </div>
@@ -258,14 +262,18 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                 {slides.map((_, idx) => (
                   <button
                     key={idx}
+                    type="button"
                     onClick={() => setCurrentSlide(idx)}
                     aria-label={`Go to slide ${idx + 1}`}
-                    className={`h-2 rounded-full transition-all cursor-pointer ${
-                      currentSlide === idx 
-                        ? 'w-6 bg-zinc-900 dark:bg-zinc-100' 
-                        : 'w-2 bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400'
-                    }`}
-                  />
+                    aria-current={currentSlide === idx ? 'true' : undefined}
+                    className="h-6 min-w-6 px-1 inline-flex items-center justify-center cursor-pointer"
+                  >
+                    <span
+                      className={`block h-2 rounded-full transition-all ${
+                        currentSlide === idx ? 'w-6 bg-zinc-900 dark:bg-zinc-100' : 'w-2 bg-zinc-400 dark:bg-zinc-600'
+                      }`}
+                    />
+                  </button>
                 ))}
               </div>
             </div>
@@ -277,7 +285,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                 <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                   Try it with sample data
                 </h4>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5">
                   Load a few example assignments, classes and a course. They are labelled Sample and are left out of your GPA, backups and calendar export.
                 </p>
 
@@ -317,7 +325,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                 )}
               </div>
 
-              <div className="p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 text-[11px] text-zinc-500 dark:text-zinc-400 space-y-1">
+              <div className="p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 text-[11px] text-zinc-600 dark:text-zinc-400 space-y-1">
                 <span className="font-semibold text-zinc-700 dark:text-zinc-300 block">
                   Where your data lives
                 </span>
@@ -351,7 +359,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
 
         {/* Footer */}
         <div className="p-4 border-t border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/30 flex items-center justify-between">
-          <span className="text-[11px] tabular-nums text-zinc-400">
+          <span className="text-[11px] tabular-nums text-zinc-600 dark:text-zinc-400">
             StudyFlow · Study planner
           </span>
           <button

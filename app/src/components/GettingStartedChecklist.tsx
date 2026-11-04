@@ -90,7 +90,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
               {completedCount} / {steps.length} completed
             </span>
           </div>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+          <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5">
             Four things worth doing in your first week.
           </p>
         </div>
@@ -99,7 +99,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
           onClick={dismissOnboarding}
           title="Dismiss getting started checklist"
           aria-label="Dismiss getting started checklist"
-          className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors cursor-pointer"
+          className="p-1 text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors cursor-pointer"
         >
           <X className="h-4 w-4" />
         </button>
@@ -133,24 +133,24 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
                   {step.completed ? (
                     <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                   ) : (
-                    <Circle className="h-4 w-4 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500" />
+                    <Circle className="h-4 w-4 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-500" />
                   )}
                 </div>
                 <div className="min-w-0">
                   <span className={`text-xs font-medium flex items-center gap-1 truncate ${
-                    step.completed ? 'line-through text-zinc-400' : 'text-zinc-900 dark:text-zinc-100'
+                    step.completed ? 'line-through text-zinc-600 dark:text-zinc-400' : 'text-zinc-900 dark:text-zinc-100'
                   }`}>
-                    <Icon className="h-3 w-3 text-zinc-400 shrink-0" />
+                    <Icon className="h-3 w-3 text-zinc-600 dark:text-zinc-400 shrink-0" />
                     <span>{step.title}</span>
                   </span>
-                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 block truncate">
+                  <span className="text-[10px] text-zinc-600 dark:text-zinc-400 block truncate">
                     {step.desc}
                   </span>
                 </div>
               </div>
 
               {!step.completed && (
-                <ChevronRight className="h-3.5 w-3.5 text-zinc-400 group-hover:translate-x-0.5 transition-transform shrink-0 mt-1" />
+                <ChevronRight className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400 group-hover:translate-x-0.5 transition-transform shrink-0 mt-1" />
               )}
             </button>
           );

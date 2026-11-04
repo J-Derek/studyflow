@@ -124,7 +124,7 @@ export function docToGrade(id: string, data: Doc): CourseGrade {
     courseName: typeof data.courseName === 'string' ? data.courseName : '',
     credits: typeof data.credits === 'number' && Number.isFinite(data.credits) ? data.credits : 0,
     targetLetter: typeof data.targetLetter === 'string' ? data.targetLetter : 'A',
-    color: typeof data.color === 'string' ? data.color : '#6366F1',
+    color: typeof data.color === 'string' ? data.color : '#4F46E5',
     assessments: raw
       .filter((a): a is Record<string, unknown> => !!a && typeof a === 'object')
       .map((a) => ({

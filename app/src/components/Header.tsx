@@ -85,11 +85,11 @@ export const Header: React.FC<HeaderProps> = ({
           {onOpenSearch && (
             <button
               onClick={onOpenSearch}
-              className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
+              className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
             >
               <Search className="h-3 w-3" />
               <span>Search assignments…</span>
-              <kbd className="inline-flex items-center gap-0.5 px-1 py-0.2 text-[10px] tabular-nums bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-400">
+              <kbd className="inline-flex items-center gap-0.5 px-1 py-0.2 text-[10px] tabular-nums bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-400">
                 <Command className="h-2.5 w-2.5" /> K
               </kbd>
             </button>
@@ -166,8 +166,8 @@ export const Header: React.FC<HeaderProps> = ({
                 else handleLinkGoogle();
               }}
               disabled={isLinking}
-              aria-label="Back up and sync your data"
-              title="Back up and sync your data"
+              aria-label="Backup and sync your data"
+              title="Backup and sync your data"
               className="flex items-center justify-center gap-1.5 px-3 min-h-[44px] min-w-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium transition-colors disabled:opacity-60 cursor-pointer"
             >
               <LogIn className="h-3.5 w-3.5 text-blue-600" />
