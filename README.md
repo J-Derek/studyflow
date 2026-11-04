@@ -1,4 +1,4 @@
-# StudyFlow — Intelligent Academic Command Center & GPA Simulator
+# StudyFlow — Deadlines, Timetable, Focus Timer & GPA What-If
 
 [![Production Status](https://img.shields.io/badge/Production-Live-success?style=flat-square)](https://app-beta-lilac-23.vercel.app)
 [![Vercel Deployment](https://img.shields.io/badge/Deploy-Vercel-black?style=flat-square&logo=vercel)](https://app-beta-lilac-23.vercel.app)
@@ -8,7 +8,7 @@
 [![Firebase Firestore](https://img.shields.io/badge/Database-Cloud%20Firestore-FFA000?style=flat-square&logo=firebase)](https://firebase.google.com)
 [![Vitest](https://img.shields.io/badge/Tests-Vitest%205.1-FCC72B?style=flat-square&logo=vitest)](https://vitest.dev)
 
-StudyFlow is a modern, distraction-free academic command center engineered for university students. It combines syllabus-aligned deliverable tracking, weekly timetable scheduling, a drift-free Pomodoro focus timer with ambient soundscapes, dynamic GPA simulation with what-if exam forecasting, and client-first disaster recovery portability.
+StudyFlow is a study planner for university students: assignments with subtasks, a weekly timetable, a Pomodoro focus timer with ambient sounds, a projected-GPA what-if calculator, and JSON backup/restore.
 
 🔗 **Live Production URL**: [https://app-beta-lilac-23.vercel.app](https://app-beta-lilac-23.vercel.app)
 
@@ -32,9 +32,9 @@ StudyFlow is a modern, distraction-free academic command center engineered for u
 University students routinely juggle complex syllabi, overlapping course deadlines, and fragmented study habits. StudyFlow provides a cohesive, single-window academic workspace designed with human-computer interaction (HCI) principles:
 - **Low Cognitive Overhead**: Clean visual hierarchy that surfaces urgent obligations without artificial badges or high-stress neon pills.
 - **Dual-Token Theme**: High-contrast paper palette for daylight library study and true dark obsidian slate for late-night focus sessions.
-- **Timestamp-Anchored Timer**: Anchors to system timestamps so remaining time is computed accurately upon tab refocus.
+- **Timestamp-Anchored Timer**: Remaining time is recomputed from timestamps when the tab regains focus. Alerts do not fire while the device is asleep.
 - **Dynamic GPA Simulator**: Course-weighted quality points calculation with a what-if solver computing exact needed exam percentages to secure target honors tiers.
-- **Client-First Disaster Recovery**: Full JSON export and schema-validated import with prototype-pollution defense, ensuring zero vendor lock-in.
+- **Client-First Disaster Recovery**: JSON export and schema-validated import with prototype-pollution checks.
 
 ---
 
@@ -58,7 +58,7 @@ flowchart TD
 
 ## ✨ Key Features
 
-1. **Academic Command Ledger**: High-density overview of urgent obligations, syllabus clearance rates, deep work hours, and university honors tier.
+1. **Today**: Upcoming deadlines, focus time, and a projected GPA.
 2. **Coursework & Deliverables Tracker**: Comprehensive task management with subtask state machines, priority tiers, course code tags, and automatic progress calculation capped at 99% until fully verified.
 3. **Weekly Academic Timetable**: Interactive schedule grid supporting lecture sessions, labs, review blocks, and exam periods with full quick-add modals and iCal ICS export.
 4. **Deep Focus Timer & Soundscapes**: Configurable Pomodoro engine (Focus, Short Break, Long Break) paired with Web Audio API generative soundscapes (Rain, Brown noise, White noise, Binaural alpha beats).
@@ -127,7 +127,7 @@ flowchart TD
 ```bash
 npm test
 ```
-Executes all 29 automated tests across:
+Runs the Vitest unit suites:
 - `academicCalculations.test.ts`: GPA math, credit hour weighting, monotonicity, and what-if score boundary checks.
 - `subtasks.test.ts`: Subtask progress state machine and the 99% cap invariant.
 - `backupValidator.test.ts`: Prototype pollution injection defense and schema boundaries.
@@ -144,8 +144,8 @@ Validates cold-load console error count (`0`), verifies mobile touch target boun
 
 StudyFlow enforces enterprise multi-tenant isolation:
 - **Subcollection Scoping**: All user data is nested exclusively under `/users/{userId}/` with Firestore rules verifying `request.auth.uid == userId`.
-- **Immutable Focus Sessions**: History records cannot be edited after completion (`allow update: if false;`), preventing artificial streak inflation.
-- **Session Tear-Down Invariant**: Signing out immediately unsubscribes all active Firestore real-time snapshot listeners and purges in-memory stores to prevent session bleeds on shared campus workstations.
+- **Focus session history**: Updates are denied by the rules. Forged *creates* are not yet constrained; this is tracked as Phase 4A work and is not claimed as protection.
+- **Sign-out**: Unsubscribes Firestore listeners and resets the in-memory store. Clearing the Firestore IndexedDB cache is Phase 4A work and not yet done.
 - **Client-Side Sanitization**: All JSON imports are validated against schema boundaries, maximum item quotas ($\le 1000$ assignments), and prototype pollution vectors.
 
 ---
@@ -155,8 +155,8 @@ StudyFlow enforces enterprise multi-tenant isolation:
 - [x] **Phase 1: Production MVP** — Deployed live on Vercel.
 - [x] **Phase 2: UI/UX Audit & Anti-Slop Redesign** — Neutralized AI fingerprints, unified dual-token styling.
 - [x] **Phase 3: Front-End Remediations** — Real editable student profiles, week-switching schedule, What-If simulator, and responsive navigation.
-- [ ] **Phase 4A: Backend Hardening & Automated Test Suites** — 41 Vitest unit tests active; Firestore emulator test suite in preparation.
-- [x] **Phase 4B: Vercel Preview & Production Deployment** — Verified with live pushState SPA rewrites.
+- [ ] **Phase 4A: Backend Hardening & Automated Test Suites** — in progress: Firestore rules emulator suite, account-switch isolation tests, pure-logic tests, CI.
+- [ ] **Phase 4B: Vercel preview (4B-1) and production domain (4B-2)** — the app is live on a `vercel.app` URL; no custom domain bound yet.
 - [ ] **Phase 4C: Multi-Device QA & Accessibility Audit** — 0 console errors, mobile touch targets verified; full axe-core audit scheduled.
 - [x] **Phase 5: GitHub Push & Release Tagging** — Synchronized to [github.com/J-Derek/studyflow](https://github.com/J-Derek/studyflow).
 
@@ -165,4 +165,4 @@ StudyFlow enforces enterprise multi-tenant isolation:
 ## 👥 Team & Governance
 
 - **Product Owner**: 21
-- **Engineering Squad**: Antigravity, Claude, ChatGPT
+- **Built with AI coding assistants; every change is reviewed by the product owner

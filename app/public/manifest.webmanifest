@@ -1,7 +1,7 @@
 {
   "name": "StudyFlow — Academic Productivity & Focus",
   "short_name": "StudyFlow",
-  "description": "High-performance academic study planner, GPA simulator, focus timer, and coursework milestone tracker.",
+  "description": "Study planner: deadlines, timetable, focus timer and projected-GPA what-if.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FAF9F6",
