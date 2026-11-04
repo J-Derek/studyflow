@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   CheckCircle2, 
   Circle, 
-  Plus, 
   ArrowRight,
   Flame,
 } from 'lucide-react';
@@ -14,19 +13,15 @@ import { FirstDeadlineCard } from '../components/FirstDeadlineCard';
 import { GettingStartedChecklist } from '../components/GettingStartedChecklist';
 
 interface DashboardProps {
-  onOpenProfile?: () => void;
   onOpenAddModal?: () => void;
   onOpenBackup?: () => void;
-  onOpenHelp?: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
-  onOpenProfile,
   onOpenAddModal,
-  onOpenBackup,
-  onOpenHelp 
+  onOpenBackup
 }) => {
-  const { user, assignments, sessions, grades, pomodorosCompleted, setActiveTab, toggleAssignmentComplete } = useStudyFlowStore();
+  const { assignments, sessions, grades, pomodorosCompleted, setActiveTab, toggleAssignmentComplete } = useStudyFlowStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Statistics Computations
@@ -36,8 +31,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const completionRate = totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0;
 
   // Real-time Dynamic GPA & Academic Standing
-  const { gpaString, gpa } = calculateCumulativeGpa(grades);
+  const { gpaString, gpa, hasData: hasGpa } = calculateCumulativeGpa(grades);
   const academicStanding = getAcademicStanding(gpa);
+  const focusHours = ((pomodorosCompleted * 25) / 60).toFixed(1);
+  const todayLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
   // Urgent / Upcoming assignments sorted by due date
   const urgentAssignments = [...pendingAssignments]
@@ -50,64 +47,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-6 animate-fade-in pb-16">
-      {/* Executive Academic Ledger Header */}
-      <div className="rounded-xl bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 p-5 md:p-6 transition-colors shadow-2xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-          <div className="space-y-1.5 max-w-2xl">
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={onOpenProfile}
-                title="Edit scholar profile & institution"
-                aria-label="Edit scholar profile & institution"
-                className="tabular-nums text-[11px] px-2.5 py-1 min-h-[44px] inline-flex items-center rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition cursor-pointer"
-              >
-                {user.university.toUpperCase()}
-              </button>
-              <span className="tabular-nums text-[11px] text-zinc-400">/</span>
-              <span className="tabular-nums text-[11px] text-zinc-500 dark:text-zinc-400">
-                {user.semester.toUpperCase()}
-              </span>
-              <span className="tabular-nums text-[10px] text-zinc-400 dark:text-zinc-500">WK 10</span>
-            </div>
-            
-            <h1 className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-              Academic Dashboard
-            </h1>
-            
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-sans">
-              <span className="tabular-nums font-medium text-zinc-900 dark:text-zinc-100">{pendingAssignments.length} deliverables pending</span> across {sessions.length} weekly course modules. Track progress and keep coursework on schedule.
-            </p>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Today</h1>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {todayLabel}
+            {' · '}
+            {pendingAssignments.length === 0
+              ? 'Nothing due.'
+              : `${pendingAssignments.length} ${pendingAssignments.length === 1 ? 'assignment' : 'assignments'} to finish`}
+            {todaysSessions.length > 0 && `, ${todaysSessions.length} ${todaysSessions.length === 1 ? 'class' : 'classes'} today`}
+          </p>
+        </div>
 
-          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-            {onOpenHelp && (
-              <button
-                type="button"
-                onClick={onOpenHelp}
-                aria-label="StudyFlow Playbook & 45-Second Tour"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg border border-zinc-200/80 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs transition cursor-pointer"
-              >
-                <span>45s Tour & Guide</span>
-              </button>
-            )}
-            <button
-              onClick={() => (onOpenAddModal ? onOpenAddModal() : setIsModalOpen(true))}
-              aria-label="Add Deliverable"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium text-xs hover:bg-zinc-800 dark:hover:bg-white/90 transition-transform active:scale-95 shadow-2xs cursor-pointer"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Add Deliverable</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('timer')}
-              aria-label="Launch Focus Timer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 font-medium text-xs border border-zinc-200/80 dark:border-zinc-700/80 transition-colors active:scale-95 cursor-pointer"
-            >
-              <Flame className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
-              <span>Launch Focus</span>
-            </button>
-          </div>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => setActiveTab('timer')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 font-medium text-sm border border-zinc-200/80 dark:border-zinc-700/80 transition-colors active:scale-95 cursor-pointer"
+          >
+            <Flame className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+            <span>Start focus timer</span>
+          </button>
         </div>
       </div>
 
@@ -116,100 +76,61 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <FirstDeadlineCard />
       )}
 
-      {/* Getting Started Derived Activation Checklist */}
-      <GettingStartedChecklist
+      {assignments.length > 0 && <GettingStartedChecklist
         onOpenAddModal={onOpenAddModal || (() => setIsModalOpen(true))}
         onOpenBackup={onOpenBackup}
-      />
+      />}
 
-      {/* Unified High-Density Performance Ledger Strip (Continuous Hairline Grid) */}
-      <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-2 lg:grid-cols-4 shadow-2xs overflow-hidden">
-        {/* Metric 1: Due Deliverables */}
+      <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-2 lg:grid-cols-4 overflow-hidden">
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <div className="flex items-center text-zinc-500 dark:text-zinc-400">
-            <span className="text-xs font-medium">Due Deliverables</span>
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">To do</span>
+          <div className="my-2.5 flex items-baseline gap-2">
+            <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{pendingAssignments.length}</span>
+            
           </div>
-          <div className="my-2.5">
-            <div className="flex items-baseline gap-2">
-              <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight ">
-                {pendingAssignments.length}
-              </span>
-              <span className="text-[11px] tabular-nums text-zinc-400">active</span>
-            </div>
-          </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] tabular-nums text-zinc-500">
-            <span>{urgentAssignments.length} pending</span>
-            <span>{completedAssignments} completed</span>
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500">
+            <span>{completedAssignments} done</span>
+            
           </div>
         </div>
-
-        {/* Metric 2: Syllabus Completion */}
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <div className="flex items-center text-zinc-500 dark:text-zinc-400">
-            <span className="text-xs font-medium">Syllabus Progress</span>
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Completed</span>
+          <div className="my-2.5 flex items-baseline gap-2">
+            <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{completionRate}%</span>
+            
           </div>
-          <div className="my-2.5">
-            <div className="flex items-baseline gap-2">
-              <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight ">
-                {completionRate}%
-              </span>
-              <span className="text-[11px] tabular-nums text-zinc-400">cleared</span>
-            </div>
-          </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
-            <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
-              <div
-                className="bg-zinc-400 dark:bg-zinc-500 h-full rounded-full transition-all duration-500"
-                style={{ width: `${completionRate}%` }}
-              />
-            </div>
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500">
+            <span>{completedAssignments} of {totalAssignments}</span>
+            
           </div>
         </div>
-
-        {/* Metric 3: Deep Work Hours */}
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <div className="flex items-center text-zinc-500 dark:text-zinc-400">
-            <span className="text-xs font-medium">Deep Work Logged</span>
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Focus sessions</span>
+          <div className="my-2.5 flex items-baseline gap-2">
+            <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{pomodorosCompleted}</span>
+            <span className="text-xs text-zinc-400">completed</span>
           </div>
-          <div className="my-2.5">
-            <div className="flex items-baseline gap-2">
-              <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight ">
-                {pomodorosCompleted}
-              </span>
-              <span className="text-[11px] tabular-nums text-zinc-400">blocks</span>
-            </div>
-          </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] tabular-nums text-zinc-500">
-            <span>Cumulative</span>
-            <span className="text-zinc-700 dark:text-zinc-300">
-              ~{((pomodorosCompleted * 25) / 60).toFixed(1)} hrs logged
-            </span>
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500">
+            <span>About {focusHours} h of focus</span>
+            
           </div>
         </div>
-
-        {/* Metric 4: Academic Standing / GPA */}
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <div className="flex items-center text-zinc-500 dark:text-zinc-400">
-            <span className="text-xs font-medium">Academic Standing</span>
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Projected GPA</span>
+          <div className="my-2.5 flex items-baseline gap-2">
+            <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{hasGpa ? gpaString : "—"}</span>
+            
           </div>
-          <div className="my-2.5">
-            <div className="flex items-baseline gap-2">
-              <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight ">
-                {gpaString}
-              </span>
-              <span className="text-[11px] tabular-nums text-zinc-400">GPA</span>
-            </div>
-          </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] tabular-nums">
-            <span className="text-zinc-600 dark:text-zinc-400 font-medium">{academicStanding.standing}</span>
-            <span className="text-zinc-400 dark:text-zinc-500">{academicStanding.tier}</span>
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500">
+            <span>{hasGpa ? academicStanding.standing : "Add graded work in Grades"}</span>
+            
           </div>
         </div>
       </div>
 
-      {/* Main Content Split: Coursework Queue & Architectural Timetable */}
+      {/* Main Content Split: Upcoming assignments and today's classes */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Linear-grade Coursework Queue (2 cols) */}
+        {/* Left: Linear-grade Assignments Queue (2 cols) */}
         <div className="lg:col-span-2 space-y-3">
           <div className="flex items-center justify-between pb-1">
             <div className="flex items-center gap-2">
@@ -233,13 +154,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {assignments.length === 0 ? (
                   <>
                     <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">No deadlines scheduled yet</h4>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">Use the quick start card above or click "Add Deliverable" to begin.</p>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">Use the quick start card above or click "Add assignment" to begin.</p>
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-                    <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">All deliverables cleared</h4>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">No urgent deadlines pending on your syllabus.</p>
+                    <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">All assignments cleared</h4>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">No urgent deadlines pending on your course.</p>
                   </>
                 )}
               </div>
@@ -302,7 +223,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        {/* Right: Today's Architectural Timetable (1 col) */}
+        {/* Right: Today's classes (1 col) */}
         <div className="space-y-3">
           <div className="flex items-center justify-between pb-1">
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Today’s Schedule</h2>

@@ -6,7 +6,6 @@ import {
   Timer, 
   GraduationCap,
   Cloud,
-  CheckCircle2,
   LogOut,
   Sun,
   Moon,
@@ -61,9 +60,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
   const navItems = [
     { id: 'dashboard' as const, label: 'Today', icon: LayoutDashboard },
     { id: 'assignments' as const, label: 'Assignments', icon: CheckSquare, badge: pendingCount },
-    { id: 'calendar' as const, label: 'Schedule', icon: CalendarIcon },
+    { id: 'calendar' as const, label: 'Timetable', icon: CalendarIcon },
     { id: 'timer' as const, label: 'Focus Timer', icon: Timer },
-    { id: 'grades' as const, label: 'Grades & GPA', icon: Award }
+    { id: 'grades' as const, label: 'Grades', icon: Award }
   ];
 
   return (
@@ -76,7 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
           </div>
           <div>
             <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 tracking-tight">StudyFlow</span>
-            <p className="text-[11px] text-zinc-400 dark:text-zinc-500 tabular-nums">Academic Workspace</p>
+            <p className="text-[11px] text-zinc-400 dark:text-zinc-500 tabular-nums">Study planner</p>
           </div>
         </div>
 
@@ -157,18 +156,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
           <button
             type="button"
             onClick={onOpenProfile}
-            title="Edit scholar profile & institution"
+            title="Edit student profile & institution"
             className="flex items-center gap-2 overflow-hidden text-left hover:opacity-80 transition-opacity cursor-pointer group flex-1 min-w-0"
           >
             <div className="h-7 w-7 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 tabular-nums font-semibold flex items-center justify-center text-xs flex-shrink-0 group-hover:bg-zinc-300 dark:group-hover:bg-zinc-600 transition-colors">
-              {isAnonymous ? 'GS' : user.name.split(' ').map((n) => n[0]).join('')}
+              {isAnonymous ? 'G' : user.name.split(' ').map((n) => n[0]).join('')}
             </div>
             <div className="truncate flex-1 min-w-0">
               <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                {isAnonymous ? 'Guest Scholar' : user.name}
+                {isAnonymous ? 'Guest' : user.name}
               </p>
               <p className="text-[10px] tabular-nums text-zinc-400 dark:text-zinc-500 truncate">
-                {isAnonymous ? 'Local Session' : (userEmail || 'Cloud Student')}
+                {isAnonymous ? 'Not signed in' : (userEmail || 'Cloud Student')}
               </p>
             </div>
           </button>
@@ -187,10 +186,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
 
         {/* Sync Status Banner */}
         <div className="pt-1.5 border-t border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-between text-[11px] tabular-nums">
-          <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-            <CheckCircle2 className="h-3 w-3" />
-            <span>Synced</span>
-          </div>
+          <span className="text-zinc-500 dark:text-zinc-400">{isAnonymous ? 'Guest account' : 'Signed in'}</span>
 
           <button
             onClick={() => {
@@ -202,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
             title="Open Data Portability & Cloud Sync"
           >
             <Cloud className="h-3 w-3" />
-            <span>{isAnonymous ? 'Backup' : 'Cloud ID'}</span>
+            <span>{isAnonymous ? 'Back up' : 'Account'}</span>
           </button>
         </div>
       </div>

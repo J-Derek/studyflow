@@ -77,21 +77,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   // Build command items
   const navigationItems: CommandItem[] = [
-    { id: 'nav-dash', label: 'Go to Academic Dashboard', category: 'Navigation', icon: LayoutDashboard, action: () => { setActiveTab('dashboard'); onClose(); } },
-    { id: 'nav-asg', label: 'Go to Coursework Registry', category: 'Navigation', icon: CheckSquare, action: () => { setActiveTab('assignments'); onClose(); } },
-    { id: 'nav-cal', label: 'Go to Academic Timetable', category: 'Navigation', icon: Calendar, action: () => { setActiveTab('calendar'); onClose(); } },
+    { id: 'nav-dash', label: 'Go to Today', category: 'Navigation', icon: LayoutDashboard, action: () => { setActiveTab('dashboard'); onClose(); } },
+    { id: 'nav-asg', label: 'Go to Assignments Registry', category: 'Navigation', icon: CheckSquare, action: () => { setActiveTab('assignments'); onClose(); } },
+    { id: 'nav-cal', label: 'Go to Timetable', category: 'Navigation', icon: Calendar, action: () => { setActiveTab('calendar'); onClose(); } },
     { id: 'nav-timer', label: 'Go to Focus Timer Console', category: 'Navigation', icon: Timer, action: () => { setActiveTab('timer'); onClose(); } },
     { id: 'nav-grades', label: 'Go to GPA Predictor & Simulator', category: 'Navigation', icon: Award, action: () => { setActiveTab('grades'); onClose(); } }
   ];
 
   const actionItems: CommandItem[] = [
-    { id: 'act-new', label: 'Create New Deliverable', category: 'Actions', icon: Plus, action: () => { onClose(); onOpenAddModal(); } },
+    { id: 'act-new', label: 'Create New Assignment', category: 'Actions', icon: Plus, action: () => { onClose(); onOpenAddModal(); } },
     { id: 'act-focus', label: 'Launch 25m Focus Session', category: 'Actions', icon: Sparkles, action: () => { setActiveTab('timer'); setTimerMode('focus'); startTimer(); onClose(); } },
     { id: 'act-theme', label: `Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`, category: 'Actions', icon: theme === 'light' ? Moon : Sun, action: () => { toggleTheme(); onClose(); } },
     { id: 'act-ics', label: 'Export Timetable to Apple/Google (.ICS)', category: 'Actions', icon: Download, action: () => { exportTimetable(); onClose(); } },
     {
       id: 'act-backup',
-      label: 'Export Full Academic Ledger (.JSON Backup)',
+      label: 'Export Full Academic Data (.JSON Backup)',
       category: 'Actions',
       icon: Database,
       action: () => {
@@ -111,7 +111,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `studyflow-ledger-${new Date().toISOString().split('T')[0]}.json`;
+          a.download = `studyflow-data-${new Date().toISOString().split('T')[0]}.json`;
           a.click();
           URL.revokeObjectURL(url);
           onClose();
@@ -123,7 +123,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const assignmentItems: CommandItem[] = assignments.map((a) => ({
     id: `asg-${a.id}`,
     label: `${a.title} (${a.course.split('—')[0].trim()})`,
-    category: 'Coursework',
+    category: 'Assignments',
     icon: CheckSquare,
     badge: a.priority.toUpperCase(),
     action: () => {
@@ -174,7 +174,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           <input
             ref={inputRef}
             type="text"
-            placeholder="Type a command or search coursework..."
+            placeholder="Type a command or search assignments..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -191,7 +191,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         <div className="max-h-80 overflow-y-auto p-1.5 space-y-0.5">
           {filteredItems.length === 0 ? (
             <div className="py-8 text-center text-xs text-zinc-400 tabular-nums">
-              No matching commands or coursework found.
+              No matching commands or assignments found.
             </div>
           ) : (
             filteredItems.map((item, index) => {

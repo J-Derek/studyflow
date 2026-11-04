@@ -33,7 +33,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
   const steps = [
     {
       id: 'step-asg',
-      title: 'Add your first deliverable',
+      title: 'Add your first assignment',
       desc: 'Set an upcoming exam, homework, or project deadline',
       completed: assignments.some((a) => !a.sample),
       icon: CheckSquare,
@@ -44,7 +44,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
     },
     {
       id: 'step-focus',
-      title: 'Log a deep work focus block',
+      title: 'Finish a focus session',
       desc: 'Run a 25-minute Pomodoro round with ambient sound',
       completed: pomodorosCompleted > 0,
       icon: Timer,
@@ -60,7 +60,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
     },
     {
       id: 'step-backup',
-      title: 'Secure your academic record',
+      title: 'Secure your data',
       desc: 'Link Google or save a local recovery JSON file',
       completed: !isAnonymous,
       icon: ShieldCheck,
@@ -91,7 +91,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
             </span>
           </div>
           <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Four quick steps to take full command of your academic semester.
+            Four things worth doing in your first week.
           </p>
         </div>
 

@@ -29,8 +29,8 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
 
   const slides = [
     {
-      title: 'Coursework & Deadlines',
-      tagline: 'Track every deliverable with milestone checklists',
+      title: 'Assignments & Deadlines',
+      tagline: 'Track every assignment with milestone checklists',
       icon: CheckSquare,
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
@@ -62,10 +62,10 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
         setActiveTab('calendar');
         onClose();
       },
-      actionLabel: 'View Schedule'
+      actionLabel: 'Open timetable'
     },
     {
-      title: 'Deep Work Focus Timer',
+      title: 'Focus Focus Timer',
       tagline: 'Zero-drift Pomodoros with ambient soundscapes',
       icon: Timer,
       color: 'text-rose-500',
@@ -104,12 +104,12 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
 
   const handleLoadDemo = () => {
     loadSampleData();
-    setIsSandboxSuccess('Demo coursework loaded successfully!');
+    setIsSandboxSuccess('Demo assignments loaded successfully!');
     setTimeout(() => setIsSandboxSuccess(null), 3000);
   };
 
   const handleClearAll = () => {
-    if (window.confirm('Clear all coursework, schedule, and grade data for a fresh start?')) {
+    if (window.confirm('Clear all assignments, schedule, and grade data for a fresh start?')) {
       clearAllData();
       setIsSandboxSuccess('All data cleared. You have a clean slate.');
       setTimeout(() => setIsSandboxSuccess(null), 3000);
@@ -278,7 +278,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                   Interactive Demo Sandbox
                 </h4>
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  Want to explore StudyFlow with realistic university coursework, a weekly lecture schedule, and sample GPA grades before adding your own?
+                  Want to explore StudyFlow with realistic university assignments, a weekly lecture schedule, and sample GPA grades before adding your own?
                 </p>
 
                 <div className="flex items-center gap-2.5 mt-3.5 flex-wrap">
@@ -287,7 +287,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs cursor-pointer"
                   >
                     <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                    <span>Load Demo Coursework</span>
+                    <span>Load Demo Assignments</span>
                   </button>
 
                   <button
@@ -320,11 +320,11 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
           {activeTab === 'shortcuts' && (
             <div className="space-y-2">
               {[
-                { key: '⌘ K / Ctrl K', desc: 'Open Command Palette & Coursework Search' },
+                { key: '⌘ K / Ctrl K', desc: 'Open Command Palette & Assignments Search' },
                 { key: '⌘ 1', desc: 'Jump to Today & Dashboard' },
-                { key: '⌘ 2', desc: 'Jump to Deliverables & Deadlines' },
-                { key: '⌘ 3', desc: 'Jump to Class Schedule' },
-                { key: '⌘ 4', desc: 'Jump to Deep Work Focus Timer' },
+                { key: '⌘ 2', desc: 'Jump to Assignments & Deadlines' },
+                { key: '⌘ 3', desc: 'Go to Timetable' },
+                { key: '⌘ 4', desc: 'Jump to Focus Focus Timer' },
                 { key: '⌘ 5', desc: 'Jump to GPA & Grade Predictor' },
                 { key: 'Space', desc: 'Start / Pause Active Focus Timer' }
               ].map((sc, idx) => (

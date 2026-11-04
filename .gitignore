@@ -25,3 +25,5 @@ graphify-out/
 test-results/
 playwright-report/
 playwright-install.log
+vite-dev.log
+.gstack-shots/

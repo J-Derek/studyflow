@@ -30,8 +30,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateUser({
-      name: name.trim() || 'Guest Scholar',
-      university: university.trim() || 'Academic Workspace',
+      name: name.trim() || 'Guest',
+      university: university.trim() || 'StudyFlow',
       program: program.trim() || 'General Studies',
       semester: semester.trim() || 'Fall 2026'
     });
@@ -63,7 +63,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                 Academic Profile
               </h3>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400 tabular-nums">
-                Customize your scholar identity and institutional affiliation
+                Customize your student identity and institutional affiliation
               </p>
             </div>
           </div>

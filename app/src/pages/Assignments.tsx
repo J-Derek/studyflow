@@ -80,15 +80,15 @@ export const AssignmentsPage: React.FC = () => {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Coursework Registry</h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-sans">Track syllabus deliverables, milestones, and grading deadlines</p>
+          <h1 className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Assignments Registry</h1>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-sans">Track course assignments, milestones, and grading deadlines</p>
         </div>
         <button
           onClick={handleCreate}
           className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-xs transition shadow-2xs active:scale-95 self-start sm:self-auto"
         >
           <Plus className="h-3.5 w-3.5" />
-          <span>New Deliverable</span>
+          <span>New Assignment</span>
         </button>
       </div>
 
@@ -100,7 +100,7 @@ export const AssignmentsPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
             <input
               type="text"
-              placeholder="Search deliverables by title, course code, or notes..."
+              placeholder="Search assignments by title, course code, or notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 transition"
@@ -162,7 +162,7 @@ export const AssignmentsPage: React.FC = () => {
           </div>
 
           <div className="text-[11px] tabular-nums text-zinc-400">
-            {filteredAssignments.length} of {assignments.length} deliverables
+            {filteredAssignments.length} of {assignments.length} assignments
           </div>
         </div>
       </div>
@@ -173,12 +173,12 @@ export const AssignmentsPage: React.FC = () => {
           <div className="py-12 text-center p-6">
             <CheckSquare className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
             <h3 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
-              {assignments.length === 0 ? 'Your coursework ledger is empty' : 'No deliverables match filters'}
+              {assignments.length === 0 ? 'Your assignments data is empty' : 'No assignments match filters'}
             </h3>
             <p className="text-[11px] text-zinc-400 max-w-sm mx-auto mt-0.5">
               {assignments.length === 0 
                 ? 'Add your first problem set, paper, or lab report to start tracking your deadlines.' 
-                : 'Adjust your search filters or click "New Deliverable" to add a coursework milestone.'}
+                : 'Adjust your search filters or click "New Assignment" to add an assignments milestone.'}
             </p>
             {assignments.length === 0 && (
               <div className="mt-4 flex items-center justify-center gap-2">
@@ -187,7 +187,7 @@ export const AssignmentsPage: React.FC = () => {
                   className="px-3.5 py-1.5 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  <span>Add First Deliverable</span>
+                  <span>Add First Assignment</span>
                 </button>
               </div>
             )}
@@ -205,7 +205,7 @@ export const AssignmentsPage: React.FC = () => {
                   isCompleted ? 'opacity-70 bg-zinc-50/30 dark:bg-zinc-900/30' : ''
                 }`}
               >
-                {/* Main Deliverable Row */}
+                {/* Main Assignment Row */}
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 overflow-hidden min-w-0">
                     <button
@@ -281,16 +281,16 @@ export const AssignmentsPage: React.FC = () => {
                       <button
                         onClick={() => handleEdit(asg)}
                         className="p-1 rounded text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-                        title="Edit Deliverable"
-                        aria-label={`Edit deliverable "${asg.title}"`}
+                        title="Edit Assignment"
+                        aria-label={`Edit assignment "${asg.title}"`}
                       >
                         <Edit3 className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => deleteAssignment(asg.id)}
                         className="p-1 rounded text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                        title="Delete Deliverable"
-                        aria-label={`Delete deliverable "${asg.title}"`}
+                        title="Delete Assignment"
+                        aria-label={`Delete assignment "${asg.title}"`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

@@ -79,9 +79,9 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800">
           <div>
             <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">
-              {assignmentToEdit ? 'Edit Deliverable' : 'Create New Deliverable'}
+              {assignmentToEdit ? 'Edit Assignment' : 'Create New Assignment'}
             </h3>
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Specify requirements, course syllabus, and deadline targets</p>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Specify requirements, course course, and deadline targets</p>
           </div>
           <button
             onClick={onClose}
@@ -95,7 +95,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         <form onSubmit={handleSubmit} className="p-5 space-y-3.5">
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Deliverable Title
+              Assignment title
             </label>
             <input
               type="text"
@@ -197,7 +197,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
 
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Deliverable Notes & Syllabus Specs
+              Assignment Notes & Syllabus Specs
             </label>
             <textarea
               rows={3}
@@ -221,7 +221,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
               type="submit"
               className="px-3.5 py-1.5 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 transition shadow-2xs"
             >
-              {assignmentToEdit ? 'Save Changes' : 'Create Deliverable'}
+              {assignmentToEdit ? 'Save Changes' : 'Create Assignment'}
             </button>
           </div>
         </form>

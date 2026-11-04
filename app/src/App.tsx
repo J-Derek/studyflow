@@ -104,10 +104,8 @@ export function App() {
           >
             {activeTab === 'dashboard' && (
               <Dashboard 
-                onOpenProfile={() => setIsProfileOpen(true)}
                 onOpenAddModal={() => setIsAddModalOpen(true)}
                 onOpenBackup={() => setIsBackupOpen(true)}
-                onOpenHelp={() => setIsHelpOpen(true)}
               />
             )}
             {activeTab === 'assignments' && <AssignmentsPage />}
@@ -140,7 +138,7 @@ export function App() {
           onClose={() => setIsBackupOpen(false)}
         />
 
-        {/* Scholar Profile & Academic Settings Modal */}
+        {/* Student Profile & Academic Settings Modal */}
         <ProfileModal
           isOpen={isProfileOpen}
           onClose={() => setIsProfileOpen(false)}

@@ -34,7 +34,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `studyflow-ledger-${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `studyflow-data-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -59,7 +59,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
 
       useStudyFlowStore.getState().importLedger(validation.data.ledger);
 
-      setImportStatus('Academic ledger successfully verified and restored!');
+      setImportStatus('Your data successfully verified and restored!');
       setTimeout(() => {
         setImportStatus(null);
         onClose();
@@ -98,7 +98,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
             </div>
             <div>
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                Academic Ledger & Data Durability
+                Academic Data & Data Durability
               </h3>
               <p className="text-[11px] tabular-nums text-zinc-500">System Design: Zero lock-in, client-first portability</p>
             </div>
@@ -117,7 +117,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
             Local Disaster Recovery (JSON)
           </h4>
           <p className="text-xs text-zinc-600 dark:text-zinc-400">
-            Export a standalone, human-readable snapshot of all deliverables, milestones, course syllabi, and GPA records.
+            Export a standalone, human-readable snapshot of all assignments, milestones, course syllabi, and GPA records.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -126,7 +126,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
               className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-medium shadow-2xs transition active:scale-95"
             >
               <Download className="h-3.5 w-3.5" />
-              <span>Export JSON Ledger</span>
+              <span>Export JSON Data</span>
             </button>
 
             <label className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-medium cursor-pointer transition active:scale-95">

@@ -3,8 +3,7 @@ import {
   ArrowRight, 
   CheckCircle2, 
   Flame, 
-  Plus,
-  Sparkles
+  Plus
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Priority } from '../types';
@@ -77,7 +76,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
       status: 'pending',
       progress: 0,
       subtasks: [
-        { id: `st-${Date.now()}-1`, title: 'Review lecture notes & syllabus guidelines', completed: false },
+        { id: `st-${Date.now()}-1`, title: 'Review lecture notes & course guidelines', completed: false },
         { id: `st-${Date.now()}-2`, title: 'Draft initial outline or code prototype', completed: false }
       ]
     });
@@ -107,7 +106,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             <div>
               <div className="flex items-center gap-2">
                 <span className="tabular-nums text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  Deliverable Saved
+                  Assignment Saved
                 </span>
                 <span className="text-xs text-zinc-500 tabular-nums">Live countdown active</span>
               </div>
@@ -147,20 +146,12 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
 
   return (
     <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark p-5 md:p-6 transition-colors shadow-2xs">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center gap-1 tabular-nums text-[11px] px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-medium">
-          <Sparkles className="h-3 w-3 text-amber-500" />
-          <span>Quick Start</span>
-        </span>
-        <span className="text-[11px] tabular-nums text-zinc-400">Step 1 of 1 · 30 seconds</span>
-      </div>
-
       <div className="space-y-1 mb-4">
         <h2 className="text-lg md:text-xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
-          Never miss a deadline. What’s your next one?
+          What is your next deadline?
         </h2>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Add your first exam, paper, or homework. You'll see a live countdown and focus sprint immediately.
+          Add an exam, paper or homework. StudyFlow shows how many days are left.
         </p>
       </div>
 
@@ -168,7 +159,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="md:col-span-2">
             <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Deliverable Title
+              Assignment title
             </label>
             <input
               type="text"
@@ -182,7 +173,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
 
           <div>
             <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Course Code / Name
+              Course
             </label>
             <input
               type="text"
@@ -285,7 +276,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             type="submit"
             className="inline-flex items-center justify-center gap-1.5 px-4 py-2 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium text-xs hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs cursor-pointer"
           >
-            <span>Lock in Deadline</span>
+            <span>Save deadline</span>
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>

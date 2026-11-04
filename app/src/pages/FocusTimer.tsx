@@ -102,7 +102,7 @@ export const FocusTimerPage: React.FC = () => {
     if ('mediaSession' in navigator && window.MediaMetadata) {
       try {
         navigator.mediaSession.metadata = new window.MediaMetadata({
-          title: timerMode === 'focus' ? 'Deep Work Focus Session' : 'Rest & Recovery Break',
+          title: timerMode === 'focus' ? 'Focus Focus Session' : 'Rest & Recovery Break',
           artist: 'StudyFlow Ambient Productivity',
           album: `${formatTimeLeft(timerSecondsLeft)} remaining`
         });
@@ -154,7 +154,7 @@ export const FocusTimerPage: React.FC = () => {
       {/* Header */}
       <div className="text-center space-y-1">
         <h1 className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-          Acoustic Deep Work Console
+          Acoustic Focus Console
         </h1>
         <p className="text-xs text-zinc-500 dark:text-zinc-400 font-sans">
           Calibrated concentration blocks with synthesized acoustic masking

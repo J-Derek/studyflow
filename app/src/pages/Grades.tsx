@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Award,
   Calculator,
   BookOpen,
   Plus,
@@ -31,7 +30,7 @@ export const GradesPage: React.FC = () => {
   const [newTarget, setNewTarget] = useState('A');
 
   // Compute overall Term GPA using unified utility
-  const { gpaString: termGpa, gpa: numericGpa, totalCredits } = calculateCumulativeGpa(grades);
+  const { gpaString: termGpa, gpa: numericGpa, totalCredits, hasData: hasGpa } = calculateCumulativeGpa(grades);
   const standing = getAcademicStanding(numericGpa);
   const selectedCourse = grades.find((c) => c.id === selectedCourseId) || grades[0];
 
@@ -68,9 +67,9 @@ export const GradesPage: React.FC = () => {
       targetLetter: newTarget,
       color: '#6366F1',
       assessments: [
-        { id: `a-${Date.now()}-1`, name: 'Midterm Exam', weight: 30, score: 90 },
-        { id: `a-${Date.now()}-2`, name: 'Homework & Assignments', weight: 30, score: 92 },
-        { id: `a-${Date.now()}-3`, name: 'Final Comprehensive Exam', weight: 40, score: undefined }
+        { id: `a-${Date.now()}-1`, name: 'Midterm exam', weight: 30, score: undefined },
+        { id: `a-${Date.now()}-2`, name: 'Coursework', weight: 30, score: undefined },
+        { id: `a-${Date.now()}-3`, name: 'Final exam', weight: 40, score: undefined }
       ]
     });
 
@@ -81,63 +80,45 @@ export const GradesPage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in pb-16">
-      {/* Top Banner & KPI Stat Row (Unified Academic Ledger Strip) */}
-      <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-1 md:grid-cols-3 shadow-2xs overflow-hidden">
-        {/* Cumulative GPA Card */}
+      <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-1 md:grid-cols-3 overflow-hidden">
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
-            <span className="text-xs font-medium">Cumulative Grade Point Average</span>
-            <span className="text-[10px] tabular-nums px-1.5 py-0.2 rounded bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
-              Dean’s List
-            </span>
-          </div>
-
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Projected GPA</span>
           <div className="my-2.5 flex items-baseline gap-2">
-            <span className="text-3xl md:text-4xl tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight ">
-              {termGpa}
+            <span className="text-3xl md:text-4xl tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+              {hasGpa ? termGpa : '—'}
             </span>
-            <span className="text-xs tabular-nums text-zinc-400">/ 4.00 Max</span>
+            {hasGpa && <span className="text-xs text-zinc-400">out of 4.00</span>}
           </div>
-
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] tabular-nums text-zinc-500">
-            <span>{totalCredits} Enrolled Credits</span>
-            <span className="text-emerald-600 dark:text-emerald-400">100% Passing Track</span>
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-500">
+            {hasGpa ? 'Based on the grades you have entered so far.' : 'Enter a score for any assessment to see it.'}
           </div>
         </div>
 
-        {/* Total Courses Card */}
         <div className="p-4 md:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
-            <span className="text-xs font-medium">Credits Enrolled</span>
+            <span className="text-xs font-medium">Credits</span>
             <BookOpen className="h-3.5 w-3.5 text-zinc-400" />
           </div>
           <div className="my-2.5 flex items-baseline gap-2">
-            <span className="text-3xl md:text-4xl tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight ">
+            <span className="text-3xl md:text-4xl tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
               {totalCredits}
             </span>
-            <span className="text-xs tabular-nums text-zinc-400">load units</span>
+            <span className="text-xs text-zinc-400">counted in GPA</span>
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] tabular-nums text-zinc-500">
-            <span>{grades.length} Active Courses</span>
-            <span className="text-blue-600 dark:text-blue-400">Full-Time Status</span>
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-500">
+            {grades.length} {grades.length === 1 ? 'course' : 'courses'} added
           </div>
         </div>
 
-        {/* Target Standing */}
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
-            <span className="text-xs font-medium">Class Standing</span>
-            <Award className="h-3.5 w-3.5 text-amber-500" />
-          </div>
-          <div className="my-2.5 flex items-baseline gap-2">
-            <span className="text-3xl md:text-4xl tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-              {standing.tier}
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Where that lands</span>
+          <div className="my-2.5">
+            <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              {hasGpa ? standing.standing.replace('Projected: ', '') : '—'}
             </span>
-            <span className="text-xs tabular-nums text-amber-600 dark:text-amber-400">{standing.standing}</span>
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] tabular-nums text-zinc-500">
-            <span>Honors Track Status</span>
-            <span className="text-zinc-400">Term 2026</span>
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-500">
+            Cut-offs are a common default (3.8, 3.5, 3.0). Your university may differ.
           </div>
         </div>
       </div>
@@ -241,7 +222,7 @@ export const GradesPage: React.FC = () => {
           <div>
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Enrolled Course Portfolio</h2>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-              Edit individual assessment scores in real time to model syllabus progression
+              Edit individual assessment scores in real time to model course progression
             </p>
           </div>
 
@@ -259,7 +240,7 @@ export const GradesPage: React.FC = () => {
             <Calculator className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
             <h3 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">No courses enrolled</h3>
             <p className="text-[11px] text-zinc-400 max-w-sm mx-auto mt-0.5">
-              Add your classes and syllabus grade weights to calculate your cumulative GPA and simulate target final exam scores.
+              Add your classes and course grade weights to calculate your cumulative GPA and simulate target final exam scores.
             </p>
             <div className="mt-3">
               <button
