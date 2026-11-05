@@ -40,6 +40,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const urgentAssignments = [...pendingAssignments]
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
     .slice(0, 4);
+  const nextUp = urgentAssignments[0];
+  const nextUpDue = nextUp ? getDaysRemaining(nextUp.dueDate) : { label: '', isUrgent: false };
 
   // Today's Day of Week (0 = Sun, 1 = Mon, ..., 6 = Sat)
   const currentDayOfWeek = new Date().getDay();
@@ -88,50 +90,53 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <FirstDeadlineCard />
       )}
 
+      {/* One dominant thing first: what is due next. Everything else is quiet. */}
+      {nextUp && (
+        <section aria-labelledby="next-up-heading" className="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark p-5 md:p-7">
+          <h2 id="next-up-heading" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Next up</h2>
+          <p className="mt-2 font-display text-3xl md:text-5xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 break-words">{nextUp.title}</p>
+          <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-base text-zinc-700 dark:text-zinc-300">
+            <span>{nextUp.course.split('—')[0].trim()}</span>
+            <span aria-hidden="true">·</span>
+            <span className={`tabular-nums font-medium ${nextUpDue.isUrgent ? 'text-red-600 dark:text-red-400' : ''}`}>{nextUpDue.label}</span>
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2.5">
+            <button
+              type="button"
+              onClick={() => toggleAssignmentComplete(nextUp.id)}
+              className="inline-flex items-center gap-2 px-4 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium cursor-pointer"
+            >
+              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              <span>Mark done</span>
+            </button>
+          </div>
+        </section>
+      )}
+
+      <dl className="flex flex-wrap gap-x-10 gap-y-4 px-1">
+        <div>
+          <dt className="text-sm text-zinc-600 dark:text-zinc-400">To do</dt>
+          <dd className="font-display tabular-nums text-3xl font-semibold text-zinc-900 dark:text-zinc-50">{pendingAssignments.length}</dd>
+        </div>
+        <div>
+          <dt className="text-sm text-zinc-600 dark:text-zinc-400">Completed</dt>
+          <dd className="font-display tabular-nums text-3xl font-semibold text-zinc-900 dark:text-zinc-50">{completionRate}%<span className="ml-2 text-sm font-normal font-sans text-zinc-600 dark:text-zinc-400">{completedAssignments} of {totalAssignments}</span></dd>
+        </div>
+        <div>
+          <dt className="text-sm text-zinc-600 dark:text-zinc-400">Focus sessions</dt>
+          <dd className="font-display tabular-nums text-3xl font-semibold text-zinc-900 dark:text-zinc-50">{pomodorosCompleted}<span className="ml-2 text-sm font-normal font-sans text-zinc-600 dark:text-zinc-400">about {focusHours} h</span></dd>
+        </div>
+        <div>
+          <dt className="text-sm text-zinc-600 dark:text-zinc-400">Projected GPA</dt>
+          <dd className="font-display tabular-nums text-3xl font-semibold text-zinc-900 dark:text-zinc-50">{hasGpa ? gpaString : '—'}<span className="ml-2 text-sm font-normal font-sans text-zinc-600 dark:text-zinc-400">{hasGpa ? academicStanding.standing : 'Add graded work in Grades'}</span></dd>
+        </div>
+      </dl>
+
       {assignments.length > 0 && <GettingStartedChecklist
         onOpenAddModal={onOpenAddModal || (() => setIsModalOpen(true))}
         onOpenBackup={onOpenBackup}
       />}
 
-      <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-2 lg:grid-cols-4 overflow-hidden">
-        <div className="p-4 md:p-5 flex flex-col justify-between">
-          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">To do</span>
-          <div className="my-2.5 flex items-baseline gap-2">
-            <span className="font-display tabular-nums text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{pendingAssignments.length}</span>
-          </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
-            <span>{completedAssignments} done</span>
-          </div>
-        </div>
-        <div className="p-4 md:p-5 flex flex-col justify-between">
-          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Completed</span>
-          <div className="my-2.5 flex items-baseline gap-2">
-            <span className="font-display tabular-nums text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{completionRate}%</span>
-          </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
-            <span>{completedAssignments} of {totalAssignments}</span>
-          </div>
-        </div>
-        <div className="p-4 md:p-5 flex flex-col justify-between">
-          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Focus sessions</span>
-          <div className="my-2.5 flex items-baseline gap-2">
-            <span className="font-display tabular-nums text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{pomodorosCompleted}</span>
-            <span className="text-xs text-zinc-600 dark:text-zinc-400">completed</span>
-          </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
-            <span>About {focusHours} h of focus</span>
-          </div>
-        </div>
-        <div className="p-4 md:p-5 flex flex-col justify-between">
-          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Projected GPA</span>
-          <div className="my-2.5 flex items-baseline gap-2">
-            <span className="font-display tabular-nums text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{hasGpa ? gpaString : "—"}</span>
-          </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
-            <span>{hasGpa ? academicStanding.standing : "Add graded work in Grades"}</span>
-          </div>
-        </div>
-      </div>
 
       {/* Main Content Split: Upcoming assignments and today's classes */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -32,6 +32,11 @@ export default {
           rose: '#EF4444'
         }
       },
+      // One step up from Tailwind's defaults so body text is no longer 12px everywhere.
+      fontSize: {
+        xs: ['0.8125rem', { lineHeight: '1.25rem' }],
+        sm: ['0.9375rem', { lineHeight: '1.5rem' }],
+      },
       fontFamily: {
         display: ['"Bricolage Grotesque Variable"', '"Inter Variable"', 'sans-serif'],
         sans: ['"Inter Variable"', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
