@@ -122,7 +122,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
 
         {/* Section 1: Offline Local JSON Portability */}
         <div className="space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 tabular-nums">
+          <h3 className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 tabular-nums">
             Back up to a file (JSON)
           </h3>
           <p className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -159,7 +159,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
 
         {/* Section 2: Multi-Device Cloud Sync */}
         <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 tabular-nums">
+          <h3 className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 tabular-nums">
             Multi-Device Cloud Synchronization
           </h3>
 

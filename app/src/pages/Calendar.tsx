@@ -164,11 +164,11 @@ export const CalendarPage: React.FC = () => {
                   {/* Day Header */}
                   <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800/80 mb-2.5">
                     <div>
-                      <span className="text-xs tabular-nums font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">{day.dayName}</span>
+                      <span className="text-xs tabular-nums font-medium text-zinc-600 dark:text-zinc-400">{day.dayName}</span>
                       <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                         <span>{day.monthName} {day.dateNumber}</span>
                         {day.isToday && (
-                          <span className="text-xs tabular-nums px-1 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 font-semibold">Today</span>
+                          <span className="text-xs tabular-nums px-1 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 font-semibold">Today</span>
                         )}
                       </h3>
                     </div>
@@ -211,7 +211,7 @@ export const CalendarPage: React.FC = () => {
                             </button>
                           </div>
                           
-                          <h5 className="font-medium text-zinc-900 dark:text-zinc-100 text-xs leading-snug line-clamp-2">{session.title}</h5>
+                          <h3 className="font-medium text-zinc-900 dark:text-zinc-100 text-xs leading-snug line-clamp-2">{session.title}</h3>
                           
                           <div className="mt-1 flex items-center gap-1 text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
                             <Clock className="h-2.5 w-2.5" />

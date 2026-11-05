@@ -223,11 +223,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
                   <div className="flex items-center gap-2 shrink-0">
                     {item.badge && (
-                      <span className="tabular-nums text-xs px-1.5 py-0.2 rounded bg-zinc-200/60 dark:bg-zinc-700/60 text-zinc-600 dark:text-zinc-300">
+                      <span className="tabular-nums text-xs px-1.5 py-0.5 rounded bg-zinc-200/60 dark:bg-zinc-700/60 text-zinc-600 dark:text-zinc-300">
                         {item.badge}
                       </span>
                     )}
-                    <span className="tabular-nums text-xs text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                    <span className="tabular-nums text-xs text-zinc-600 dark:text-zinc-400">
                       {item.category}
                     </span>
                     {isSelected && <ArrowRight className="h-3 w-3 text-zinc-600 dark:text-zinc-400" />}
@@ -240,8 +240,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
         {/* Footer info bar */}
         <div className="px-3.5 py-2 border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/60 dark:bg-zinc-850/60 flex items-center justify-between text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
-          <span>Navigate with <kbd className="px-1 py-0.2 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">↑</kbd> <kbd className="px-1 py-0.2 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">↓</kbd></span>
-          <span>Select with <kbd className="px-1 py-0.2 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">↵</kbd></span>
+          <span>Navigate with <kbd className="px-1 py-0.5 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">↑</kbd> <kbd className="px-1 py-0.5 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">↓</kbd></span>
+          <span>Select with <kbd className="px-1 py-0.5 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">↵</kbd></span>
         </div>
       </div>
     </div>

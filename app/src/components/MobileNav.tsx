@@ -19,7 +19,7 @@ export const MobileNav: React.FC = () => {
     <nav
       role="navigation"
       aria-label="Mobile Navigation"
-      className="md:hidden fixed bottom-0 left-0 right-0 bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md border-t border-zinc-200/80 dark:border-zinc-800/80 z-40 px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-2xs transition-colors"
+      className="md:hidden fixed bottom-0 left-0 right-0 bg-surface-light dark:bg-surface-dark border-t border-zinc-200/80 dark:border-zinc-800/80 z-40 px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-2xs transition-colors"
     >
       {items.map((item) => {
         const Icon = item.icon;

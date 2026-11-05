@@ -86,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
             className={cn(
               "flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium transition-colors duration-150",
               theme === 'light'
-                ? "bg-white text-zinc-900 shadow-2xs border border-zinc-200/60"
+                ? "bg-surface-light text-zinc-900 shadow-2xs border border-zinc-200/60"
                 : "text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
             )}
           >
@@ -135,7 +135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
                 {item.badge !== undefined && item.badge > 0 && (
                   <span
                     className={cn(
-                      'text-xs tabular-nums px-1.5 py-0.2 rounded font-medium ',
+                      'text-xs tabular-nums px-1.5 py-0.5 rounded font-medium ',
                       isActive 
                         ? 'bg-blue-600 text-white' 
                         : 'bg-zinc-200/70 dark:bg-zinc-700/70 text-zinc-700 dark:text-zinc-300'

@@ -218,11 +218,6 @@ export const FocusTimerPage: React.FC = () => {
             <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 mt-2">
               {timerMode === 'focus' ? 'Focus' : 'Break'}
             </span>
-            {timerIsRunning && (
-              <span className="mt-2 inline-flex items-center gap-1.5 text-xs tabular-nums font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/60">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> ACTIVE
-              </span>
-            )}
           </div>
         </div>
 
@@ -286,9 +281,7 @@ export const FocusTimerPage: React.FC = () => {
                 <span>Background sound</span>
                 {soundscape !== 'off' && timerIsRunning && (
                   <span className="flex items-center gap-0.5 text-xs text-emerald-600 dark:text-emerald-400 tabular-nums">
-                    <span className="h-2 w-0.5 bg-emerald-500 animate-pulse" />
-                    <span className="h-3 w-0.5 bg-emerald-500 animate-pulse delay-75" />
-                    Active
+                    Playing
                   </span>
                 )}
               </h2>
@@ -331,7 +324,7 @@ export const FocusTimerPage: React.FC = () => {
                   : 'border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
               }`}
             >
-              <div className="p-1 rounded w-fit bg-white dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700/50 mb-1.5">
+              <div className="p-1 rounded w-fit bg-surface-light dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700/50 mb-1.5">
                 {item.icon}
               </div>
               <div>

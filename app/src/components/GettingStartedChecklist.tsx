@@ -86,7 +86,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
             <h2 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
               Getting Started Checklist
             </h2>
-            <span className="tabular-nums text-xs px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+            <span className="tabular-nums text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
               {completedCount} / {steps.length} completed
             </span>
           </div>
@@ -108,7 +108,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
       {/* Progress Bar */}
       <div className="mt-3 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
         <div 
-          className="bg-zinc-800 dark:bg-zinc-200 h-full rounded-full transition-all duration-500" 
+          className="bg-zinc-800 dark:bg-zinc-200 h-full rounded-full transition-[width] duration-500" 
           style={{ width: `${progressPercent}%` }} 
         />
       </div>
@@ -125,7 +125,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
               className={`p-2.5 rounded-lg border text-left flex items-start justify-between gap-2.5 transition min-h-[44px] ${
                 step.completed
                   ? 'bg-zinc-50/60 dark:bg-zinc-900/40 border-zinc-200/50 dark:border-zinc-800/50 opacity-60 cursor-default'
-                  : 'bg-white dark:bg-zinc-850 border-zinc-200 dark:border-zinc-700/80 hover:border-zinc-400 dark:hover:border-zinc-500 cursor-pointer group'
+                  : 'bg-surface-light dark:bg-zinc-850 border-zinc-200 dark:border-zinc-700/80 hover:border-zinc-400 dark:hover:border-zinc-500 cursor-pointer group'
               }`}
             >
               <div className="flex items-start gap-2.5 min-w-0">

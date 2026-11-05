@@ -97,7 +97,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
 
   if (savedAssignment) {
     return (
-      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/20 p-5 md:p-6 transition-all duration-200">
+      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/20 p-5 md:p-6 transition-colors duration-200">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
@@ -105,7 +105,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="tabular-nums text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <span className="tabular-nums text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                   Assignment Saved
                 </span>
                 <span className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">Live countdown active</span>
@@ -167,7 +167,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Problem Set 2 or Chapter 4 Summary"
-              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
+              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
             />
           </div>
 
@@ -181,7 +181,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               value={course}
               onChange={(e) => setCourse(e.target.value)}
               placeholder="e.g. CS 101 or Physics"
-              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
+              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
             />
           </div>
         </div>
@@ -247,7 +247,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
                   setDueDate(e.target.value);
                   setActiveChip('custom');
                 }}
-                className="px-2.5 py-1.5 min-h-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-xs tabular-nums text-zinc-800 dark:text-zinc-200 focus:outline-none"
+                className="px-2.5 py-1.5 min-h-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/60 text-xs tabular-nums text-zinc-800 dark:text-zinc-200 focus:outline-none"
               />
             </div>
           </div>

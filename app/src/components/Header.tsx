@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="w-full bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/80 sticky top-0 z-20 px-4 md:px-6 h-12 flex items-center transition-colors duration-150">
+    <header className="w-full bg-surface-light dark:bg-surface-dark border-b border-zinc-200/80 dark:border-zinc-800/80 sticky top-0 z-20 px-4 md:px-6 h-12 flex items-center transition-colors duration-150">
       <div className="flex items-center justify-between gap-4 w-full">
         {/* Left: Dynamic Page Breadcrumb */}
         <div className="flex items-center gap-2 text-xs">
@@ -89,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Search className="h-3 w-3" />
               <span>Search assignments…</span>
-              <kbd className="inline-flex items-center gap-0.5 px-1 py-0.2 text-xs tabular-nums bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-400">
+              <kbd className="inline-flex items-center gap-0.5 px-1 py-0.5 text-xs tabular-nums bg-surface-light dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-400">
                 <Command className="h-2.5 w-2.5" /> K
               </kbd>
             </button>

@@ -102,7 +102,7 @@ export const AssignmentsPage: React.FC = () => {
                 onClick={() => setSelectedStatus(s)}
                 className={`flex-1 md:flex-none px-2.5 py-1 rounded-md text-xs font-medium capitalize transition-colors ${
                   selectedStatus === s 
-                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-2xs font-semibold' 
+                    ? 'bg-surface-light dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-2xs font-semibold' 
                     : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
                 }`}
               >
@@ -122,7 +122,7 @@ export const AssignmentsPage: React.FC = () => {
                 aria-label="Filter by course"
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
-                className="px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
+                className="px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
               >
                 <option value="all">All Courses ({assignments.length})</option>
                 {courses.map((c) => (
@@ -140,7 +140,7 @@ export const AssignmentsPage: React.FC = () => {
                 aria-label="Filter by priority"
                 value={selectedPriority}
                 onChange={(e) => setSelectedPriority(e.target.value)}
-                className="px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
+                className="px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
               >
                 <option value="all">All Priorities</option>
                 <option value="high">High Priority</option>
@@ -364,7 +364,7 @@ export const AssignmentsPage: React.FC = () => {
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
                 aria-label="Previous page"
-                className="px-2.5 py-1 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
+                className="px-2.5 py-1 rounded border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
               >
                 Previous
               </button>
@@ -375,7 +375,7 @@ export const AssignmentsPage: React.FC = () => {
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
                 aria-label="Next page"
-                className="px-2.5 py-1 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
+                className="px-2.5 py-1 rounded border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
               >
                 Next
               </button>

@@ -137,7 +137,7 @@ export const GradesPage: React.FC = () => {
                   <h2 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                     What-if calculator
                   </h2>
-                  <span className="tabular-nums text-xs px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
+                  <span className="tabular-nums text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
                     {selectedCourse.courseCode}
                   </span>
                 </div>
@@ -277,7 +277,7 @@ export const GradesPage: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-1.5">
                         <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">{course.courseCode}</span>
-                        <span className="text-xs tabular-nums px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                        <span className="text-xs tabular-nums px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                           {course.credits} Credits
                         </span>
                       </div>
@@ -289,7 +289,7 @@ export const GradesPage: React.FC = () => {
 
                   <div className="text-right flex items-center gap-1.5">
                     <span className="text-sm tabular-nums font-semibold text-zinc-900 dark:text-white ">{currentPct.toFixed(1)}%</span>
-                    <span className="px-1.5 py-0.2 rounded text-xs tabular-nums font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700">
+                    <span className="px-1.5 py-0.5 rounded text-xs tabular-nums font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700">
                       {letter}
                     </span>
                   </div>
@@ -324,7 +324,7 @@ export const GradesPage: React.FC = () => {
                               const val = e.target.value === '' ? undefined : Number(e.target.value);
                               updateAssessmentScore(course.id, a.id, val);
                             }}
-                            className="w-14 px-1.5 py-0.5 text-right tabular-nums text-xs font-semibold rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-14 px-1.5 py-0.5 text-right tabular-nums text-xs font-semibold rounded border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                           />
                           <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">%</span>
                         </div>

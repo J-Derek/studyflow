@@ -49,7 +49,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div className="space-y-6 animate-fade-in pb-16">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Today</h1>
+          <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Today</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             {todayLabel}
             {' · '}
@@ -97,57 +97,50 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="p-4 md:p-5 flex flex-col justify-between">
           <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">To do</span>
           <div className="my-2.5 flex items-baseline gap-2">
-            <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{pendingAssignments.length}</span>
-            
+            <span className="font-display tabular-nums text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{pendingAssignments.length}</span>
           </div>
           <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
             <span>{completedAssignments} done</span>
-            
           </div>
         </div>
         <div className="p-4 md:p-5 flex flex-col justify-between">
           <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Completed</span>
           <div className="my-2.5 flex items-baseline gap-2">
-            <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{completionRate}%</span>
-            
+            <span className="font-display tabular-nums text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{completionRate}%</span>
           </div>
           <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
             <span>{completedAssignments} of {totalAssignments}</span>
-            
           </div>
         </div>
         <div className="p-4 md:p-5 flex flex-col justify-between">
           <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Focus sessions</span>
           <div className="my-2.5 flex items-baseline gap-2">
-            <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{pomodorosCompleted}</span>
+            <span className="font-display tabular-nums text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{pomodorosCompleted}</span>
             <span className="text-xs text-zinc-600 dark:text-zinc-400">completed</span>
           </div>
           <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
             <span>About {focusHours} h of focus</span>
-            
           </div>
         </div>
         <div className="p-4 md:p-5 flex flex-col justify-between">
           <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Projected GPA</span>
           <div className="my-2.5 flex items-baseline gap-2">
-            <span className="tabular-nums text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{hasGpa ? gpaString : "—"}</span>
-            
+            <span className="font-display tabular-nums text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{hasGpa ? gpaString : "—"}</span>
           </div>
           <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
             <span>{hasGpa ? academicStanding.standing : "Add graded work in Grades"}</span>
-            
           </div>
         </div>
       </div>
 
       {/* Main Content Split: Upcoming assignments and today's classes */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Linear-grade Assignments Queue (2 cols) */}
+        {/* Left: upcoming assignments (2 cols) */}
         <div className="lg:col-span-2 space-y-3">
           <div className="flex items-center justify-between pb-1">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Upcoming deadlines</h2>
-              <span className="tabular-nums text-xs px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+              <span className="tabular-nums text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                 {urgentAssignments.length} in queue
               </span>
             </div>
@@ -166,7 +159,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {assignments.length === 0 ? (
                   <>
                     <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">No deadlines scheduled yet</h3>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">Use the quick start card above or click "Add assignment" to begin.</p>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">Use the quick start card above or click “Add assignment” to begin.</p>
                   </>
                 ) : (
                   <>
@@ -262,12 +255,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <div className="h-full w-0.5 bg-zinc-400 dark:bg-zinc-600 shrink-0 self-stretch rounded-full" />
                   <div className="overflow-hidden min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="tabular-nums text-xs px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
+                      <span className="tabular-nums text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
                         {session.course}
                       </span>
                       <span className="text-xs capitalize text-zinc-600 dark:text-zinc-400 tabular-nums">{session.type}</span>
                     </div>
-                    <h5 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">{session.title}</h5>
+                    <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">{session.title}</h3>
                   </div>
                 </div>
               ))
