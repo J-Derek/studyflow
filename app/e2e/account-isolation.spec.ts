@@ -22,6 +22,20 @@ async function boot(page: Page): Promise<void> {
 }
 
 /** Drives the Auth emulator's fake Google popup, signing in as the given email. */
+/** Unique per run, so a retry never meets accounts left in the emulator by the first attempt. */
+const RUN = Date.now().toString(36);
+function runEmail(email: string): string {
+  return email.replace('@', `-${RUN}@`);
+}
+
+/** Resolves once the app has reloaded itself: a marker set on the old document is gone on the new one. */
+async function waitForAppReload(page: Page): Promise<void> {
+  await page.waitForFunction(() => !(window as unknown as { __reloadMarker?: boolean }).__reloadMarker);
+}
+async function markDocument(page: Page): Promise<void> {
+  await page.evaluate(() => ((window as unknown as { __reloadMarker?: boolean }).__reloadMarker = true));
+}
+
 async function googleSignIn(page: Page, email: string): Promise<void> {
   const popupPromise = page.waitForEvent('popup');
   void page
@@ -29,13 +43,13 @@ async function googleSignIn(page: Page, email: string): Promise<void> {
     .catch((e) => console.log('signInOrLink rejected:', String(e)));
   const popup = await popupPromise;
   await popup.waitForLoadState('domcontentloaded');
-  const existing = popup.getByText(email, { exact: false });
+  const existing = popup.getByText(runEmail(email), { exact: false });
   if (await existing.count()) {
     await existing.first().click();
   } else {
     await popup.locator('button.mdc-button--outlined').first().click(); // "Add new account"
     await popup.locator('#autogen-button').click();
-    await popup.locator('#email-input').fill(email);
+    await popup.locator('#email-input').fill(runEmail(email));
     await popup.locator('#sign-in').click();
   }
   await popup.waitForEvent('close').catch(() => undefined);
@@ -152,8 +166,9 @@ test.describe('account isolation', () => {
     // let the write reach the emulator before signing out
     await page.waitForFunction(() => !(window as unknown as { __store: { getState: () => { isSyncing: boolean } } }).__store.getState().isSyncing);
 
+    await markDocument(page);
     await page.evaluate(() => (window as unknown as { __auth: AuthApi }).__auth.signOutUser());
-    await page.waitForLoadState('load');
+    await waitForAppReload(page);
     await boot(page);
     const afterSignOut = await dumpOrigin(page);
     expectNoTrace(afterSignOut, 'SECRET-ALICE-7f3a');
@@ -176,9 +191,10 @@ test.describe('account isolation', () => {
     await addAssignment(page, 'SECRET-CAROL-91bc');
     await page.waitForFunction(() => !(window as unknown as { __store: { getState: () => { isSyncing: boolean } } }).__store.getState().isSyncing);
 
+    await markDocument(page);
     await googleSignIn(page, 'dave@example.com'); // already signed in: this is a direct switch
     await waitForUidChange(page, carolUid);
-    await page.waitForLoadState('load');
+    await waitForAppReload(page);
     await boot(page);
     const dump = await dumpOrigin(page);
     expectNoTrace(dump, 'SECRET-CAROL-91bc');
