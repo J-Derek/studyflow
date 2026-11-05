@@ -17,8 +17,18 @@ if (typeof window !== 'undefined') {
     });
   }
 
-  // Auto-recover from stale chunk 404s after new deployments
+  // Auto-recover from stale chunk 404s after new deployments. Only for genuine "file did not load"
+  // errors: anything else (a blocked sign-in pop-up, for example) must reach its caller, not reload.
   window.addEventListener('vite:preloadError', (event) => {
+    const message = String((event as Event & { payload?: { message?: string } }).payload?.message ?? '');
+    if (!/dynamically imported module|importing a module script failed|unable to preload|loading (css )?chunk/i.test(message)) return;
+    try {
+      const last = Number(sessionStorage.getItem('studyflow_chunk_reload_at') ?? 0);
+      if (Date.now() - last < 10_000) return; // already reloaded just now: do not loop
+      sessionStorage.setItem('studyflow_chunk_reload_at', String(Date.now()));
+    } catch {
+      /* storage unavailable: reload once anyway */
+    }
     event.preventDefault();
     window.location.reload();
   });

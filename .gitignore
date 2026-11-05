@@ -28,3 +28,5 @@ playwright-install.log
 vite-dev.log
 .gstack-shots/
 dist-lh/
+dist-e2e/
+dist-noshell/
