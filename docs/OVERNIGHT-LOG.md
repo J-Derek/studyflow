@@ -28,3 +28,26 @@ Started after the plan in OVERNIGHT-PLAN.md was approved.
 - Timer: `role="timer"` with a name, and a polite live region that announces state changes and each remaining minute, not every second.
 - Evidence: Playwright 56 passed (20 page scans = 5 routes x light/dark x desktop/375px mobile; 10 dialog tests; 10 keyboard walks + skip link + keyboard add + timer announcements), all axe violations 0.
 - Not covered: a real screen reader (NVDA/VoiceOver) was not run; axe cannot judge reading order or meaningful labels. Contrast was measured by axe only; text on gradient/image backgrounds would be flagged as "incomplete" and none appeared.
+
+## Step 5: preview deploy and Lighthouse (done, with limits)
+- Deployed **preview** builds only (never `--prod`). The preview is behind Vercel login, so I checked it with `vercel curl`. On the final preview: `/`, `/assignments`, `/timer`, `/grades` return 200; `/assets/x.js` and `/nope.png` return 404; X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy and HSTS are present; no request goes to fonts.googleapis.com.
+- Lighthouse (mobile, simulated slow 4G, 4x CPU) ran against a local production build wired to the emulators, NOT the preview URL, so I did not create throwaway users in your real Firebase project. Scores are therefore indicative, not a measurement of Vercel.
+- Before: performance 64-83, accessibility 98-100, best practices 96-100, SEO 100.
+- After: performance 80-88 (median 84 on Today over three runs), accessibility 100, best practices 100, SEO 100. First paint went from about 3.4-5.8 s to 2.7 s. LCP is about 3.7 s, which Lighthouse still rates "needs improvement"; it stays a client-rendered app, so the next real gain would be pre-rendering the shell.
+- What changed: Inter is now self-hosted (removed a 1.25 s render-blocking Google Fonts request and the unused JetBrains Mono); text under 12px raised to 12px (only 37-54% of text was legible size); Firebase (640 KB) loads after first paint via dynamic imports; Google's api.js is no longer loaded on every visit (the popup resolver is passed only when someone clicks sign-in); heading order fixed (every page has an h1, no skipped levels); the Today page loads eagerly because it is the landing page.
+- Honest note: eager vs lazy Today differed by about 130 ms of LCP, inside run-to-run noise; I kept eager.
+- 20 new Playwright tests check there is no horizontal scrolling at 320, 375, 768 and 1440 px on every screen.
+
+## Step 6: close-out
+- README rewritten to match reality: real test commands and what each proves, what is NOT covered, security claims limited to what is tested, roadmap statuses.
+- CI: first run on GitHub was green. The run for the accessibility commit failed once in the Playwright job and passed on the identical code when re-run, so it was a flake I could not attribute (logs need credentials). I added GitHub annotations to the Playwright reporter and ONE retry on CI only; if a retried test passes, Playwright reports it as flaky rather than hiding it.
+
+## Final state at the end of the run
+- Unit 101 passed, rules 44 passed, Playwright 76 passed, build ok, lint warnings only.
+
+## Still needs you
+1. `firebase login`, then deploy the rules (after shipping this app version, not before).
+2. Add the `FIREBASE_SERVICE_ACCOUNT` GitHub secret if you want CI to deploy rules.
+3. Confirm your production domain is on Firebase Auth's authorized domains, then try a real Google sign-in once.
+4. Review the diff and merge the branch (I never merged, never deployed to production).
+5. Phase 4B-2 (custom domain), a manual screen-reader pass, and the five-student usability test.

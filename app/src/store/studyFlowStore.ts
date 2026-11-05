@@ -21,7 +21,7 @@ import {
   deleteGradeFromFirestore,
   pushTimerState,
   completeFocusSession
-} from '../services/firestoreSync';
+} from '../services/cloud';
 import { calculateSubtaskProgress } from '../utils/subtasks';
 import { syncThemeColor } from '../utils/themeColor';
 import { complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';

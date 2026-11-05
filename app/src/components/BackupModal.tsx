@@ -2,7 +2,7 @@ import { useDialog } from '../lib/useDialog';
 import React, { useState } from 'react';
 import { X, Download, Upload, Cloud, CheckCircle2, AlertTriangle, Database, Copy } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { friendlyAuthMessage, signInOrLinkWithGoogle } from '../lib/auth';
+import { friendlyAuthMessage, signInOrLinkWithGoogle } from '../lib/authActions';
 import { MAX_BACKUP_BYTES, validateBackupJson } from '../utils/backupValidator';
 import { inAppBrowser } from '../utils/inAppBrowser';
 
@@ -104,10 +104,10 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
               <Database className="h-4 w-4" />
             </div>
             <div>
-              <h3 id="backup-modal-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <h2 id="backup-modal-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 Backup and sync
-              </h3>
-              <p className="text-[11px] tabular-nums text-zinc-600 dark:text-zinc-400">System Design: Zero lock-in, client-first portability</p>
+              </h2>
+              <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">System Design: Zero lock-in, client-first portability</p>
             </div>
           </div>
           <button
@@ -122,9 +122,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
 
         {/* Section 1: Offline Local JSON Portability */}
         <div className="space-y-3">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 tabular-nums">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 tabular-nums">
             Back up to a file (JSON)
-          </h4>
+          </h3>
           <p className="text-xs text-zinc-600 dark:text-zinc-400">
             Export a standalone, human-readable snapshot of all assignments, milestones, course syllabi, and GPA records.
           </p>
@@ -159,9 +159,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
 
         {/* Section 2: Multi-Device Cloud Sync */}
         <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 tabular-nums">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 tabular-nums">
             Multi-Device Cloud Synchronization
-          </h4>
+          </h3>
 
           {isAnonymous ? (
             <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-850 border border-zinc-200/70 dark:border-zinc-800 space-y-2">
@@ -169,12 +169,12 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 <span>Currently running in local guest session.</span>
               </div>
-              <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">
                 Link your Google account to mirror your study plan across phone, tablet, and laptop with zero data loss.
               </p>
               {inAppBrowser() ? (
                 <div className="space-y-2 pt-1">
-                  <div className="p-2.5 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-[11px] leading-relaxed">
+                  <div className="p-2.5 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs leading-relaxed">
                     Google sign-in is blocked inside embedded browsers (WhatsApp, Instagram). Please open StudyFlow in Chrome or Safari to link your Google account.
                   </div>
                   <button
@@ -203,7 +203,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
                 </button>
               )}
               {authError && (
-                <p role="alert" className="text-[11px] text-red-600 dark:text-red-400">{authError}</p>
+                <p role="alert" className="text-xs text-red-600 dark:text-red-400">{authError}</p>
               )}
             </div>
           ) : (
@@ -212,10 +212,10 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                 <div>
                   <p className="text-xs font-medium text-emerald-900 dark:text-emerald-100">Cloud Sync Active</p>
-                  <p className="text-[10px] tabular-nums text-emerald-600 dark:text-emerald-400">{userEmail}</p>
+                  <p className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400">{userEmail}</p>
                 </div>
               </div>
-              <span className="text-[10px] tabular-nums px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">
+              <span className="text-xs tabular-nums px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">
                 Auto-Save
               </span>
             </div>

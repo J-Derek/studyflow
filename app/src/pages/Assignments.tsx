@@ -117,7 +117,7 @@ export const AssignmentsPage: React.FC = () => {
           <div className="flex items-center gap-3">
             {/* Course filter */}
             <div className="flex items-center gap-1.5">
-              <span className="text-zinc-600 dark:text-zinc-400 tabular-nums text-[11px]">Course:</span>
+              <span className="text-zinc-600 dark:text-zinc-400 tabular-nums text-xs">Course:</span>
               <select
                 aria-label="Filter by course"
                 value={selectedCourse}
@@ -135,7 +135,7 @@ export const AssignmentsPage: React.FC = () => {
 
             {/* Priority filter */}
             <div className="flex items-center gap-1.5">
-              <span className="text-zinc-600 dark:text-zinc-400 tabular-nums text-[11px]">Priority:</span>
+              <span className="text-zinc-600 dark:text-zinc-400 tabular-nums text-xs">Priority:</span>
               <select
                 aria-label="Filter by priority"
                 value={selectedPriority}
@@ -150,7 +150,7 @@ export const AssignmentsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="text-[11px] tabular-nums text-zinc-600 dark:text-zinc-400">
+          <div className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
             {filteredAssignments.length} of {assignments.length} assignments
           </div>
         </div>
@@ -161,10 +161,10 @@ export const AssignmentsPage: React.FC = () => {
         {filteredAssignments.length === 0 ? (
           <div className="py-12 text-center p-6">
             <CheckSquare className="h-8 w-8 text-zinc-600 dark:text-zinc-400 mx-auto mb-2" />
-            <h3 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
+            <h2 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
               {assignments.length === 0 ? 'Your assignments data is empty' : 'No assignments match filters'}
-            </h3>
-            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mt-0.5">
+            </h2>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mt-0.5">
               {assignments.length === 0 
                 ? 'Add your first problem set, paper, or lab report to start tracking your deadlines.' 
                 : 'Adjust your search filters or click "New Assignment" to add an assignments milestone.'}
@@ -211,7 +211,7 @@ export const AssignmentsPage: React.FC = () => {
                     </button>
 
                     <div className="flex items-center gap-2 overflow-hidden min-w-0">
-                      <span className="tabular-nums text-[11px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+                      <span className="tabular-nums text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
                         {asg.course.split('—')[0].trim()}
                       </span>
 
@@ -223,13 +223,13 @@ export const AssignmentsPage: React.FC = () => {
                         {asg.title}
                       </span>
                       {asg.sample && (
-                        <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded border border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400">
+                        <span className="shrink-0 text-xs font-medium px-1.5 py-0.5 rounded border border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400">
                           Sample
                         </span>
                       )}
 
                       {asg.notes && (
-                        <span className="text-[11px] text-zinc-600 dark:text-zinc-400 truncate hidden md:inline">
+                        <span className="text-xs text-zinc-600 dark:text-zinc-400 truncate hidden md:inline">
                           — {asg.notes}
                         </span>
                       )}
@@ -239,12 +239,12 @@ export const AssignmentsPage: React.FC = () => {
                   {/* Right Metadata & Controls */}
                   <div className="flex items-center gap-3 shrink-0">
                     {/* Priority — monochrome text only */}
-                    <span className="tabular-nums text-[10px] text-zinc-600 dark:text-zinc-400 hidden sm:inline capitalize">
+                    <span className="tabular-nums text-xs text-zinc-600 dark:text-zinc-400 hidden sm:inline capitalize">
                       {asg.priority}
                     </span>
 
                     {/* Progress Percentage */}
-                    <div className="hidden lg:flex items-center gap-1.5 tabular-nums text-[11px] text-zinc-600 dark:text-zinc-400">
+                    <div className="hidden lg:flex items-center gap-1.5 tabular-nums text-xs text-zinc-600 dark:text-zinc-400">
                       <div className="w-12 bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
                         <div
                           className="bg-zinc-400 dark:bg-zinc-500 h-full rounded-full"
@@ -256,7 +256,7 @@ export const AssignmentsPage: React.FC = () => {
 
                     {/* Due Date — clean monospace */}
                     <span
-                      className={`tabular-nums text-[11px]  ${
+                      className={`tabular-nums text-xs  ${
                         isUrgent && !isCompleted
                           ? 'text-red-600 dark:text-red-400'
                           : 'text-zinc-600 dark:text-zinc-400'

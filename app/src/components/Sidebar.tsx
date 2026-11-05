@@ -12,7 +12,7 @@ import {
   Award
 } from 'lucide-react';
 import { useStudyFlowStore, getPathFromTab } from '../store/studyFlowStore';
-import { friendlyAuthMessage, signInOrLinkWithGoogle, signOutUser } from '../lib/auth';
+import { friendlyAuthMessage, signInOrLinkWithGoogle, signOutUser } from '../lib/authActions';
 import { cn } from '../utils/formatters';
 
 interface SidebarProps {
@@ -75,7 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
           </div>
           <div>
             <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 tracking-tight">StudyFlow</span>
-            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 tabular-nums">Study planner</p>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">Study planner</p>
           </div>
         </div>
 
@@ -135,7 +135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
                 {item.badge !== undefined && item.badge > 0 && (
                   <span
                     className={cn(
-                      'text-[10px] tabular-nums px-1.5 py-0.2 rounded font-medium ',
+                      'text-xs tabular-nums px-1.5 py-0.2 rounded font-medium ',
                       isActive 
                         ? 'bg-blue-600 text-white' 
                         : 'bg-zinc-200/70 dark:bg-zinc-700/70 text-zinc-700 dark:text-zinc-300'
@@ -166,7 +166,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
               <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {isAnonymous ? 'Guest' : user.name}
               </p>
-              <p className="text-[10px] tabular-nums text-zinc-600 dark:text-zinc-400 truncate">
+              <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 truncate">
                 {isAnonymous ? 'Not signed in' : (userEmail || 'Cloud Student')}
               </p>
             </div>
@@ -186,7 +186,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
         </div>
 
         {/* Sync Status Banner */}
-        <div className="pt-1.5 border-t border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-between text-[11px] tabular-nums">
+        <div className="pt-1.5 border-t border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-between text-xs tabular-nums">
           <span className="text-zinc-600 dark:text-zinc-400">{isAnonymous ? 'Guest account' : 'Signed in'}</span>
 
           <button

@@ -83,14 +83,14 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
       <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800/80">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
+            <h2 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
               Getting Started Checklist
-            </h3>
-            <span className="tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+            </h2>
+            <span className="tabular-nums text-xs px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
               {completedCount} / {steps.length} completed
             </span>
           </div>
-          <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5">
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
             Four things worth doing in your first week.
           </p>
         </div>
@@ -143,7 +143,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
                     <Icon className="h-3 w-3 text-zinc-600 dark:text-zinc-400 shrink-0" />
                     <span>{step.title}</span>
                   </span>
-                  <span className="text-[10px] text-zinc-600 dark:text-zinc-400 block truncate">
+                  <span className="text-xs text-zinc-600 dark:text-zinc-400 block truncate">
                     {step.desc}
                   </span>
                 </div>

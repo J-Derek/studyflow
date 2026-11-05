@@ -147,7 +147,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="flex items-center justify-between pb-1">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Upcoming deadlines</h2>
-              <span className="tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+              <span className="tabular-nums text-xs px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                 {urgentAssignments.length} in queue
               </span>
             </div>
@@ -165,14 +165,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="p-8 text-center">
                 {assignments.length === 0 ? (
                   <>
-                    <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">No deadlines scheduled yet</h4>
-                    <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5">Use the quick start card above or click "Add assignment" to begin.</p>
+                    <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">No deadlines scheduled yet</h3>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">Use the quick start card above or click "Add assignment" to begin.</p>
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-                    <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">All assignments cleared</h4>
-                    <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5">No urgent deadlines pending on your course.</p>
+                    <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">All assignments cleared</h3>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">No urgent deadlines pending on your course.</p>
                   </>
                 )}
               </div>
@@ -195,7 +195,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       </button>
 
                       <div className="flex items-center gap-2 overflow-hidden min-w-0">
-                        <span className="tabular-nums text-[11px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+                        <span className="tabular-nums text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
                           {asg.course.split('—')[0].trim()}
                         </span>
                         
@@ -204,7 +204,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         </span>
 
                         {asg.notes && (
-                          <span className="text-[11px] text-zinc-600 dark:text-zinc-400 truncate hidden md:inline">
+                          <span className="text-xs text-zinc-600 dark:text-zinc-400 truncate hidden md:inline">
                             — {asg.notes}
                           </span>
                         )}
@@ -213,13 +213,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                     <div className="flex items-center gap-3 shrink-0">
                       {/* Priority — monochrome text only, no color coding */}
-                      <span className="tabular-nums text-[10px] text-zinc-600 dark:text-zinc-400 hidden sm:inline capitalize">
+                      <span className="tabular-nums text-xs text-zinc-600 dark:text-zinc-400 hidden sm:inline capitalize">
                         {asg.priority}
                       </span>
 
                       {/* Due Countdown — plain monospace, red only if overdue */}
                       <span
-                        className={`tabular-nums text-[11px]  ${
+                        className={`tabular-nums text-xs  ${
                           isUrgent
                             ? 'text-red-600 dark:text-red-400'
                             : 'text-zinc-600 dark:text-zinc-400'
@@ -257,15 +257,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <div key={session.id} className="flex items-start gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 last:border-0 last:pb-0">
                   <div className="w-14 shrink-0 text-right tabular-nums">
                     <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">{session.startTime}</span>
-                    <span className="block text-[10px] text-zinc-600 dark:text-zinc-400">{session.endTime}</span>
+                    <span className="block text-xs text-zinc-600 dark:text-zinc-400">{session.endTime}</span>
                   </div>
                   <div className="h-full w-0.5 bg-zinc-400 dark:bg-zinc-600 shrink-0 self-stretch rounded-full" />
                   <div className="overflow-hidden min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
+                      <span className="tabular-nums text-xs px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
                         {session.course}
                       </span>
-                      <span className="text-[10px] capitalize text-zinc-600 dark:text-zinc-400 tabular-nums">{session.type}</span>
+                      <span className="text-xs capitalize text-zinc-600 dark:text-zinc-400 tabular-nums">{session.type}</span>
                     </div>
                     <h5 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">{session.title}</h5>
                   </div>

@@ -128,10 +128,10 @@ export const CalendarPage: React.FC = () => {
       {sessions.length === 0 && (
         <div className="p-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+            <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
               Your weekly class schedule is empty
-            </h4>
-            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5">
+            </h3>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
               Add your lectures, labs, and study blocks to organize your week, or load demo courses from the Help menu (?).
             </p>
           </div>
@@ -164,13 +164,13 @@ export const CalendarPage: React.FC = () => {
                   {/* Day Header */}
                   <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800/80 mb-2.5">
                     <div>
-                      <span className="text-[11px] tabular-nums font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">{day.dayName}</span>
-                      <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                      <span className="text-xs tabular-nums font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">{day.dayName}</span>
+                      <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                         <span>{day.monthName} {day.dateNumber}</span>
                         {day.isToday && (
-                          <span className="text-[10px] tabular-nums px-1 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 font-semibold">Today</span>
+                          <span className="text-xs tabular-nums px-1 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 font-semibold">Today</span>
                         )}
-                      </h4>
+                      </h3>
                     </div>
                     {day.isToday && (
                       <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
@@ -181,7 +181,7 @@ export const CalendarPage: React.FC = () => {
                   <div className="space-y-2">
                     {daySessions.length === 0 ? (
                       <div className="py-12 text-center text-zinc-600 dark:text-zinc-400">
-                        <p className="text-[11px] tabular-nums">No blocks</p>
+                        <p className="text-xs tabular-nums">No blocks</p>
                       </div>
                     ) : (
                       daySessions.map((session) => (
@@ -198,7 +198,7 @@ export const CalendarPage: React.FC = () => {
                           }`}
                         >
                           <div className="flex items-center justify-between mb-0.5">
-                            <span className="tabular-nums text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+                            <span className="tabular-nums text-xs font-medium text-zinc-600 dark:text-zinc-400">
                               {session.course.split('—')[0].trim()}
                             </span>
                             <button
@@ -213,7 +213,7 @@ export const CalendarPage: React.FC = () => {
                           
                           <h5 className="font-medium text-zinc-900 dark:text-zinc-100 text-xs leading-snug line-clamp-2">{session.title}</h5>
                           
-                          <div className="mt-1 flex items-center gap-1 text-[10px] tabular-nums text-zinc-600 dark:text-zinc-400">
+                          <div className="mt-1 flex items-center gap-1 text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
                             <Clock className="h-2.5 w-2.5" />
                             <span>
                               {session.startTime} - {session.endTime}
@@ -231,7 +231,7 @@ export const CalendarPage: React.FC = () => {
                     setDayOfWeek(day.dayNumber);
                     setModalOpen(true);
                   }}
-                  className="mt-3 w-full py-1 rounded-md border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 text-[10px] tabular-nums transition"
+                  className="mt-3 w-full py-1 rounded-md border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 text-xs tabular-nums transition"
                 >
                   + Add Block
                 </button>
@@ -246,7 +246,7 @@ export const CalendarPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/60 dark:bg-black/80 backdrop-blur-sm animate-fade-in motion-reduce:animate-none">
           <div className="bg-surface-light dark:bg-surface-dark rounded-xl w-full max-w-md shadow-2xl border border-zinc-200/80 dark:border-zinc-800/80 overflow-hidden transition-colors">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-850/40">
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">Add a block</h3>
+              <h2 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">Add a block</h2>
               <button
                 onClick={() => setModalOpen(false)}
                 className="p-1 rounded-md text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"

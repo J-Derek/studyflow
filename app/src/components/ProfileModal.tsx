@@ -77,10 +77,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               <User className="h-4 w-4" />
             </div>
             <div>
-              <h3 id="profile-modal-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+              <h2 id="profile-modal-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                 Profile
-              </h3>
-              <p className="text-[11px] text-zinc-600 dark:text-zinc-400 tabular-nums">
+              </h2>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">
                 Your name and where you study.
               </p>
             </div>
@@ -157,18 +157,18 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
 
           <fieldset className="space-y-2 pt-1">
             <legend className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Calendar export</legend>
-            <p className="text-[11px] text-zinc-600 dark:text-zinc-400">Your timetable repeats weekly between these dates when you export it to a calendar app.</p>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">Your timetable repeats weekly between these dates when you export it to a calendar app.</p>
             <div className="grid grid-cols-2 gap-2">
-              <label className="block text-[11px] text-zinc-600 dark:text-zinc-400">
+              <label className="block text-xs text-zinc-600 dark:text-zinc-400">
                 Term starts
                 <input type="date" value={semesterStart} onChange={(e) => setSemesterStart(e.target.value)} className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
               </label>
-              <label className="block text-[11px] text-zinc-600 dark:text-zinc-400">
+              <label className="block text-xs text-zinc-600 dark:text-zinc-400">
                 Term ends
                 <input type="date" value={semesterEnd} min={semesterStart || undefined} onChange={(e) => setSemesterEnd(e.target.value)} className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
               </label>
             </div>
-            <label className="block text-[11px] text-zinc-600 dark:text-zinc-400">
+            <label className="block text-xs text-zinc-600 dark:text-zinc-400">
               Time zone
               <select value={timeZone} onChange={(e) => setTimeZone(e.target.value)} className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
                 {Array.from(new Set(zones)).map((z) => (

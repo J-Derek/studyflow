@@ -8,10 +8,10 @@ import { BackupModal } from './components/BackupModal';
 import { ProfileModal } from './components/ProfileModal';
 import { HelpMenuModal } from './components/HelpMenuModal';
 import { useStudyFlowStore, getTabFromPath } from './store/studyFlowStore';
-import { startAuthSession } from './lib/auth';
+import { startAuthSessionLazy } from './lib/authActions';
 
 // Code-split pages for performance optimization
-const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
+import { Dashboard } from './pages/Dashboard';
 const AssignmentsPage = lazy(() => import('./pages/Assignments').then((m) => ({ default: m.AssignmentsPage })));
 const CalendarPage = lazy(() => import('./pages/Calendar').then((m) => ({ default: m.CalendarPage })));
 const FocusTimerPage = lazy(() => import('./pages/FocusTimer').then((m) => ({ default: m.FocusTimerPage })));
@@ -26,7 +26,7 @@ export function App() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   // Guest-first anonymous auth and live Firestore sync, rebound whenever the signed-in user changes
-  useEffect(() => startAuthSession(), []);
+  useEffect(() => startAuthSessionLazy(), []);
 
   // Synchronize dark mode class, colorScheme, and dynamic theme-color meta
   useEffect(() => {

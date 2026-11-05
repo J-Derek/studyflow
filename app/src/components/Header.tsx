@@ -9,7 +9,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { signInOrLinkWithGoogle } from '../lib/auth';
+import { signInOrLinkWithGoogle } from '../lib/authActions';
 
 interface HeaderProps {
   onOpenAddModal?: () => void;
@@ -89,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Search className="h-3 w-3" />
               <span>Search assignments…</span>
-              <kbd className="inline-flex items-center gap-0.5 px-1 py-0.2 text-[10px] tabular-nums bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-400">
+              <kbd className="inline-flex items-center gap-0.5 px-1 py-0.2 text-xs tabular-nums bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-400">
                 <Command className="h-2.5 w-2.5" /> K
               </kbd>
             </button>
@@ -121,7 +121,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Real Network & Sync Status Badge */}
           <div
-            className={`hidden sm:flex items-center gap-1.5 px-2 py-0.8 rounded-md border text-[11px] tabular-nums transition-colors ${
+            className={`hidden sm:flex items-center gap-1.5 px-2 py-0.8 rounded-md border text-xs tabular-nums transition-colors ${
               !isOnline
                 ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-400'
                 : isSyncing

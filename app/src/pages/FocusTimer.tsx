@@ -215,11 +215,11 @@ export const FocusTimerPage: React.FC = () => {
             <span className="text-4xl md:text-5xl font-light text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums ">
               <span role="timer" aria-live="off" aria-label={`${timerMode === 'focus' ? 'Focus' : 'Break'} timer`}>{formatTimeLeft(timerSecondsLeft)}</span>
             </span>
-            <span className="text-[11px] tabular-nums text-zinc-600 dark:text-zinc-400 mt-2">
+            <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 mt-2">
               {timerMode === 'focus' ? 'Focus' : 'Break'}
             </span>
             {timerIsRunning && (
-              <span className="mt-2 inline-flex items-center gap-1.5 text-[10px] tabular-nums font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/60">
+              <span className="mt-2 inline-flex items-center gap-1.5 text-xs tabular-nums font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/60">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> ACTIVE
               </span>
             )}
@@ -282,17 +282,17 @@ export const FocusTimerPage: React.FC = () => {
               <Headphones className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <h2 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <span>Background sound</span>
                 {soundscape !== 'off' && timerIsRunning && (
-                  <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 tabular-nums">
+                  <span className="flex items-center gap-0.5 text-xs text-emerald-600 dark:text-emerald-400 tabular-nums">
                     <span className="h-2 w-0.5 bg-emerald-500 animate-pulse" />
                     <span className="h-3 w-0.5 bg-emerald-500 animate-pulse delay-75" />
                     Active
                   </span>
                 )}
-              </h3>
-              <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+              </h2>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">
                 Optional. Plays while the timer runs. Binaural tones work best with headphones.
               </p>
             </div>
@@ -312,7 +312,7 @@ export const FocusTimerPage: React.FC = () => {
                 onChange={(e) => setSoundscapeVolume(Number(e.target.value))}
                 className="w-20 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
-              <span className="tabular-nums text-[10px] text-zinc-600 dark:text-zinc-400 w-6">
+              <span className="tabular-nums text-xs text-zinc-600 dark:text-zinc-400 w-6">
                 {Math.round(soundscapeVolume * 100)}%
               </span>
             </div>
@@ -335,8 +335,8 @@ export const FocusTimerPage: React.FC = () => {
                 {item.icon}
               </div>
               <div>
-                <p className="text-[11px] font-medium leading-tight">{item.label}</p>
-                <p className="text-[10px] tabular-nums text-zinc-600 dark:text-zinc-400 mt-0.5">
+                <p className="text-xs font-medium leading-tight">{item.label}</p>
+                <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 mt-0.5">
                   {soundscape === item.id ? (timerIsRunning ? 'Playing' : 'Selected') : ''}
                 </p>
               </div>
@@ -348,8 +348,8 @@ export const FocusTimerPage: React.FC = () => {
       {/* Focus Session Counter & Milestones */}
       <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex items-center justify-between transition-colors">
         <div>
-          <h4 className="font-medium text-zinc-900 dark:text-zinc-100 text-xs">Focus sessions completed</h4>
-          <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-sans">
+          <h3 className="font-medium text-zinc-900 dark:text-zinc-100 text-xs">Focus sessions completed</h3>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 font-sans">
             Counted on this device
           </p>
         </div>

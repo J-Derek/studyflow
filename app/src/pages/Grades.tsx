@@ -80,6 +80,7 @@ export const GradesPage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in pb-16">
+      <h1 className="sr-only">Grades</h1>
       <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-1 md:grid-cols-3 overflow-hidden">
         <div className="p-4 md:p-5 flex flex-col justify-between">
           <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Projected GPA</span>
@@ -136,11 +137,11 @@ export const GradesPage: React.FC = () => {
                   <h2 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                     What-if calculator
                   </h2>
-                  <span className="tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
+                  <span className="tabular-nums text-xs px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
                     {selectedCourse.courseCode}
                   </span>
                 </div>
-                <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
                   Try a score on your next assessment and see the grade it would give you.
                 </p>
               </div>
@@ -189,7 +190,7 @@ export const GradesPage: React.FC = () => {
                 className="w-full h-1 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
 
-              <div className="flex justify-between text-[10px] tabular-nums text-zinc-600 dark:text-zinc-400">
+              <div className="flex justify-between text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
                 <span>50%</span>
                 <span>75%</span>
                 <span>85%</span>
@@ -199,7 +200,7 @@ export const GradesPage: React.FC = () => {
 
             {/* Projected Result Callout */}
             <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-850 border border-zinc-200/80 dark:border-zinc-800 text-center space-y-1">
-              <p className="text-[11px] tabular-nums text-zinc-600 dark:text-zinc-400">
+              <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
                 Projected Course Grade
               </p>
               <div className="flex items-center justify-center gap-2">
@@ -210,7 +211,7 @@ export const GradesPage: React.FC = () => {
                   {percentageToLetter(simCoursePct)}
                 </span>
               </div>
-              <p className="text-[10px] tabular-nums text-zinc-600 dark:text-zinc-400">
+              <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
                 Grade points at this score: {percentageToGpa(simCoursePct).toFixed(1)} · Your target: {selectedCourse.targetLetter}
               </p>
             </div>
@@ -223,7 +224,7 @@ export const GradesPage: React.FC = () => {
         <div className="flex items-center justify-between pb-1">
           <div>
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Your courses</h2>
-            <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">
               Enter scores as you get them.
             </p>
           </div>
@@ -240,8 +241,8 @@ export const GradesPage: React.FC = () => {
         {grades.length === 0 ? (
           <div className="p-8 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-surface-light dark:bg-surface-dark text-center">
             <Calculator className="h-8 w-8 text-zinc-600 dark:text-zinc-400 mx-auto mb-2" />
-            <h3 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">No courses enrolled</h3>
-            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mt-0.5">
+            <h2 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">No courses enrolled</h2>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mt-0.5">
               Add your classes and course grade weights to calculate your cumulative GPA and simulate target final exam scores.
             </p>
             <div className="mt-3">
@@ -276,11 +277,11 @@ export const GradesPage: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-1.5">
                         <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100">{course.courseCode}</span>
-                        <span className="text-[10px] tabular-nums px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                        <span className="text-xs tabular-nums px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                           {course.credits} Credits
                         </span>
                       </div>
-                      <p className="text-[11px] text-zinc-600 dark:text-zinc-400 truncate max-w-[200px]">
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 truncate max-w-[200px]">
                         {course.courseName}
                       </p>
                     </div>
@@ -296,7 +297,7 @@ export const GradesPage: React.FC = () => {
 
                 {/* Assessments list with live score inputs */}
                 <div className="space-y-1.5 pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
-                  <p className="text-[10px] tabular-nums text-zinc-600 dark:text-zinc-400">
+                  <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
                     Weights ({gradedWeight}% Graded)
                   </p>
 
@@ -308,7 +309,7 @@ export const GradesPage: React.FC = () => {
                       >
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs text-zinc-700 dark:text-zinc-300">{a.name}</span>
-                          <span className="text-[10px] tabular-nums text-zinc-600 dark:text-zinc-400">({a.weight}%)</span>
+                          <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">({a.weight}%)</span>
                         </div>
 
                         <div className="flex items-center gap-1">
@@ -325,7 +326,7 @@ export const GradesPage: React.FC = () => {
                             }}
                             className="w-14 px-1.5 py-0.5 text-right tabular-nums text-xs font-semibold rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                           />
-                          <span className="text-[11px] tabular-nums text-zinc-600 dark:text-zinc-400">%</span>
+                          <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">%</span>
                         </div>
                       </div>
                     ))}
@@ -336,7 +337,7 @@ export const GradesPage: React.FC = () => {
                 <div className="flex items-center justify-between pt-1 text-xs">
                   <button
                     onClick={() => setSelectedCourseId(course.id)}
-                    className="text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1 text-[11px]"
+                    className="text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1 text-xs"
                   >
                     <span>Try the final</span>
                     <ChevronRight className="h-3 w-3" />
@@ -365,7 +366,7 @@ export const GradesPage: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-surface-light dark:bg-surface-dark w-full max-w-md rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-4 animate-scale-in">
             <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Add a course</h3>
+              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Add a course</h2>
               <button
                 onClick={() => setShowAddCourseModal(false)}
                 className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs tabular-nums p-1"

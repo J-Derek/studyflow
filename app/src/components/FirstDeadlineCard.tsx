@@ -105,14 +105,14 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="tabular-nums text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <span className="tabular-nums text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                   Assignment Saved
                 </span>
                 <span className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">Live countdown active</span>
               </div>
-              <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mt-1">
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mt-1">
                 "{savedAssignment.title}" is locked in.
-              </h3>
+              </h2>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
                 Take immediate momentum: launch a focus round now or review your schedule.
               </p>
@@ -158,7 +158,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="md:col-span-2">
-            <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
               Assignment title
             </label>
             <input
@@ -172,7 +172,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
               Course
             </label>
             <input
@@ -188,7 +188,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
 
         {/* Date Quick Chips */}
         <div>
-          <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
             When is it due?
           </label>
           <div className="flex items-center gap-2 flex-wrap">
@@ -256,13 +256,13 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
         {/* Priority & Submit */}
         <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-zinc-100 dark:border-zinc-800/80">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium">Priority:</span>
+            <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Priority:</span>
             {(['low', 'medium', 'high'] as Priority[]).map((p) => (
               <button
                 key={p}
                 type="button"
                 onClick={() => setPriority(p)}
-                className={`text-[11px] tabular-nums px-2.5 py-1 min-h-[44px] rounded capitalize transition cursor-pointer ${
+                className={`text-xs tabular-nums px-2.5 py-1 min-h-[44px] rounded capitalize transition cursor-pointer ${
                   priority === p
                     ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold'
                     : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'

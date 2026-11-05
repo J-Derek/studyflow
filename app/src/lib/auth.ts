@@ -1,4 +1,5 @@
 import {
+  browserPopupRedirectResolver,
   GoogleAuthProvider,
   linkWithPopup,
   onAuthStateChanged,
@@ -169,25 +170,7 @@ export class AuthGuidanceError extends Error {
   }
 }
 
-/** Turns a Firebase auth error into text a student can act on. Returns null for silent cancels. */
-export function friendlyAuthMessage(err: unknown): string | null {
-  const code = (err as { code?: string })?.code ?? '';
-  switch (code) {
-    case 'auth/popup-closed-by-user':
-    case 'auth/cancelled-popup-request':
-      return null;
-    case 'auth/in-app-browser-blocked':
-      return 'Google sign-in does not work inside this app. Open StudyFlow in Chrome or Safari and try again.';
-    case 'auth/popup-blocked':
-      return 'Your browser blocked the Google sign-in window. Allow pop-ups for this site, then try again.';
-    case 'auth/operation-not-supported-in-this-environment':
-      return 'This browser cannot open Google sign-in. Open StudyFlow in Chrome or Safari and try again.';
-    case 'auth/network-request-failed':
-      return 'No connection. Check your internet and try again.';
-    default:
-      return 'Could not sign in with Google. Please try again.';
-  }
-}
+export { friendlyAuthMessage } from './authActions';
 
 /**
  * Upgrades a guest to a Google account, or signs in to an existing one.
@@ -203,7 +186,7 @@ export async function signInOrLinkWithGoogle(): Promise<User> {
 
   if (currentUser && currentUser.isAnonymous) {
     try {
-      const result = await linkWithPopup(currentUser, googleProvider);
+      const result = await linkWithPopup(currentUser, googleProvider, browserPopupRedirectResolver);
       bindUser(result.user);
       return result.user;
     } catch (error: unknown) {
@@ -231,7 +214,7 @@ export async function signInOrLinkWithGoogle(): Promise<User> {
       }
     }
   }
-  const result = await signInWithPopup(auth, googleProvider);
+  const result = await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
   bindUser(result.user);
   return result.user;
 }
