@@ -1,5 +1,5 @@
-# StudyFlow — Academic Command Center
-> An institutional-grade academic operating system for university scholars and engineering students.
+# StudyFlow — Study planner
+> Deadlines, timetable, focus timer and a projected-GPA what-if calculator for university students.
 
 ## Architecture
 - Framework: Vite 8.3 + React 19 + TypeScript + Tailwind CSS 3.4
@@ -8,8 +8,8 @@
 - Features: Coursework registry, interactive calendar timetable, Pomodoro focus timer with ambient soundscapes, GPA & grade predictor, local/cloud disaster recovery backup
 
 ## Routes
-- `/`: Academic command ledger & daily briefings
+- `/`: Today: upcoming deadlines
 - `/assignments`: Deliverables registry with filtering, search, and pagination
 - `/calendar`: 7-day timetable with interactive weekly navigation & .ics export
-- `/timer`: Zero-drift Pomodoro focus timer with Web Audio soundscapes
-- `/grades`: Real-time cumulative GPA calculator & final exam grade simulator
+- `/timer`: Pomodoro focus timer with Web Audio soundscapes
+- `/grades`: Projected GPA and what-if calculator

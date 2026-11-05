@@ -1,9 +1,18 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
+import {
+  browserLocalPersistence,
+  browserSessionPersistence,
+  connectAuthEmulator,
+  GoogleAuthProvider,
+  indexedDBLocalPersistence,
+  initializeAuth,
+  type Auth
+} from 'firebase/auth';
 import {
   initializeFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
+  connectFirestoreEmulator,
   type Firestore
 } from 'firebase/firestore';
 
@@ -28,6 +37,16 @@ export const db: Firestore = initializeFirestore(app, {
 });
 
 // Initialize Authentication & Providers
-export const auth: Auth = getAuth(app);
+// No popup resolver here: it would load Google's api.js on every page view. It is passed when the
+// student actually clicks sign-in (see lib/auth.ts).
+export const auth: Auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
+});
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+// Test builds only: run against the local Auth and Firestore emulators.
+if (import.meta.env.VITE_USE_EMULATORS === 'true') {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+}

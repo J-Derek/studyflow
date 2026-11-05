@@ -20,6 +20,8 @@ export interface Assignment {
   subtasks?: Subtask[];
   createdAt: string;
   completedAt?: string;
+  /** Demo content added via the Help menu. Excluded from GPA, backups, .ics and the checklist. */
+  sample?: boolean;
 }
 
 export interface StudySession {
@@ -31,6 +33,7 @@ export interface StudySession {
   endTime: string; // HH:mm
   type: 'lecture' | 'lab' | 'study' | 'review' | 'exam';
   color?: string;
+  sample?: boolean;
 }
 
 export interface Assessment {
@@ -48,6 +51,7 @@ export interface CourseGrade {
   targetLetter: string; // e.g. 'A', 'A-', 'B+'
   color: string;
   assessments: Assessment[];
+  sample?: boolean;
 }
 
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
@@ -66,6 +70,10 @@ export interface UserPreferences {
   program: string;
   semester: string;
   avatarUrl?: string;
+  /** Term dates and zone used by the .ics export. Stored on this device only. */
+  semesterStart?: string;
+  semesterEnd?: string;
+  timeZone?: string;
 }
 
 export type SoundscapeType = 'off' | 'rain' | 'brown' | 'white' | 'binaural';

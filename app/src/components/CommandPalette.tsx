@@ -1,3 +1,4 @@
+import { useDialog } from '../lib/useDialog';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
@@ -15,7 +16,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { downloadICalendarFile } from '../lib/icalExport';
+import { exportTimetable } from '../lib/exportTimetable';
 
 interface CommandItem {
   id: string;
@@ -77,21 +78,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   // Build command items
   const navigationItems: CommandItem[] = [
-    { id: 'nav-dash', label: 'Go to Academic Dashboard', category: 'Navigation', icon: LayoutDashboard, action: () => { setActiveTab('dashboard'); onClose(); } },
-    { id: 'nav-asg', label: 'Go to Coursework Registry', category: 'Navigation', icon: CheckSquare, action: () => { setActiveTab('assignments'); onClose(); } },
-    { id: 'nav-cal', label: 'Go to Academic Timetable', category: 'Navigation', icon: Calendar, action: () => { setActiveTab('calendar'); onClose(); } },
-    { id: 'nav-timer', label: 'Go to Focus Timer Console', category: 'Navigation', icon: Timer, action: () => { setActiveTab('timer'); onClose(); } },
+    { id: 'nav-dash', label: 'Go to Today', category: 'Navigation', icon: LayoutDashboard, action: () => { setActiveTab('dashboard'); onClose(); } },
+    { id: 'nav-asg', label: 'Go to Assignments', category: 'Navigation', icon: CheckSquare, action: () => { setActiveTab('assignments'); onClose(); } },
+    { id: 'nav-cal', label: 'Go to Timetable', category: 'Navigation', icon: Calendar, action: () => { setActiveTab('calendar'); onClose(); } },
+    { id: 'nav-timer', label: 'Go to Focus timer', category: 'Navigation', icon: Timer, action: () => { setActiveTab('timer'); onClose(); } },
     { id: 'nav-grades', label: 'Go to GPA Predictor & Simulator', category: 'Navigation', icon: Award, action: () => { setActiveTab('grades'); onClose(); } }
   ];
 
   const actionItems: CommandItem[] = [
-    { id: 'act-new', label: 'Create New Deliverable', category: 'Actions', icon: Plus, action: () => { onClose(); onOpenAddModal(); } },
+    { id: 'act-new', label: 'Create New Assignment', category: 'Actions', icon: Plus, action: () => { onClose(); onOpenAddModal(); } },
     { id: 'act-focus', label: 'Launch 25m Focus Session', category: 'Actions', icon: Sparkles, action: () => { setActiveTab('timer'); setTimerMode('focus'); startTimer(); onClose(); } },
     { id: 'act-theme', label: `Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`, category: 'Actions', icon: theme === 'light' ? Moon : Sun, action: () => { toggleTheme(); onClose(); } },
-    { id: 'act-ics', label: 'Export Timetable to Apple/Google (.ICS)', category: 'Actions', icon: Download, action: () => { downloadICalendarFile(sessions); onClose(); } },
+    { id: 'act-ics', label: 'Export Timetable to Apple/Google (.ICS)', category: 'Actions', icon: Download, action: () => { exportTimetable(); onClose(); } },
     {
       id: 'act-backup',
-      label: 'Export Full Academic Ledger (.JSON Backup)',
+      label: 'Export all my data (JSON backup)',
       category: 'Actions',
       icon: Database,
       action: () => {
@@ -111,7 +112,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `studyflow-ledger-${new Date().toISOString().split('T')[0]}.json`;
+          a.download = `studyflow-data-${new Date().toISOString().split('T')[0]}.json`;
           a.click();
           URL.revokeObjectURL(url);
           onClose();
@@ -123,7 +124,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const assignmentItems: CommandItem[] = assignments.map((a) => ({
     id: `asg-${a.id}`,
     label: `${a.title} (${a.course.split('—')[0].trim()})`,
-    category: 'Coursework',
+    category: 'Assignments',
     icon: CheckSquare,
     badge: a.priority.toUpperCase(),
     action: () => {
@@ -156,6 +157,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     }
   };
 
+  const dialogRef = useDialog(isOpen, onClose);
+
   if (!isOpen) return null;
 
   return (
@@ -167,22 +170,27 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         className="w-full max-w-xl bg-surface-light dark:bg-surface-dark border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search and commands"
       >
         {/* Search Input Bay */}
         <div className="flex items-center px-3.5 py-3 border-b border-zinc-200/80 dark:border-zinc-800/80 gap-3">
-          <Search className="h-4 w-4 text-zinc-400 shrink-0" />
+          <Search className="h-4 w-4 text-zinc-600 dark:text-zinc-400 shrink-0" />
           <input
             ref={inputRef}
             type="text"
-            placeholder="Type a command or search coursework..."
+            aria-label="Search assignments and commands"
+            placeholder="Type a command or search assignments..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
-            className="w-full bg-transparent text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
+            className="w-full bg-transparent text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none"
           />
-          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-xs tabular-nums rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
             ESC
           </kbd>
         </div>
@@ -190,8 +198,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         {/* Command Results List */}
         <div className="max-h-80 overflow-y-auto p-1.5 space-y-0.5">
           {filteredItems.length === 0 ? (
-            <div className="py-8 text-center text-xs text-zinc-400 font-mono">
-              No matching commands or coursework found.
+            <div className="py-8 text-center text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">
+              No matching commands or assignments found.
             </div>
           ) : (
             filteredItems.map((item, index) => {
@@ -209,20 +217,20 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   }`}
                 >
                   <div className="flex items-center gap-2.5 truncate">
-                    <Icon className={`h-3.5 w-3.5 shrink-0 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400'}`} />
+                    <Icon className={`h-3.5 w-3.5 shrink-0 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-600 dark:text-zinc-400'}`} />
                     <span className="truncate">{item.label}</span>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
                     {item.badge && (
-                      <span className="font-mono text-[9px] px-1.5 py-0.2 rounded bg-zinc-200/60 dark:bg-zinc-700/60 text-zinc-600 dark:text-zinc-300">
+                      <span className="tabular-nums text-xs px-1.5 py-0.5 rounded bg-zinc-200/60 dark:bg-zinc-700/60 text-zinc-600 dark:text-zinc-300">
                         {item.badge}
                       </span>
                     )}
-                    <span className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
+                    <span className="tabular-nums text-xs text-zinc-600 dark:text-zinc-400">
                       {item.category}
                     </span>
-                    {isSelected && <ArrowRight className="h-3 w-3 text-zinc-400" />}
+                    {isSelected && <ArrowRight className="h-3 w-3 text-zinc-600 dark:text-zinc-400" />}
                   </div>
                 </button>
               );
@@ -231,9 +239,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         </div>
 
         {/* Footer info bar */}
-        <div className="px-3.5 py-2 border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/60 dark:bg-zinc-850/60 flex items-center justify-between text-[11px] font-mono text-zinc-400">
-          <span>Navigate with <kbd className="px-1 py-0.2 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-500">↑</kbd> <kbd className="px-1 py-0.2 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-500">↓</kbd></span>
-          <span>Select with <kbd className="px-1 py-0.2 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-500">↵</kbd></span>
+        <div className="px-3.5 py-2 border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/60 dark:bg-zinc-850/60 flex items-center justify-between text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
+          <span>Navigate with <kbd className="px-1 py-0.5 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">↑</kbd> <kbd className="px-1 py-0.5 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">↓</kbd></span>
+          <span>Select with <kbd className="px-1 py-0.5 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">↵</kbd></span>
         </div>
       </div>
     </div>

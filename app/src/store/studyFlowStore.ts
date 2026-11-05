@@ -10,15 +10,22 @@ import type {
   SoundscapeType,
   Subtask
 } from '../types';
-import { playSoundscape, stopSoundscape, setSoundscapeVolume as setAudioVolume } from '../lib/soundscapes';
+import { playSoundscape, stopSoundscape, playCompletionChime, setSoundscapeVolume as setAudioVolume } from '../lib/soundscapes';
 import {
   syncAssignmentToFirestore,
   deleteAssignmentFromFirestore,
   syncSessionToFirestore,
-  deleteSessionFromFirestore
-} from '../services/firestoreSync';
+  deleteSessionFromFirestore,
+  syncOnboardingDismissed,
+  syncGradeToFirestore,
+  deleteGradeFromFirestore,
+  pushTimerState,
+  completeFocusSession
+} from '../services/cloud';
 import { calculateSubtaskProgress } from '../utils/subtasks';
 import { syncThemeColor } from '../utils/themeColor';
+import { complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
+import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 
 export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades';
 
@@ -39,6 +46,8 @@ export function getPathFromTab(tab: NavigationTab): string {
 interface StudyFlowState {
   // Authentication & Sync State
   userId: string | null;
+  /** uid that the persisted records on this device belong to. */
+  dataOwnerUid: string | null;
   isAnonymous: boolean;
   userEmail: string | null;
   isSyncing: boolean;
@@ -52,7 +61,13 @@ interface StudyFlowState {
   // Onboarding & Demo Sandbox
   onboardingDismissed: boolean;
   dismissOnboarding: () => void;
+  guestNoticeDismissed: boolean;
+  dismissGuestNotice: () => void;
   loadSampleData: () => void;
+  icsExportCount: number;
+  bumpIcsExport: () => void;
+  importLedger: (ledger: { assignments: Assignment[]; sessions: StudySession[]; grades: CourseGrade[] }) => void;
+  clearSampleData: () => void;
   clearAllData: () => void;
 
   // Active Navigation Tab
@@ -87,10 +102,12 @@ interface StudyFlowState {
 
   // Focus Timer
   timerSettings: TimerSettings;
-  timerMode: TimerMode;
-  timerSecondsLeft: number;
-  timerIsRunning: boolean;
-  timerLastTimestamp: number | null;
+  /** Timestamps and durations only. Remaining time is derived with remainingSeconds(timer, nowMs). */
+  timer: TimerState;
+  /** Wall clock, refreshed once a second by the scheduler while a timer runs. */
+  nowMs: number;
+  /** Set when a focus block finishes, so the page can celebrate. */
+  focusCompletedAtMs: number | null;
   pomodorosCompleted: number;
   soundscape: SoundscapeType;
   soundscapeVolume: number;
@@ -98,176 +115,14 @@ interface StudyFlowState {
   startTimer: () => void;
   pauseTimer: () => void;
   resetTimer: () => void;
-  tickTimer: () => void;
-  syncInactiveTime: () => void;
+  completeTimer: () => void;
+  setNowMs: (ms: number) => void;
+  adoptRemoteTimer: (t: TimerState) => void;
   incrementPomodoros: () => void;
   updateTimerSettings: (settings: Partial<TimerSettings>) => void;
   setSoundscape: (type: SoundscapeType) => void;
   setSoundscapeVolume: (volume: number) => void;
 }
-
-const initialAssignments: Assignment[] = [
-  {
-    id: 'asg-1',
-    title: 'Distributed Consensus Algorithm Synthesis',
-    course: 'CS 4400 — Distributed Systems',
-    dueDate: '2026-11-03',
-    dueTime: '23:59',
-    priority: 'high',
-    status: 'in_progress',
-    progress: 75,
-    notes: 'Implement Raft leader election and log replication with fault-injection test harness.',
-    subtasks: [
-      { id: 'st-1', title: 'Review Ongaro-Ousterhout Raft paper', completed: true },
-      { id: 'st-2', title: 'Implement Leader Election RPC states', completed: true },
-      { id: 'st-3', title: 'Write Log Replication appendEntries handler', completed: true },
-      { id: 'st-4', title: 'Run network partition chaos suite', completed: false }
-    ],
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'asg-2',
-    title: 'Linear State-Space Control Problem Set',
-    course: 'MATH 310 — Applied Linear Algebra',
-    dueDate: '2026-11-05',
-    dueTime: '17:00',
-    priority: 'high',
-    status: 'in_progress',
-    progress: 40,
-    notes: 'Derive eigenspaces, compute Jordan canonical form, and prove observability matrices.',
-    subtasks: [
-      { id: 'st-5', title: 'Questions 1–3: Eigenvalues & diagonalization', completed: true },
-      { id: 'st-6', title: 'Question 4: Generalized eigenvectors', completed: true },
-      { id: 'st-7', title: 'Question 5: Jordan form transformation matrix', completed: false },
-      { id: 'st-8', title: 'Question 6: Proof of Kalman rank condition', completed: false },
-      { id: 'st-9', title: 'Format solutions in LaTeX', completed: false }
-    ],
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'asg-3',
-    title: 'Design System & Component Token Spec',
-    course: 'DES 202 — Interaction Systems',
-    dueDate: '2026-11-08',
-    dueTime: '12:00',
-    priority: 'medium',
-    status: 'in_progress',
-    progress: 80,
-    notes: 'Figma code layer integration, WCAG AA contrast audit, and mobile tap targets.',
-    subtasks: [
-      { id: 'st-10', title: 'Color token hierarchy (Light & Dark mode)', completed: true },
-      { id: 'st-11', title: 'Typography roles & baseline grid', completed: true },
-      { id: 'st-12', title: 'WCAG 2.2 AA Contrast verification (4.5:1 ratio)', completed: true },
-      { id: 'st-13', title: 'Export Figma Code Connect specs', completed: false }
-    ],
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'asg-4',
-    title: 'Query Optimization & B+ Tree Indexing Benchmark',
-    course: 'CS 3200 — Database Internals',
-    dueDate: '2026-11-12',
-    dueTime: '23:59',
-    priority: 'low',
-    status: 'pending',
-    progress: 0,
-    notes: 'Compare buffer pool hit ratios across LRU and Clock-sweep algorithms.',
-    subtasks: [
-      { id: 'st-14', title: 'Scaffold disk page layout', completed: false },
-      { id: 'st-15', title: 'Implement B+ Tree leaf split and merge', completed: false },
-      { id: 'st-16', title: 'Benchmark concurrent latching under 100 threads', completed: false }
-    ],
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'asg-5',
-    title: 'Ethics in Autonomous Intelligence Memo',
-    course: 'PHIL 105 — Technology & Society',
-    dueDate: '2026-10-28',
-    dueTime: '18:00',
-    priority: 'medium',
-    status: 'completed',
-    progress: 100,
-    notes: 'Submitted peer review synthesis on moral agency in multi-agent autonomous software.',
-    subtasks: [
-      { id: 'st-17', title: 'Read Russell & Norvig alignment chapter', completed: true },
-      { id: 'st-18', title: 'Write 1,500 word policy memo', completed: true },
-      { id: 'st-19', title: 'Submit on Canvas portal', completed: true }
-    ],
-    createdAt: new Date().toISOString(),
-    completedAt: '2026-10-28T16:45:00.000Z'
-  }
-];
-
-const initialSessions: StudySession[] = [
-  { id: 's-1', title: 'Distributed Systems Lecture', course: 'CS 4400', dayOfWeek: 1, startTime: '09:00', endTime: '10:30', type: 'lecture' },
-  { id: 's-2', title: 'Deep Work: Raft Implementation', course: 'CS 4400', dayOfWeek: 1, startTime: '14:00', endTime: '16:30', type: 'study' },
-  { id: 's-3', title: 'Applied Linear Algebra', course: 'MATH 310', dayOfWeek: 2, startTime: '11:00', endTime: '12:30', type: 'lecture' },
-  { id: 's-4', title: 'Interaction Systems Studio', course: 'DES 202', dayOfWeek: 3, startTime: '13:00', endTime: '15:00', type: 'lab' },
-  { id: 's-5', title: 'Problem Set Review & Eigenvectors', course: 'MATH 310', dayOfWeek: 3, startTime: '16:00', endTime: '18:00', type: 'review' },
-  { id: 's-6', title: 'Database Systems Architecture', course: 'CS 3200', dayOfWeek: 4, startTime: '10:00', endTime: '11:30', type: 'lecture' },
-  { id: 's-7', title: 'B+ Tree Benchmark Lab', course: 'CS 3200', dayOfWeek: 5, startTime: '14:00', endTime: '16:00', type: 'lab' },
-  { id: 's-8', title: 'Weekly Academic Retrospective', course: 'General', dayOfWeek: 6, startTime: '10:00', endTime: '11:30', type: 'review' }
-];
-
-const initialGrades: CourseGrade[] = [
-  {
-    id: 'cg-1',
-    courseCode: 'CS 4400',
-    courseName: 'Distributed Systems',
-    credits: 4,
-    targetLetter: 'A',
-    color: '#6366F1',
-    assessments: [
-      { id: 'a-1', name: 'Midterm Exam', weight: 25, score: 92 },
-      { id: 'a-2', name: 'Raft Consensus Project', weight: 30, score: 96 },
-      { id: 'a-3', name: 'Weekly Problem Sets', weight: 20, score: 90 },
-      { id: 'a-4', name: 'Final Comprehensive Exam', weight: 25, score: undefined }
-    ]
-  },
-  {
-    id: 'cg-2',
-    courseCode: 'MATH 310',
-    courseName: 'Applied Linear Algebra',
-    credits: 4,
-    targetLetter: 'A-',
-    color: '#EC4899',
-    assessments: [
-      { id: 'a-5', name: 'Problem Sets (Total)', weight: 20, score: 86 },
-      { id: 'a-6', name: 'Midterm 1 (Vector Spaces)', weight: 25, score: 84 },
-      { id: 'a-7', name: 'Midterm 2 (Eigenvalues)', weight: 25, score: 91 },
-      { id: 'a-8', name: 'Final Exam', weight: 30, score: undefined }
-    ]
-  },
-  {
-    id: 'cg-3',
-    courseCode: 'DES 202',
-    courseName: 'Interaction Systems',
-    credits: 3,
-    targetLetter: 'A',
-    color: '#10B981',
-    assessments: [
-      { id: 'a-9', name: 'Design Sprint 1: Typography', weight: 20, score: 95 },
-      { id: 'a-10', name: 'Design Sprint 2: Design Tokens', weight: 25, score: 98 },
-      { id: 'a-11', name: 'Heuristic Usability Evaluation', weight: 25, score: 92 },
-      { id: 'a-12', name: 'Final Product Prototype', weight: 30, score: undefined }
-    ]
-  },
-  {
-    id: 'cg-4',
-    courseCode: 'CS 3200',
-    courseName: 'Database Internals',
-    credits: 4,
-    targetLetter: 'A',
-    color: '#F59E0B',
-    assessments: [
-      { id: 'a-13', name: 'Lab 1: Disk Storage Engine', weight: 15, score: 94 },
-      { id: 'a-14', name: 'Lab 2: B+ Tree Concurrency', weight: 20, score: 91 },
-      { id: 'a-15', name: 'Midterm Examination', weight: 25, score: 88 },
-      { id: 'a-16', name: 'Final Query Engine Capstone', weight: 40, score: undefined }
-    ]
-  }
-];
 
 const defaultSettings: TimerSettings = {
   focusDuration: 25 * 60,
@@ -277,16 +132,24 @@ const defaultSettings: TimerSettings = {
   autoStartFocus: false
 };
 
+function durationFor(mode: TimerMode, settings: TimerSettings): number {
+  if (mode === 'shortBreak') return settings.shortBreakDuration;
+  if (mode === 'longBreak') return settings.longBreakDuration;
+  return settings.focusDuration;
+}
+
 export const useStudyFlowStore = create<StudyFlowState>()(
   persist(
     (set, get) => ({
       userId: null,
+      dataOwnerUid: null,
       isAnonymous: true,
       userEmail: null,
       isSyncing: false,
       setAuthUser: (uid, isAnonymous, email, displayName) => {
         set((state) => ({
           userId: uid,
+          dataOwnerUid: uid,
           isAnonymous,
           userEmail: email || null,
           user: {
@@ -299,6 +162,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       resetStore: () => {
         set({
           userId: null,
+          dataOwnerUid: null,
           isAnonymous: true,
           userEmail: null,
           isSyncing: false,
@@ -306,6 +170,10 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           sessions: [],
           grades: [],
           onboardingDismissed: false,
+          guestNoticeDismissed: false,
+          pomodorosCompleted: 0,
+          timer: idleTimer('focus', defaultSettings.focusDuration),
+          focusCompletedAtMs: null,
           user: {
             name: 'Student',
             university: 'Academic Workspace',
@@ -327,24 +195,88 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           user: { ...state.user, ...updates }
         })),
 
+      guestNoticeDismissed: false,
+      dismissGuestNotice: () => set({ guestNoticeDismissed: true }),
+
       onboardingDismissed: false,
-      dismissOnboarding: () => set({ onboardingDismissed: true }),
+      dismissOnboarding: () => {
+        set({ onboardingDismissed: true });
+        const uid = get().userId;
+        if (uid) syncOnboardingDismissed(uid).catch(console.warn);
+      },
+
+      icsExportCount: 0,
+      bumpIcsExport: () => set((state) => ({ icsExportCount: state.icsExportCount + 1 })),
 
       loadSampleData: () => {
+        const sample = buildSampleData();
+        const state = get();
+        const known = new Set(state.assignments.map((x) => x.id));
+        const newAssignments = sample.assignments.filter((x) => !known.has(x.id));
+        const knownSessions = new Set(state.sessions.map((x) => x.id));
+        const newSessions = sample.sessions.filter((x) => !knownSessions.has(x.id));
+        const knownGrades = new Set(state.grades.map((x) => x.id));
+        const newGrades = sample.grades.filter((x) => !knownGrades.has(x.id));
         set({
-          assignments: initialAssignments,
-          sessions: initialSessions,
-          grades: initialGrades,
-          user: {
-            name: 'Alex Vance',
-            university: 'Polytechnic Institute',
-            program: 'Computer Engineering',
-            semester: 'Fall 2026'
-          }
+          assignments: [...newAssignments, ...state.assignments],
+          sessions: [...state.sessions, ...newSessions],
+          grades: [...state.grades, ...newGrades]
         });
+        const uid = state.userId;
+        if (uid) {
+          newAssignments.forEach((x) => syncAssignmentToFirestore(uid, x).catch(console.warn));
+          newSessions.forEach((x) => syncSessionToFirestore(uid, x).catch(console.warn));
+          newGrades.forEach((x) => syncGradeToFirestore(uid, x).catch(console.warn));
+        }
+      },
+
+      importLedger: (ledger) => {
+        const state = get();
+        const uid = state.userId;
+        const keepA = new Set(ledger.assignments.map((x) => x.id));
+        const keepS = new Set(ledger.sessions.map((x) => x.id));
+        const keepG = new Set(ledger.grades.map((x) => x.id));
+        const removedG = state.grades.filter((x) => !keepG.has(x.id));
+        const removedA = state.assignments.filter((x) => !keepA.has(x.id));
+        const removedS = state.sessions.filter((x) => !keepS.has(x.id));
+        set({ assignments: ledger.assignments, sessions: ledger.sessions, grades: ledger.grades });
+        if (uid) {
+          // A restore replaces the account's data in the cloud too; otherwise the next snapshot undoes it.
+          ledger.assignments.forEach((x) => syncAssignmentToFirestore(uid, x).catch(console.warn));
+          ledger.sessions.forEach((x) => syncSessionToFirestore(uid, x).catch(console.warn));
+          removedA.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(console.warn));
+          removedS.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(console.warn));
+          ledger.grades.forEach((x) => syncGradeToFirestore(uid, x).catch(console.warn));
+          removedG.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(console.warn));
+        }
+      },
+
+      clearSampleData: () => {
+        const state = get();
+        const sampleAssignments = state.assignments.filter((x) => x.sample);
+        const sampleSessions = state.sessions.filter((x) => x.sample);
+        const sampleGrades = state.grades.filter((x) => x.sample);
+        set({
+          assignments: state.assignments.filter((x) => !x.sample),
+          sessions: state.sessions.filter((x) => !x.sample),
+          grades: state.grades.filter((x) => !x.sample)
+        });
+        const uid = state.userId;
+        if (uid) {
+          sampleAssignments.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(console.warn));
+          sampleSessions.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(console.warn));
+          sampleGrades.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(console.warn));
+        }
       },
 
       clearAllData: () => {
+        const state = get();
+        const uid = state.userId;
+        if (uid) {
+          state.assignments.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(console.warn));
+          state.sessions.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(console.warn));
+          state.grades.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(console.warn));
+        }
         set({
           assignments: [],
           sessions: [],
@@ -383,7 +315,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         }
       },
 
-      assignments: initialAssignments,
+      assignments: [],
       addAssignment: (assignment) => {
         const newAssignment: Assignment = {
           ...assignment,
@@ -470,13 +402,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         set((state) => ({
           assignments: state.assignments.map((a) => {
             if (a.id === assignmentId) {
-              const currentSubtasks: Subtask[] = (a.subtasks && a.subtasks.length > 0)
-                ? a.subtasks
-                : [
-                    { id: `${a.id}-st-1`, title: 'Read requirements & synthesize outline', completed: a.progress >= 30 },
-                    { id: `${a.id}-st-2`, title: 'Execute core technical deliverables & tests', completed: a.progress >= 70 },
-                    { id: `${a.id}-st-3`, title: 'Final proofing, documentation & submission', completed: a.progress === 100 }
-                  ];
+              const currentSubtasks: Subtask[] = a.subtasks ?? [];
               const updatedSubtasks = currentSubtasks.map((st) =>
                 st.id === subtaskId ? { ...st, completed: !st.completed } : st
               );
@@ -501,20 +427,14 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         set((state) => ({
           assignments: state.assignments.map((a) => {
             if (a.id === assignmentId) {
-              const currentSubtasks: Subtask[] = (a.subtasks && a.subtasks.length > 0)
-                ? a.subtasks
-                : [
-                    { id: `${a.id}-st-1`, title: 'Read requirements & synthesize outline', completed: a.progress >= 30 },
-                    { id: `${a.id}-st-2`, title: 'Execute core technical deliverables & tests', completed: a.progress >= 70 },
-                    { id: `${a.id}-st-3`, title: 'Final proofing, documentation & submission', completed: a.progress === 100 }
-                  ];
+              const currentSubtasks: Subtask[] = a.subtasks ?? [];
               const newSubtask: Subtask = {
                 id: `st-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
                 title,
                 completed: false
               };
               const updatedSubtasks = [...currentSubtasks, newSubtask];
-              const { progress, status, allDone } = calculateSubtaskProgress(updatedSubtasks, a.progress);
+              const { progress, status, allDone } = calculateSubtaskProgress(updatedSubtasks, a.progress, { allowComplete: false });
               const updated: Assignment = {
                 ...a,
                 subtasks: updatedSubtasks,
@@ -536,7 +456,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           assignments: state.assignments.map((a) => {
             if (a.id === assignmentId && a.subtasks) {
               const updatedSubtasks = a.subtasks.filter((st) => st.id !== subtaskId);
-              const { progress, status, allDone } = calculateSubtaskProgress(updatedSubtasks, a.progress);
+              const { progress, status, allDone } = calculateSubtaskProgress(updatedSubtasks, a.progress, { allowComplete: false });
               const updated: Assignment = {
                 ...a,
                 subtasks: updatedSubtasks,
@@ -553,7 +473,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         }));
       },
 
-      sessions: initialSessions,
+      sessions: [],
       addSession: (session) => {
         const newSession: StudySession = {
           ...session,
@@ -584,140 +504,106 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         }
       },
 
-      grades: initialGrades,
+      grades: [],
       updateAssessmentScore: (courseId, assessmentId, score) => {
-        set((state) => ({
-          grades: state.grades.map((c) => {
-            if (c.id === courseId) {
-              return {
-                ...c,
-                assessments: c.assessments.map((a) =>
-                  a.id === assessmentId ? { ...a, score } : a
-                )
-              };
-            }
-            return c;
-          })
-        }));
+        const course = get().grades.find((c) => c.id === courseId);
+        if (!course) return;
+        const next: CourseGrade = {
+          ...course,
+          assessments: course.assessments.map((a) => (a.id === assessmentId ? { ...a, score } : a))
+        };
+        set((state) => ({ grades: state.grades.map((c) => (c.id === courseId ? next : c)) }));
+        const uid = get().userId;
+        if (uid) syncGradeToFirestore(uid, next).catch((err) => console.warn('Sync error updating grade:', err));
       },
 
       addCourseGrade: (course) => {
         const newCourse: CourseGrade = {
           ...course,
-          id: `cg-${Date.now()}`
+          id: `cg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
         };
-        set((state) => ({
-          grades: [...state.grades, newCourse]
-        }));
+        set((state) => ({ grades: [...state.grades, newCourse] }));
+        const uid = get().userId;
+        if (uid) syncGradeToFirestore(uid, newCourse).catch((err) => console.warn('Sync error adding grade:', err));
       },
 
       deleteCourseGrade: (courseId) => {
-        set((state) => ({
-          grades: state.grades.filter((c) => c.id !== courseId)
-        }));
+        set((state) => ({ grades: state.grades.filter((c) => c.id !== courseId) }));
+        const uid = get().userId;
+        if (uid) deleteGradeFromFirestore(uid, courseId).catch((err) => console.warn('Sync error deleting grade:', err));
       },
 
       // Focus Timer
       timerSettings: defaultSettings,
-      timerMode: 'focus',
-      timerSecondsLeft: defaultSettings.focusDuration,
-      timerIsRunning: false,
-      timerLastTimestamp: null,
-      pomodorosCompleted: 4,
+      timer: idleTimer('focus', defaultSettings.focusDuration),
+      nowMs: Date.now(),
+      focusCompletedAtMs: null,
+      pomodorosCompleted: 0,
       soundscape: 'off',
       soundscapeVolume: 0.35,
 
       setTimerMode: (mode) => {
-        const { timerSettings } = get();
-        let seconds = timerSettings.focusDuration;
-        if (mode === 'shortBreak') seconds = timerSettings.shortBreakDuration;
-        if (mode === 'longBreak') seconds = timerSettings.longBreakDuration;
-
-        set({
-          timerMode: mode,
-          timerSecondsLeft: seconds,
-          timerIsRunning: false,
-          timerLastTimestamp: null
-        });
+        stopSoundscape();
+        const next = switchMode(mode, durationFor(mode, get().timerSettings));
+        set({ timer: next, nowMs: Date.now() });
+        const uid = get().userId;
+        if (uid) pushTimerState(uid, next);
       },
 
       startTimer: () => {
-        const { soundscape, soundscapeVolume } = get();
-        if (soundscape !== 'off') {
-          playSoundscape(soundscape, soundscapeVolume);
-        }
-        set({
-          timerIsRunning: true,
-          timerLastTimestamp: Date.now()
-        });
+        const { soundscape, soundscapeVolume, timer } = get();
+        if (timer.status === 'running') return;
+        if (soundscape !== 'off') playSoundscape(soundscape, soundscapeVolume);
+        const now = Date.now();
+        const next = startEngine(timer, now);
+        set({ timer: next, nowMs: now });
+        const uid = get().userId;
+        if (uid) pushTimerState(uid, next);
       },
 
       pauseTimer: () => {
         stopSoundscape();
-        set({
-          timerIsRunning: false,
-          timerLastTimestamp: null
-        });
+        const now = Date.now();
+        const next = pauseEngine(get().timer, now);
+        set({ timer: next, nowMs: now });
+        const uid = get().userId;
+        if (uid) pushTimerState(uid, next);
       },
 
       resetTimer: () => {
         stopSoundscape();
-        const { timerMode, timerSettings } = get();
-        let seconds = timerSettings.focusDuration;
-        if (timerMode === 'shortBreak') seconds = timerSettings.shortBreakDuration;
-        if (timerMode === 'longBreak') seconds = timerSettings.longBreakDuration;
-
-        set({
-          timerSecondsLeft: seconds,
-          timerIsRunning: false,
-          timerLastTimestamp: null
-        });
+        const next = resetEngine(get().timer);
+        set({ timer: next, nowMs: Date.now() });
+        const uid = get().userId;
+        if (uid) pushTimerState(uid, next);
       },
 
-      tickTimer: () => {
-        const { timerSecondsLeft, timerIsRunning, timerLastTimestamp } = get();
-        if (!timerIsRunning) return;
-
+      /** Called by the scheduler when a running block has used all of its time. Safe to call twice. */
+      completeTimer: () => {
+        const { timer, userId } = get();
+        if (timer.status !== 'running') return;
+        stopSoundscape();
+        const wasFocus = timer.mode === 'focus';
         const now = Date.now();
-        const elapsedSeconds = timerLastTimestamp
-          ? Math.max(1, Math.round((now - timerLastTimestamp) / 1000))
-          : 1;
-
-        if (timerSecondsLeft <= elapsedSeconds) {
-          get().pauseTimer();
-          set({ timerSecondsLeft: 0 });
-
-          if (get().timerMode === 'focus') {
-            get().incrementPomodoros();
-          }
-        } else {
-          set({
-            timerSecondsLeft: timerSecondsLeft - elapsedSeconds,
-            timerLastTimestamp: now
-          });
+        const next = completeEngine(timer);
+        set((state) => ({
+          timer: next,
+          nowMs: now,
+          pomodorosCompleted: wasFocus ? state.pomodorosCompleted + 1 : state.pomodorosCompleted,
+          focusCompletedAtMs: wasFocus ? now : state.focusCompletedAtMs
+        }));
+        if (wasFocus) playCompletionChime();
+        if (userId) {
+          if (wasFocus) completeFocusSession(userId, timer);
+          else pushTimerState(userId, next);
         }
       },
 
-      syncInactiveTime: () => {
-        const { timerIsRunning, timerLastTimestamp, timerSecondsLeft } = get();
-        if (!timerIsRunning || !timerLastTimestamp) return;
+      setNowMs: (ms) => set({ nowMs: ms }),
 
-        const now = Date.now();
-        const elapsed = Math.round((now - timerLastTimestamp) / 1000);
-        if (elapsed > 2) {
-          if (elapsed >= timerSecondsLeft) {
-            get().pauseTimer();
-            set({ timerSecondsLeft: 0 });
-            if (get().timerMode === 'focus') {
-              get().incrementPomodoros();
-            }
-          } else {
-            set({
-              timerSecondsLeft: timerSecondsLeft - elapsed,
-              timerLastTimestamp: now
-            });
-          }
-        }
+      adoptRemoteTimer: (t) => {
+        if (get().timer.status === 'running' && t.status !== 'running') stopSoundscape();
+        set({ timer: t, nowMs: Date.now() });
       },
 
       incrementPomodoros: () =>
@@ -731,9 +617,9 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         })),
 
       setSoundscape: (type) => {
-        const { timerIsRunning, soundscapeVolume } = get();
+        const { timer, soundscapeVolume } = get();
         set({ soundscape: type });
-        if (type === 'off' || !timerIsRunning) {
+        if (type === 'off' || timer.status !== 'running') {
           stopSoundscape();
         } else {
           playSoundscape(type, soundscapeVolume);
@@ -748,50 +634,26 @@ export const useStudyFlowStore = create<StudyFlowState>()(
     {
       name: 'studyflow_storage_v1',
       partialize: (state) => ({
+        dataOwnerUid: state.dataOwnerUid,
+        guestNoticeDismissed: state.guestNoticeDismissed,
+        icsExportCount: state.icsExportCount,
         user: state.user,
-        activeTab: state.activeTab,
         theme: state.theme,
         assignments: state.assignments,
         sessions: state.sessions,
         grades: state.grades,
         pomodorosCompleted: state.pomodorosCompleted,
+        timer: state.timer,
         timerSettings: state.timerSettings,
         soundscapeVolume: state.soundscapeVolume
       }),
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          const subtaskMap: Record<string, Subtask[]> = {
-            'asg-1': [
-              { id: 'st-1', title: 'Review Ongaro-Ousterhout Raft paper', completed: true },
-              { id: 'st-2', title: 'Implement Leader Election RPC states', completed: true },
-              { id: 'st-3', title: 'Write Log Replication appendEntries handler', completed: true },
-              { id: 'st-4', title: 'Run network partition chaos suite', completed: false }
-            ],
-            'asg-2': [
-              { id: 'st-5', title: 'Questions 1–3: Eigenvalues & diagonalization', completed: true },
-              { id: 'st-6', title: 'Question 4: Generalized eigenvectors', completed: true },
-              { id: 'st-7', title: 'Question 5: Jordan form transformation matrix', completed: false },
-              { id: 'st-8', title: 'Question 6: Proof of Kalman rank condition', completed: false }
-            ],
-            'asg-3': [
-              { id: 'st-10', title: 'Color token hierarchy (Light & Dark mode)', completed: true },
-              { id: 'st-11', title: 'Typography roles & baseline grid', completed: true },
-              { id: 'st-12', title: 'WCAG 2.2 AA Contrast verification (4.5:1 ratio)', completed: true },
-              { id: 'st-13', title: 'Export Figma Code Connect specs', completed: false }
-            ]
-          };
-
-          state.assignments = state.assignments.map((a) => {
-            if ((!a.subtasks || a.subtasks.length === 0) && subtaskMap[a.id]) {
-              return { ...a, subtasks: subtaskMap[a.id] };
-            }
-            return a;
-          });
-
-          if (!state.grades) {
-            state.grades = [];
-          }
-        }
+        if (!state) return;
+        // Earlier builds seeded demo rows as the student's own data. Flag them so they are labelled
+        // and excluded from GPA, backups and exports.
+        state.assignments = (state.assignments ?? []).map((x) => (isLegacySeedId('assignment', x.id) ? { ...x, sample: true } : x));
+        state.sessions = (state.sessions ?? []).map((x) => (isLegacySeedId('session', x.id) ? { ...x, sample: true } : x));
+        state.grades = (state.grades ?? []).map((x) => (isLegacySeedId('grade', x.id) ? { ...x, sample: true } : x));
       }
     }
   )

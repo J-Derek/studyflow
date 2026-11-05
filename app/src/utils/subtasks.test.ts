@@ -99,3 +99,28 @@ describe('calculateSubtaskProgress', () => {
     expect(result.allDone).toBe(false);
   });
 });
+
+describe('explicit completion (add/delete never complete an assignment)', () => {
+  const st = (id: string, completed: boolean) => ({ id, title: id, completed });
+
+  it('deleting the last open subtask does not complete the assignment', () => {
+    const afterDelete = [st('a', true), st('b', true)]; // the only open one was deleted
+    const r = calculateSubtaskProgress(afterDelete, 50, { allowComplete: false });
+    expect(r.status).toBe('in_progress');
+    expect(r.progress).toBe(99);
+    expect(r.allDone).toBe(false);
+  });
+
+  it('an explicit tick of the last subtask still completes', () => {
+    const r = calculateSubtaskProgress([st('a', true), st('b', true)], 0);
+    expect(r.status).toBe('completed');
+    expect(r.progress).toBe(100);
+  });
+
+  it('never returns NaN for an empty list', () => {
+    for (const input of [[], null, undefined]) {
+      const r = calculateSubtaskProgress(input as never, 0, { allowComplete: false });
+      expect(Number.isNaN(r.progress)).toBe(false);
+    }
+  });
+});

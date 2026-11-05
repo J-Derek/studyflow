@@ -5,7 +5,6 @@ import {
   RotateCcw,
   Flame,
   CheckCircle,
-  ShieldCheck,
   Volume2,
   VolumeX,
   CloudRain,
@@ -16,52 +15,29 @@ import {
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { formatTimeLeft } from '../utils/formatters';
+import { remainingSeconds } from '../lib/timerEngine';
 import type { SoundscapeType } from '../types';
-import { playCompletionChime } from '../lib/soundscapes';
 import confetti from 'canvas-confetti';
 
 export const FocusTimerPage: React.FC = () => {
   const {
-    timerMode,
-    timerSecondsLeft,
-    timerIsRunning,
+    timer,
+    nowMs,
+    focusCompletedAtMs,
     pomodorosCompleted,
-    timerSettings,
     soundscape,
     soundscapeVolume,
     setTimerMode,
     startTimer,
     pauseTimer,
     resetTimer,
-    tickTimer,
-    syncInactiveTime,
     setSoundscape,
     setSoundscapeVolume
   } = useStudyFlowStore();
 
-  // Background interval tick + visibility change sync (inactive tab resilience)
-  useEffect(() => {
-    let interval: any = null;
-
-    if (timerIsRunning) {
-      interval = setInterval(() => {
-        tickTimer();
-      }, 1000);
-    }
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        syncInactiveTime();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      if (interval) clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [timerIsRunning, tickTimer, syncInactiveTime]);
+  const timerMode = timer.mode;
+  const timerIsRunning = timer.status === 'running';
+  const timerSecondsLeft = remainingSeconds(timer, nowMs);
 
   // Screen Wake Lock API — keeps display awake during active deep work and recovers on tab focus
   useEffect(() => {
@@ -102,8 +78,8 @@ export const FocusTimerPage: React.FC = () => {
     if ('mediaSession' in navigator && window.MediaMetadata) {
       try {
         navigator.mediaSession.metadata = new window.MediaMetadata({
-          title: timerMode === 'focus' ? 'Deep Work Focus Session' : 'Rest & Recovery Break',
-          artist: 'StudyFlow Ambient Productivity',
+          title: timerMode === 'focus' ? 'Focus session' : 'Break',
+          artist: 'StudyFlow',
           album: `${formatTimeLeft(timerSecondsLeft)} remaining`
         });
         navigator.mediaSession.playbackState = timerIsRunning ? 'playing' : 'paused';
@@ -113,28 +89,28 @@ export const FocusTimerPage: React.FC = () => {
     }
   }, [timerIsRunning, timerMode, timerSecondsLeft]);
 
+
+  // Screen readers hear changes of state and each remaining minute, not every tick.
+  const minutesLeft = Math.ceil(timerSecondsLeft / 60);
+  const modeLabel = timerMode === 'focus' ? 'Focus' : timerMode === 'shortBreak' ? 'Short break' : 'Long break';
+  const announcement =
+    timer.status === 'running'
+      ? `${modeLabel} running, ${minutesLeft} ${minutesLeft === 1 ? 'minute' : 'minutes'} left`
+      : timer.status === 'paused'
+      ? `${modeLabel} paused, ${minutesLeft} ${minutesLeft === 1 ? 'minute' : 'minutes'} left`
+      : `${modeLabel} ready, ${Math.round(timer.durationSec / 60)} minutes`;
+
   // Calculate duration and progress ratio
-  const totalDuration =
-    timerMode === 'focus'
-      ? timerSettings.focusDuration
-      : timerMode === 'shortBreak'
-      ? timerSettings.shortBreakDuration
-      : timerSettings.longBreakDuration;
+  const totalDuration = timer.durationSec;
 
   const progressPercent = Math.max(0, Math.min(100, ((totalDuration - timerSecondsLeft) / totalDuration) * 100));
 
-  // Trigger acoustic chime and subtle celebration on session complete
+  // Celebrate once per finished focus block (the store sets the time; the chime plays there).
   useEffect(() => {
-    if (timerSecondsLeft === 0 && timerMode === 'focus') {
-      playCompletionChime();
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.6 },
-        disableForReducedMotion: true
-      });
+    if (focusCompletedAtMs && Date.now() - focusCompletedAtMs < 5000) {
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 }, disableForReducedMotion: true });
     }
-  }, [timerSecondsLeft, timerMode]);
+  }, [focusCompletedAtMs]);
 
   // SVG Circular parameters
   const radius = 120;
@@ -142,11 +118,11 @@ export const FocusTimerPage: React.FC = () => {
   const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
   const soundscapesList: { id: SoundscapeType; label: string; icon: React.ReactNode }[] = [
-    { id: 'off', label: 'Mute', icon: <VolumeX className="w-5 h-5 text-zinc-400" /> },
-    { id: 'rain', label: 'Gentle Rain', icon: <CloudRain className="w-5 h-5 text-indigo-400" /> },
-    { id: 'brown', label: 'Deep Waterfall', icon: <Waves className="w-5 h-5 text-cyan-400" /> },
-    { id: 'white', label: 'White Noise', icon: <BookOpen className="w-5 h-5 text-amber-400" /> },
-    { id: 'binaural', label: '40Hz Gamma Focus', icon: <Brain className="w-5 h-5 text-purple-400" /> }
+    { id: 'off', label: 'Off', icon: <VolumeX className="w-5 h-5 text-zinc-600 dark:text-zinc-400" /> },
+    { id: 'rain', label: 'Rain', icon: <CloudRain className="w-5 h-5 text-zinc-600 dark:text-zinc-300" /> },
+    { id: 'brown', label: 'Brown noise', icon: <Waves className="w-5 h-5 text-zinc-600 dark:text-zinc-300" /> },
+    { id: 'white', label: 'White noise', icon: <BookOpen className="w-5 h-5 text-zinc-600 dark:text-zinc-300" /> },
+    { id: 'binaural', label: 'Binaural tones', icon: <Brain className="w-5 h-5 text-zinc-600 dark:text-zinc-300" /> }
   ];
 
   return (
@@ -154,12 +130,14 @@ export const FocusTimerPage: React.FC = () => {
       {/* Header */}
       <div className="text-center space-y-1">
         <h1 className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-          Acoustic Deep Work Console
+          Focus timer
         </h1>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 font-sans">
-          Calibrated concentration blocks with synthesized acoustic masking
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 font-sans">
+          Work in timed blocks, then take a break.
         </p>
       </div>
+
+      <div role="status" aria-live="polite" className="sr-only">{announcement}</div>
 
       {/* Mode Selector Tabs */}
       <div className="flex justify-center">
@@ -169,17 +147,17 @@ export const FocusTimerPage: React.FC = () => {
             className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
               timerMode === 'focus'
                 ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold shadow-2xs'
-                : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
-            Deep Focus (25m)
+            Focus (25m)
           </button>
           <button
             onClick={() => setTimerMode('shortBreak')}
             className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
               timerMode === 'shortBreak'
                 ? 'bg-emerald-600 text-white font-semibold shadow-2xs'
-                : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             Short Break (5m)
@@ -189,7 +167,7 @@ export const FocusTimerPage: React.FC = () => {
             className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
               timerMode === 'longBreak'
                 ? 'bg-blue-600 text-white font-semibold shadow-2xs'
-                : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             Long Break (15m)
@@ -234,17 +212,12 @@ export const FocusTimerPage: React.FC = () => {
 
           {/* Inner Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-4xl md:text-5xl font-light text-zinc-900 dark:text-zinc-50 tracking-tight font-mono tabular-nums">
-              {formatTimeLeft(timerSecondsLeft)}
+            <span className="font-display text-5xl md:text-6xl font-medium text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums ">
+              <span role="timer" aria-live="off" aria-label={`${timerMode === 'focus' ? 'Focus' : 'Break'} timer`}>{formatTimeLeft(timerSecondsLeft)}</span>
             </span>
-            <span className="text-[11px] font-mono text-zinc-400 mt-2">
-              {timerMode === 'focus' ? 'CONCENTRATION BLOCK' : 'RECOVERY PERIOD'}
+            <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 mt-2">
+              {timerMode === 'focus' ? 'Focus' : 'Break'}
             </span>
-            {timerIsRunning && (
-              <span className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-mono font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/60">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> ACTIVE
-              </span>
-            )}
           </div>
         </div>
 
@@ -269,9 +242,9 @@ export const FocusTimerPage: React.FC = () => {
           ) : (
             <button
               onClick={startTimer}
-              className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition shadow-2xs flex items-center gap-2 active:scale-95"
+              className="px-6 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-sm transition flex items-center gap-2 active:scale-95"
             >
-              <Play className="h-3.5 w-3.5 fill-current" /> Start Focus
+              <Play className="h-3.5 w-3.5 fill-current" /> Start
             </button>
           )}
 
@@ -293,10 +266,7 @@ export const FocusTimerPage: React.FC = () => {
         </div>
 
         {/* Tab-inactive Accuracy Badge */}
-        <div className="mt-5 flex items-center gap-1.5 text-[11px] text-zinc-400 font-mono">
-          <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-          <span>Timestamp synchronized • Background resilient</span>
-        </div>
+        
       </div>
 
       {/* AMBIENT SOUNDSCAPES DEEP WORK AUDIO (Web Audio Synthesizer) */}
@@ -307,18 +277,16 @@ export const FocusTimerPage: React.FC = () => {
               <Headphones className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                <span>Acoustic Masking Soundscapes</span>
+              <h2 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <span>Background sound</span>
                 {soundscape !== 'off' && timerIsRunning && (
-                  <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
-                    <span className="h-2 w-0.5 bg-emerald-500 animate-pulse" />
-                    <span className="h-3 w-0.5 bg-emerald-500 animate-pulse delay-75" />
-                    Active
+                  <span className="flex items-center gap-0.5 text-xs text-emerald-600 dark:text-emerald-400 tabular-nums">
+                    Playing
                   </span>
                 )}
-              </h3>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                Synthesized procedural white, pink, and waterfall frequencies
+              </h2>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                Optional. Plays while the timer runs. Binaural tones work best with headphones.
               </p>
             </div>
           </div>
@@ -326,9 +294,10 @@ export const FocusTimerPage: React.FC = () => {
           {/* Volume slider */}
           {soundscape !== 'off' && (
             <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
-              <Volume2 className="h-3 w-3 text-zinc-400" />
+              <Volume2 className="h-3 w-3 text-zinc-600 dark:text-zinc-400" />
               <input
                 type="range"
+                aria-label="Sound volume"
                 min="0.05"
                 max="0.8"
                 step="0.05"
@@ -336,7 +305,7 @@ export const FocusTimerPage: React.FC = () => {
                 onChange={(e) => setSoundscapeVolume(Number(e.target.value))}
                 className="w-20 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
-              <span className="font-mono text-[10px] text-zinc-400 w-6">
+              <span className="tabular-nums text-xs text-zinc-600 dark:text-zinc-400 w-6">
                 {Math.round(soundscapeVolume * 100)}%
               </span>
             </div>
@@ -355,13 +324,13 @@ export const FocusTimerPage: React.FC = () => {
                   : 'border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
               }`}
             >
-              <div className="p-1 rounded w-fit bg-white dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700/50 mb-1.5">
+              <div className="p-1 rounded w-fit bg-surface-light dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700/50 mb-1.5">
                 {item.icon}
               </div>
               <div>
-                <p className="text-[11px] font-medium leading-tight">{item.label}</p>
-                <p className="text-[10px] font-mono text-zinc-400 mt-0.5">
-                  {soundscape === item.id ? (timerIsRunning ? 'Active' : 'Queued') : 'Select'}
+                <p className="text-xs font-medium leading-tight">{item.label}</p>
+                <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 mt-0.5">
+                  {soundscape === item.id ? (timerIsRunning ? 'Playing' : 'Selected') : ''}
                 </p>
               </div>
             </button>
@@ -372,25 +341,25 @@ export const FocusTimerPage: React.FC = () => {
       {/* Focus Session Counter & Milestones */}
       <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex items-center justify-between transition-colors">
         <div>
-          <h4 className="font-medium text-zinc-900 dark:text-zinc-100 text-xs">Completed Focus Rounds Today</h4>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-sans">
-            Every 4 sessions triggers a 15-minute restorative rest break
+          <h3 className="font-medium text-zinc-900 dark:text-zinc-100 text-xs">Focus sessions completed</h3>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 font-sans">
+            Counted on this device
           </p>
         </div>
         <div className="flex items-center gap-1.5">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className={`h-6 w-6 rounded-md flex items-center justify-center font-mono text-xs ${
+              className={`h-6 w-6 rounded-md flex items-center justify-center tabular-nums text-xs ${
                 i < pomodorosCompleted % 4 || pomodorosCompleted >= 4
                   ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
               }`}
             >
               <Flame className="h-3 w-3" />
             </div>
           ))}
-          <span className="text-xs font-mono font-semibold text-zinc-900 dark:text-zinc-100 ml-1.5">
+          <span className="text-xs tabular-nums font-semibold text-zinc-900 dark:text-zinc-100 ml-1.5">
             {pomodorosCompleted} total
           </span>
         </div>

@@ -1,3 +1,4 @@
+import { useDialog } from '../lib/useDialog';
 import React, { useState } from 'react';
 import { X, Calendar, Clock, BookOpen, AlertCircle } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
@@ -40,6 +41,8 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
     }
   }, [assignmentToEdit, isOpen]);
 
+  const dialogRef = useDialog(isOpen, onClose);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -74,18 +77,26 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in motion-reduce:animate-none">
-      <div className="bg-surface-light dark:bg-surface-dark rounded-xl w-full max-w-lg shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-colors">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="assignment-modal-title"
+        className="bg-surface-light dark:bg-surface-dark rounded-xl w-full max-w-lg shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-colors"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800">
           <div>
-            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">
-              {assignmentToEdit ? 'Edit Deliverable' : 'Create New Deliverable'}
-            </h3>
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Specify requirements, course syllabus, and deadline targets</p>
+            <h2 id="assignment-modal-title" className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">
+              {assignmentToEdit ? 'Edit Assignment' : 'Create New Assignment'}
+            </h2>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">Specify requirements, course course, and deadline targets</p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            aria-label="Close"
+            className="p-2 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -95,7 +106,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         <form onSubmit={handleSubmit} className="p-5 space-y-3.5">
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Deliverable Title
+              Assignment title
             </label>
             <input
               type="text"
@@ -103,13 +114,13 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
               placeholder="e.g. Distributed Consensus Algorithm Synthesis"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
             />
           </div>
 
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
-              <BookOpen className="h-3 w-3 text-zinc-400" /> Course Code & Name
+              <BookOpen className="h-3 w-3 text-zinc-600 dark:text-zinc-400" /> Course Code & Name
             </label>
             <input
               type="text"
@@ -117,39 +128,41 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
               placeholder="e.g. CS 4400 — Distributed Systems"
               value={course}
               onChange={(e) => setCourse(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
-                <Calendar className="h-3 w-3 text-zinc-400" /> Due Date
+                <Calendar className="h-3 w-3 text-zinc-600 dark:text-zinc-400" /> Due Date
               </label>
               <input
                 type="date"
+                aria-label="Due date"
                 required
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
-                <Clock className="h-3 w-3 text-zinc-400" /> Due Time
+                <Clock className="h-3 w-3 text-zinc-600 dark:text-zinc-400" /> Due Time
               </label>
               <input
                 type="time"
+                aria-label="Due time (optional)"
                 value={dueTime}
                 onChange={(e) => setDueTime(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
               />
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
-              <AlertCircle className="h-3 w-3 text-zinc-400" /> Priority Level
+              <AlertCircle className="h-3 w-3 text-zinc-600 dark:text-zinc-400" /> Priority Level
             </label>
             <div className="grid grid-cols-3 gap-2">
               {(['low', 'medium', 'high'] as Priority[]).map((p) => {
@@ -159,7 +172,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
                     type="button"
                     key={p}
                     onClick={() => setPriority(p)}
-                    className={`py-1.5 rounded-md text-xs font-mono capitalize border transition-colors ${
+                    className={`py-1.5 rounded-md text-xs tabular-nums capitalize border transition-colors ${
                       isSelected
                         ? p === 'high'
                           ? 'bg-rose-50 dark:bg-rose-950/80 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-semibold'
@@ -179,12 +192,13 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
           {assignmentToEdit && (
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 font-mono">
+                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 tabular-nums">
                   Progress ({progress}%)
                 </label>
               </div>
               <input
                 type="range"
+                aria-label="Progress, percent"
                 min="0"
                 max="100"
                 step="5"
@@ -197,14 +211,14 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
 
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Deliverable Notes & Syllabus Specs
+              Assignment Notes & Syllabus Specs
             </label>
             <textarea
               rows={3}
               placeholder="Key specifications, rubric links, or references..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition resize-none"
+              className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition resize-none"
             />
           </div>
 
@@ -221,7 +235,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
               type="submit"
               className="px-3.5 py-1.5 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 transition shadow-2xs"
             >
-              {assignmentToEdit ? 'Save Changes' : 'Create Deliverable'}
+              {assignmentToEdit ? 'Save Changes' : 'Create Assignment'}
             </button>
           </div>
         </form>

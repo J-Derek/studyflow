@@ -8,47 +8,25 @@ import { BackupModal } from './components/BackupModal';
 import { ProfileModal } from './components/ProfileModal';
 import { HelpMenuModal } from './components/HelpMenuModal';
 import { useStudyFlowStore, getTabFromPath } from './store/studyFlowStore';
-import { ensureAuthenticatedUser } from './lib/auth';
-import { initFirestoreSync } from './services/firestoreSync';
+import { startAuthSessionLazy } from './lib/authActions';
 
 // Code-split pages for performance optimization
-const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
+import { Dashboard } from './pages/Dashboard';
 const AssignmentsPage = lazy(() => import('./pages/Assignments').then((m) => ({ default: m.AssignmentsPage })));
 const CalendarPage = lazy(() => import('./pages/Calendar').then((m) => ({ default: m.CalendarPage })));
 const FocusTimerPage = lazy(() => import('./pages/FocusTimer').then((m) => ({ default: m.FocusTimerPage })));
 const GradesPage = lazy(() => import('./pages/Grades').then((m) => ({ default: m.GradesPage })));
 
 export function App() {
-  const { activeTab, setAuthUser, theme } = useStudyFlowStore();
+  const { activeTab, theme } = useStudyFlowStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-  // Initialize guest-first anonymous authentication & live Firestore sync
-  useEffect(() => {
-    let cleanupSync: (() => void) | null = null;
-
-    ensureAuthenticatedUser()
-      .then((firebaseUser) => {
-        setAuthUser(
-          firebaseUser.uid,
-          firebaseUser.isAnonymous,
-          firebaseUser.email,
-          firebaseUser.displayName
-        );
-
-        cleanupSync = initFirestoreSync(firebaseUser.uid);
-      })
-      .catch((err) => {
-        console.error('Firebase guest authentication error:', err);
-      });
-
-    return () => {
-      if (cleanupSync) cleanupSync();
-    };
-  }, [setAuthUser]);
+  // Guest-first anonymous auth and live Firestore sync, rebound whenever the signed-in user changes
+  useEffect(() => startAuthSessionLazy(), []);
 
   // Synchronize dark mode class, colorScheme, and dynamic theme-color meta
   useEffect(() => {
@@ -87,6 +65,16 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-canvas-light dark:bg-canvas-dark text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row font-sans transition-colors duration-150">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:px-3 focus:py-2 focus:rounded-md focus:bg-zinc-900 focus:text-white dark:focus:bg-zinc-100 dark:focus:text-zinc-900 text-sm font-medium"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('main')?.focus();
+        }}
+      >
+        Skip to content
+      </a>
       {/* Desktop Navigation Sidebar */}
       <Sidebar
         onOpenBackup={() => setIsBackupOpen(true)}
@@ -105,7 +93,7 @@ export function App() {
         />
 
         {/* Page Content Viewport with Accessible Suspense Fallback */}
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8">
+        <main id="main" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 focus:outline-none">
           <Suspense
             fallback={
               <div
@@ -126,10 +114,8 @@ export function App() {
           >
             {activeTab === 'dashboard' && (
               <Dashboard 
-                onOpenProfile={() => setIsProfileOpen(true)}
                 onOpenAddModal={() => setIsAddModalOpen(true)}
                 onOpenBackup={() => setIsBackupOpen(true)}
-                onOpenHelp={() => setIsHelpOpen(true)}
               />
             )}
             {activeTab === 'assignments' && <AssignmentsPage />}
@@ -156,13 +142,13 @@ export function App() {
           onOpenBackupModal={() => setIsBackupOpen(true)}
         />
 
-        {/* Disaster Recovery & Backup Modal */}
+        {/* Backup modal */}
         <BackupModal
           isOpen={isBackupOpen}
           onClose={() => setIsBackupOpen(false)}
         />
 
-        {/* Scholar Profile & Academic Settings Modal */}
+        {/* Profile modal */}
         <ProfileModal
           isOpen={isProfileOpen}
           onClose={() => setIsProfileOpen(false)}

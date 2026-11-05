@@ -129,7 +129,7 @@ describe('academicCalculations', () => {
       };
 
       const result = calculateCoursePercentage(course);
-      expect(result.currentPct).toBe(100);
+      expect(result.currentPct).toBe(0);
       expect(result.gradedWeight).toBe(0);
       expect(result.earnedWeightScore).toBe(0);
     });
@@ -167,12 +167,51 @@ describe('academicCalculations', () => {
       expect(result.gpaString).toBe('3.80');
     });
 
-    it('returns default 4.00 and zero credits for empty grades array without NaN', () => {
+    it('reports no data (not 4.00) for an empty grades array, without NaN', () => {
       const result = calculateCumulativeGpa([]);
-      expect(result.gpa).toBe(4.0);
-      expect(result.gpaString).toBe('4.00');
+      expect(result.hasData).toBe(false);
+      expect(result.gpa).toBe(0);
       expect(result.totalCredits).toBe(0);
       expect(Number.isNaN(result.gpa)).toBe(false);
+    });
+
+    it('excludes sample courses and courses with nothing graded', () => {
+      const mk = (over: Partial<CourseGrade>): CourseGrade => ({
+        id: 'x', courseCode: 'X', courseName: 'X', credits: 3, targetLetter: 'A', color: '#000',
+        assessments: [{ id: 'a', name: 'T', weight: 100, score: 95 }], ...over
+      });
+      expect(calculateCumulativeGpa([mk({ sample: true })]).hasData).toBe(false);
+      expect(calculateCumulativeGpa([mk({ assessments: [{ id: 'a', name: 'T', weight: 100 }] })]).hasData).toBe(false);
+      expect(calculateCumulativeGpa([mk({}), mk({ id: 'y', sample: true, assessments: [{ id: 'a', name: 'T', weight: 100, score: 10 }] })]).gpa).toBe(4);
+    });
+
+    it('is exact with integer arithmetic (no float drift)', () => {
+      const mk = (id: string, credits: number, score: number): CourseGrade => ({
+        id, courseCode: id, courseName: id, credits, targetLetter: 'A', color: '#000',
+        assessments: [{ id: 'a', name: 'T', weight: 100, score }]
+      });
+      // 3.7x3 + 3.3x3 + 2.7x3 = 29.1 quality points / 9 credits = 3.2333, rounds to 3.23
+      const r = calculateCumulativeGpa([mk('a', 3, 91), mk('b', 3, 88), mk('c', 3, 81)]);
+      expect(r.gpa).toBe(3.23);
+      expect(r.totalQualityPoints).toBe(29.1);
+      // half credits stay exact: 4.0 x 1.5 + 3.0 x 1.5 = 10.5 / 3 = 3.5
+      expect(calculateCumulativeGpa([mk('a', 1.5, 95), mk('b', 1.5, 85)]).gpa).toBe(3.5);
+    });
+
+    it('property: GPA stays within 0..4 and is stable under course order', () => {
+      let seed = 42;
+      const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+      for (let i = 0; i < 200; i++) {
+        const n = 1 + Math.floor(rnd() * 6);
+        const courses: CourseGrade[] = Array.from({ length: n }, (_, k) => ({
+          id: `c${k}`, courseCode: `c${k}`, courseName: 'c', credits: 1 + Math.floor(rnd() * 5), targetLetter: 'A', color: '#000',
+          assessments: [{ id: 'a', name: 'T', weight: 100, score: Math.floor(rnd() * 101) }]
+        }));
+        const g = calculateCumulativeGpa(courses).gpa;
+        expect(g).toBeGreaterThanOrEqual(0);
+        expect(g).toBeLessThanOrEqual(4);
+        expect(calculateCumulativeGpa([...courses].reverse()).gpa).toBe(g);
+      }
     });
 
     it('ignores 0-credit courses in GPA weighting', () => {
@@ -204,24 +243,14 @@ describe('academicCalculations', () => {
   });
 
   describe('getAcademicStanding', () => {
-    it('returns standard university honors tiers without hallucinated percentiles', () => {
-      const deansList = getAcademicStanding(3.9);
-      expect(deansList.standing).toBe("Dean's List");
-      expect(deansList.tier).toBe('Highest Honors Track');
-      expect(deansList.tier).not.toContain('Top 5%');
-
-      const honorRoll = getAcademicStanding(3.6);
-      expect(honorRoll.standing).toBe('Honor Roll');
-      expect(honorRoll.tier).toBe("Dean's Honors Threshold");
-      expect(honorRoll.tier).not.toContain('Top 15%');
-
-      const goodStanding = getAcademicStanding(3.2);
-      expect(goodStanding.standing).toBe('Good Standing');
-      expect(goodStanding.tier).toBe('Satisfactory Standing');
-
-      const warning = getAcademicStanding(2.4);
-      expect(warning.standing).toBe('Academic Review');
-      expect(warning.tier).toBe('Academic Warning');
+    it('labels standings as projected and never renders rank or percentile text', () => {
+      for (const gpa of [3.9, 3.6, 3.2, 2.4]) {
+        const r = getAcademicStanding(gpa);
+        expect(r.standing.startsWith('Projected')).toBe(true);
+        expect(`${r.standing} ${r.tier}`).not.toMatch(/top\s*\d|percentile|rank/i);
+      }
+      expect(getAcademicStanding(3.9).standing).toContain('highest honors');
+      expect(getAcademicStanding(2.4).standing).toContain('below 3.0');
     });
   });
 

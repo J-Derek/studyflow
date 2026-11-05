@@ -3,253 +3,248 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ===============================================================
-    // Assumed Data Model
+    // Data model (every path is owner-only: request.auth.uid == userId)
+    //
+    // /users/{userId}
+    //   uid, name, university, program, semester, updatedAt (server time)
+    //   onboarding?: { dismissed: bool }
+    //
+    // /users/{userId}/assignments/{id}
+    //   id, title, course, dueDate (YYYY-MM-DD), dueTime? (HH:mm), priority,
+    //   status, progress (0..100), createdAt (client ISO string, immutable),
+    //   updatedAt (server time), notes?, completedAt?, sample? (bool),
+    //   subtasks? (map keyed by subtask id, or legacy list; max 100)
+    //
+    // /users/{userId}/sessions/{id}          (weekly timetable blocks)
+    //   id, title, course, dayOfWeek (0..6), startTime, endTime, type,
+    //   updatedAt (server time), color?, sample? (bool)
+    //
+    // /users/{userId}/liveState/timer        (single document)
+    //   rev (int, compare-and-swap counter), status ('idle' | 'running' | 'paused'),
+    //   mode, durationSeconds, updatedAt (server time),
+    //   startedAt (server time; only while running),
+    //   remainingSeconds (only while paused)
+    //
+    // /users/{userId}/grades/{id}
+    //   id, courseCode, courseName, credits (0..30), targetLetter, color,
+    //   assessments (list, max 50), updatedAt (server time), sample? (bool)
+    //
+    // /users/{userId}/focusSessions/run-{rev}
+    //   Created only in a batch with the timer going running -> idle, and only
+    //   after enough server time has elapsed since the timer started.
+    //
+    // Default: deny everything else.
     // ===============================================================
-    //
-    // Collection: /users/{userId} (Root user profile document)
-    // Document ID: userId (strictly matches request.auth.uid)
-    // Fields:
-    //   - uid: string (required, 1..100, immutable) - Must match authenticated UID
-    //   - name: string (required, 1..100) - Student's full display name
-    //   - university: string (required, 1..150) - Enrolled university
-    //   - program: string (required, 1..150) - Degree program or major
-    //   - semester: string (required, 1..50) - Current academic term / semester
-    //   - updatedAt: timestamp (optional) - Server sync timestamp
-    //
-    // Subcollection: /users/{userId}/assignments/{assignmentId}
-    // Document ID: assignmentId (matches data.id)
-    // Fields:
-    //   - id: string (required, 1..100, immutable) - Unique assignment identifier
-    //   - title: string (required, 1..250) - Assignment title
-    //   - course: string (required, 1..200) - Course code or course name
-    //   - dueDate: string (required, 1..50) - Deadline date string (YYYY-MM-DD or ISO 8601)
-    //   - dueTime: string (optional, 1..20) - Deadline time string (HH:mm)
-    //   - priority: string (required, 'low' | 'medium' | 'high') - Urgency level
-    //   - status: string (required, 'pending' | 'in_progress' | 'completed') - Workflow status
-    //   - progress: number (required, 0..100) - Numeric percentage completion
-    //   - notes: string (optional, 0..5000) - Detailed notes / prompt
-    //   - subtasks: list (optional, max 100 items) - Milestone subtasks
-    //   - createdAt: string (required, 1..50, immutable) - ISO creation timestamp
-    //   - completedAt: string (optional, 0..50) - ISO completion timestamp
-    //   - updatedAt: timestamp (optional) - Server sync timestamp
-    //
-    // Subcollection: /users/{userId}/sessions/{sessionId}
-    // Document ID: sessionId (matches data.id)
-    // Fields:
-    //   - id: string (required, 1..100, immutable) - Unique study session block identifier
-    //   - title: string (required, 1..200) - Calendar session block title
-    //   - course: string (required, 1..200) - Course code / subject
-    //   - dayOfWeek: int (required, 0..6) - Day index (0 = Sun, 1 = Mon, ..., 6 = Sat)
-    //   - startTime: string (required, 1..20) - 24h start time (HH:mm)
-    //   - endTime: string (required, 1..20) - 24h end time (HH:mm)
-    //   - type: string (required, 'lecture' | 'lab' | 'study' | 'review' | 'exam') - Session type
-    //   - color: string (optional, 0..50) - Hex / styling accent token
-    //   - updatedAt: timestamp (optional) - Server sync timestamp
-    //
-    // Subcollection: /users/{userId}/focusSessions/{sessionId}
-    // Document ID: sessionId
-    // Fields:
-    //   - id: string (optional, 1..100) - Tracking identifier
-    //   - sessionId: string (optional, 1..100) - UUID session token
-    //   - assignmentId: string (optional, 1..100) - Linked assignment reference
-    //   - mode: string (optional, 'focus' | 'short_break' | 'long_break' | 'shortBreak' | 'longBreak')
-    //   - duration: number (optional, > 0 and <= 86400) - Duration in seconds
-    //   - durationSeconds: number (optional, > 0 and <= 86400) - Duration in seconds
-    //   - startedAt: timestamp or string (optional, 1..100) - Start time
-    //   - completedAt: timestamp or string (optional, 1..100) - Completion timestamp
-    //   - createdAt: timestamp or string (optional, 1..100) - Creation timestamp
-    //   - localDate: string (optional, 1..50) - Calendar date string (YYYY-MM-DD)
-    //   - notes: string (optional, 0..2000) - Focus log reflection
-    //   - updatedAt: timestamp (optional)
-    //   (Immutable: Updates are disallowed to prevent streak / academic score falsification)
-    //
-    // Subcollection: /users/{userId}/liveState/{docId}
-    // Document ID: docId (e.g. 'timer')
-    // Fields:
-    //   - mode: string (optional, 'focus' | 'shortBreak' | 'longBreak' | 'short_break' | 'long_break')
-    //   - secondsLeft: number (optional, 0..86400) - Active remaining seconds
-    //   - isRunning: bool (optional) - Active tick flag
-    //   - updatedAt: timestamp or string (optional) - Clock sync timestamp
-    //   - assignmentId: string (optional, 0..100) - Active assignment focus link
-    //   - lastTimestamp: number (optional, >= 0) - Epoch reference ms
-    //
-    // Global Invariant:
-    //   - Multi-tenant tenant boundary: request.auth.uid == userId
-    //   - Default-deny all unmapped paths
-    // ===============================================================
-
-    // ===============================================================
-    // Helper Functions
-    // ===============================================================
-
-    function isAuthenticated() {
-      return request.auth != null;
-    }
 
     function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+      return request.auth != null && request.auth.uid == userId;
     }
 
     function validString(val, minLen, maxLen) {
       return val is string && val.size() >= minLen && val.size() <= maxLen;
     }
 
-    function isValidOptionalString(data, field, minLen, maxLen) {
-      return !(field in data) ||
-             (data[field] is string && data[field].size() >= minLen && data[field].size() <= maxLen);
+    function optionalString(data, field, minLen, maxLen) {
+      return !(field in data) || validString(data[field], minLen, maxLen);
     }
 
-    function hasRequiredFields(data, fields) {
-      return data.keys().hasAll(fields);
+    function validTime(val) {
+      return val is string && val.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$');
     }
 
-    function hasOnlyAllowedFields(data, fields) {
-      return data.keys().hasOnly(fields);
+    function validDate(val) {
+      return val is string && val.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
     }
 
-    function areImmutableFieldsUnchanged(fields) {
+    // Server clock only: serverTimestamp() resolves to request.time.
+    function isServerTime(val) {
+      return val is timestamp && val == request.time;
+    }
+
+    function immutable(fields) {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
     }
 
-    // ===============================================================
-    // Domain Validators
-    // ===============================================================
+    // ---------------- Validators ----------------
 
     function isValidUser(data, userId) {
-      return hasRequiredFields(data, ['uid', 'name', 'university', 'program', 'semester']) &&
-             hasOnlyAllowedFields(data, ['uid', 'name', 'university', 'program', 'semester', 'updatedAt']) &&
-             data.uid is string && data.uid == userId && data.uid == request.auth.uid &&
+      return data.keys().hasAll(['uid', 'name', 'university', 'program', 'semester', 'updatedAt']) &&
+             data.keys().hasOnly(['uid', 'name', 'university', 'program', 'semester', 'updatedAt', 'onboarding']) &&
+             data.uid is string && data.uid == userId &&
              validString(data.name, 1, 100) &&
              validString(data.university, 1, 150) &&
              validString(data.program, 1, 150) &&
              validString(data.semester, 1, 50) &&
-             (!('updatedAt' in data) || data.updatedAt is timestamp);
+             isServerTime(data.updatedAt) &&
+             (!('onboarding' in data) ||
+               (data.onboarding is map &&
+                data.onboarding.keys().hasOnly(['dismissed']) &&
+                data.onboarding.keys().hasAll(['dismissed']) &&
+                data.onboarding.dismissed is bool));
     }
 
     function isValidAssignment(data) {
-      return hasRequiredFields(data, ['id', 'title', 'course', 'dueDate', 'priority', 'status', 'progress', 'createdAt']) &&
-             hasOnlyAllowedFields(data, [
+      return data.keys().hasAll(['id', 'title', 'course', 'dueDate', 'priority', 'status', 'progress', 'createdAt', 'updatedAt']) &&
+             data.keys().hasOnly([
                'id', 'title', 'course', 'dueDate', 'dueTime', 'priority', 'status',
-               'progress', 'notes', 'subtasks', 'createdAt', 'completedAt', 'updatedAt'
+               'progress', 'notes', 'subtasks', 'createdAt', 'completedAt', 'updatedAt', 'sample'
              ]) &&
              validString(data.id, 1, 100) &&
              validString(data.title, 1, 250) &&
              validString(data.course, 1, 200) &&
-             validString(data.dueDate, 1, 50) &&
-             isValidOptionalString(data, 'dueTime', 1, 20) &&
+             validDate(data.dueDate) &&
+             (!('dueTime' in data) || validTime(data.dueTime)) &&
              data.priority in ['low', 'medium', 'high'] &&
              data.status in ['pending', 'in_progress', 'completed'] &&
              data.progress is number && data.progress >= 0 && data.progress <= 100 &&
-             isValidOptionalString(data, 'notes', 0, 5000) &&
-             (!('subtasks' in data) || (data.subtasks is list && data.subtasks.size() <= 100)) &&
+             (data.status != 'completed' || data.progress == 100) &&
+             optionalString(data, 'notes', 0, 5000) &&
+             (!('subtasks' in data) ||
+               (data.subtasks is map && data.subtasks.size() <= 100) ||
+               (data.subtasks is list && data.subtasks.size() <= 100)) &&
              validString(data.createdAt, 1, 50) &&
-             isValidOptionalString(data, 'completedAt', 0, 50) &&
-             (!('updatedAt' in data) || data.updatedAt is timestamp);
+             optionalString(data, 'completedAt', 0, 50) &&
+             (!('sample' in data) || data.sample is bool) &&
+             isServerTime(data.updatedAt);
     }
 
     function isValidSession(data) {
-      return hasRequiredFields(data, ['id', 'title', 'course', 'dayOfWeek', 'startTime', 'endTime', 'type']) &&
-             hasOnlyAllowedFields(data, [
-               'id', 'title', 'course', 'dayOfWeek', 'startTime', 'endTime', 'type', 'color', 'updatedAt'
+      return data.keys().hasAll(['id', 'title', 'course', 'dayOfWeek', 'startTime', 'endTime', 'type', 'updatedAt']) &&
+             data.keys().hasOnly([
+               'id', 'title', 'course', 'dayOfWeek', 'startTime', 'endTime', 'type', 'color', 'updatedAt', 'sample'
              ]) &&
              validString(data.id, 1, 100) &&
              validString(data.title, 1, 200) &&
              validString(data.course, 1, 200) &&
              data.dayOfWeek is int && data.dayOfWeek >= 0 && data.dayOfWeek <= 6 &&
-             validString(data.startTime, 1, 20) &&
-             validString(data.endTime, 1, 20) &&
+             validTime(data.startTime) &&
+             validTime(data.endTime) &&
              data.type in ['lecture', 'lab', 'study', 'review', 'exam'] &&
-             isValidOptionalString(data, 'color', 0, 50) &&
-             (!('updatedAt' in data) || data.updatedAt is timestamp);
+             optionalString(data, 'color', 0, 50) &&
+             (!('sample' in data) || data.sample is bool) &&
+             isServerTime(data.updatedAt);
     }
 
-    function isValidFocusSession(data) {
-      return hasOnlyAllowedFields(data, [
-               'id', 'sessionId', 'assignmentId', 'mode', 'duration',
-               'durationSeconds', 'startedAt', 'completedAt', 'createdAt',
-               'localDate', 'notes', 'updatedAt'
-             ]) &&
-             (!('id' in data) || validString(data.id, 1, 100)) &&
-             (!('sessionId' in data) || validString(data.sessionId, 1, 100)) &&
-             (!('assignmentId' in data) || validString(data.assignmentId, 1, 100)) &&
-             (!('mode' in data) || data.mode in ['focus', 'short_break', 'long_break', 'shortBreak', 'longBreak']) &&
-             (!('duration' in data) || (data.duration is number && data.duration > 0 && data.duration <= 86400)) &&
-             (!('durationSeconds' in data) || (data.durationSeconds is number && data.durationSeconds > 0 && data.durationSeconds <= 86400)) &&
-             (!('startedAt' in data) || validString(data.startedAt, 1, 100) || data.startedAt is timestamp) &&
-             (!('completedAt' in data) || validString(data.completedAt, 1, 100) || data.completedAt is timestamp) &&
-             (!('createdAt' in data) || validString(data.createdAt, 1, 100) || data.createdAt is timestamp) &&
-             (!('localDate' in data) || validString(data.localDate, 1, 50)) &&
-             (!('notes' in data) || validString(data.notes, 0, 2000)) &&
-             (!('updatedAt' in data) || data.updatedAt is timestamp);
+    function isValidGrade(data) {
+      return data.keys().hasAll(['id', 'courseCode', 'courseName', 'credits', 'targetLetter', 'color', 'assessments', 'updatedAt']) &&
+             data.keys().hasOnly(['id', 'courseCode', 'courseName', 'credits', 'targetLetter', 'color', 'assessments', 'updatedAt', 'sample']) &&
+             validString(data.id, 1, 100) &&
+             validString(data.courseCode, 1, 50) &&
+             validString(data.courseName, 1, 200) &&
+             data.credits is number && data.credits >= 0 && data.credits <= 30 &&
+             validString(data.targetLetter, 1, 3) &&
+             validString(data.color, 1, 50) &&
+             data.assessments is list && data.assessments.size() <= 50 &&
+             (!('sample' in data) || data.sample is bool) &&
+             isServerTime(data.updatedAt);
     }
 
-    function isValidLiveState(data) {
-      return hasOnlyAllowedFields(data, ['mode', 'secondsLeft', 'isRunning', 'updatedAt', 'assignmentId', 'lastTimestamp']) &&
-             (!('mode' in data) || data.mode in ['focus', 'shortBreak', 'longBreak', 'short_break', 'long_break']) &&
-             (!('secondsLeft' in data) || (data.secondsLeft is number && data.secondsLeft >= 0 && data.secondsLeft <= 86400)) &&
-             (!('isRunning' in data) || data.isRunning is bool) &&
-             (!('updatedAt' in data) || data.updatedAt is timestamp || data.updatedAt is string) &&
-             (!('assignmentId' in data) || validString(data.assignmentId, 0, 100)) &&
-             (!('lastTimestamp' in data) || (data.lastTimestamp is number && data.lastTimestamp >= 0));
+    function isValidTimer(data) {
+      return data.keys().hasAll(['rev', 'status', 'mode', 'durationSeconds', 'updatedAt']) &&
+             data.keys().hasOnly(['rev', 'status', 'mode', 'durationSeconds', 'updatedAt', 'startedAt', 'remainingSeconds']) &&
+             data.rev is int && data.rev >= 1 &&
+             data.status in ['idle', 'running', 'paused'] &&
+             data.mode in ['focus', 'shortBreak', 'longBreak'] &&
+             data.durationSeconds is int && data.durationSeconds >= 1 && data.durationSeconds <= 86400 &&
+             isServerTime(data.updatedAt) &&
+             (data.status == 'running'
+               ? (isServerTime(data.get('startedAt', null)) && !('remainingSeconds' in data))
+               : !('startedAt' in data)) &&
+             (data.status == 'paused'
+               ? (data.get('remainingSeconds', -1) is int && data.remainingSeconds >= 0 && data.remainingSeconds <= data.durationSeconds)
+               : !('remainingSeconds' in data));
     }
 
-    // ===============================================================
-    // Collection Rules
-    // ===============================================================
+    function timerPath(userId) {
+      return /databases/$(database)/documents/users/$(userId)/liveState/timer;
+    }
 
-    // Root user document (/users/{userId})
+    function isValidFocusSession(data, userId, sessionId) {
+      let timer = get(timerPath(userId)).data;
+      let after = getAfter(timerPath(userId)).data;
+      return data.keys().hasAll(['durationSeconds', 'mode', 'completedAt', 'localDate']) &&
+             data.keys().hasOnly(['durationSeconds', 'mode', 'completedAt', 'localDate', 'assignmentId', 'notes']) &&
+             timer.status == 'running' &&
+             timer.mode == 'focus' &&
+             data.mode == 'focus' &&
+             sessionId == 'run-' + string(timer.rev) &&
+             data.durationSeconds is int && data.durationSeconds >= 1 &&
+             data.durationSeconds <= timer.durationSeconds &&
+             data.durationSeconds <= (request.time - timer.startedAt).seconds() + 2 &&
+             isServerTime(data.completedAt) &&
+             validDate(data.localDate) &&
+             optionalString(data, 'assignmentId', 1, 100) &&
+             optionalString(data, 'notes', 0, 2000) &&
+             after.status == 'idle' && after.rev == timer.rev + 1;
+    }
+
+    // ---------------- Collections ----------------
+
     match /users/{userId} {
       allow get, delete: if isOwner(userId);
-      allow list: if false; // Blanket enumeration blocked
+      allow list: if false;
       allow create: if isOwner(userId) && isValidUser(request.resource.data, userId);
       allow update: if isOwner(userId) &&
                        isValidUser(request.resource.data, userId) &&
-                       areImmutableFieldsUnchanged(['uid']);
+                       immutable(['uid']);
 
-      // Assignments subcollection (/users/{userId}/assignments/{assignmentId})
       match /assignments/{assignmentId} {
         allow get: if isOwner(userId);
-        allow list: if isOwner(userId) && (!('limit' in request.query) || request.query.limit <= 500);
+        allow list: if isOwner(userId) && request.query.limit <= 500;
         allow create: if isOwner(userId) &&
                          isValidAssignment(request.resource.data) &&
                          request.resource.data.id == assignmentId;
         allow update: if isOwner(userId) &&
                          isValidAssignment(request.resource.data) &&
-                         areImmutableFieldsUnchanged(['id', 'createdAt']);
+                         immutable(['id', 'createdAt']);
         allow delete: if isOwner(userId);
       }
 
-      // Study sessions subcollection (/users/{userId}/sessions/{sessionId})
       match /sessions/{sessionId} {
         allow get: if isOwner(userId);
-        allow list: if isOwner(userId) && (!('limit' in request.query) || request.query.limit <= 500);
+        allow list: if isOwner(userId) && request.query.limit <= 500;
         allow create: if isOwner(userId) &&
                          isValidSession(request.resource.data) &&
                          request.resource.data.id == sessionId;
         allow update: if isOwner(userId) &&
                          isValidSession(request.resource.data) &&
-                         areImmutableFieldsUnchanged(['id']);
+                         immutable(['id']);
         allow delete: if isOwner(userId);
       }
 
-      // Focus sessions subcollection (/users/{userId}/focusSessions/{sessionId})
+      match /grades/{gradeId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId) && request.query.limit <= 500;
+        allow create: if isOwner(userId) &&
+                         isValidGrade(request.resource.data) &&
+                         request.resource.data.id == gradeId;
+        allow update: if isOwner(userId) &&
+                         isValidGrade(request.resource.data) &&
+                         immutable(['id']);
+        allow delete: if isOwner(userId);
+      }
+
       match /focusSessions/{sessionId} {
         allow get: if isOwner(userId);
         allow list: if isOwner(userId) && request.query.limit <= 500;
-        allow create: if isOwner(userId) && isValidFocusSession(request.resource.data);
-        allow update: if false; // Strictly immutable: prevents streak manipulation & anti-cheat bypass
+        allow create: if isOwner(userId) && isValidFocusSession(request.resource.data, userId, sessionId);
+        allow update: if false;
         allow delete: if isOwner(userId);
       }
 
-      // Cross-device live state singleton (/users/{userId}/liveState/{docId})
+      // Timer singleton with a rev counter used as compare-and-swap.
       match /liveState/{docId} {
-        allow read: if isOwner(userId);
-        allow create, update: if isOwner(userId) && isValidLiveState(request.resource.data);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && docId == 'timer' &&
+                         isValidTimer(request.resource.data) &&
+                         request.resource.data.rev == 1;
+        allow update: if isOwner(userId) && docId == 'timer' &&
+                         isValidTimer(request.resource.data) &&
+                         request.resource.data.rev == resource.data.rev + 1;
         allow delete: if isOwner(userId);
       }
     }
 
-    // Default deny for all unspecified paths
     match /{document=**} {
       allow read, write: if false;
     }

@@ -9,7 +9,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { signInOrLinkWithGoogle } from '../lib/auth';
+import { signInOrLinkWithGoogle } from '../lib/authActions';
 
 interface HeaderProps {
   onOpenAddModal?: () => void;
@@ -57,32 +57,25 @@ export const Header: React.FC<HeaderProps> = ({
       case 'dashboard':
         return 'Today';
       case 'assignments':
-        return 'Coursework & Deadlines';
+        return 'Assignments';
       case 'calendar':
-        return 'Class & Study Timetable';
+        return 'Timetable';
       case 'timer':
-        return 'Deep Work & Focus Timer';
+        return 'Focus timer';
       case 'grades':
-        return 'GPA & Grade Predictor';
+        return 'Grades';
       default:
         return 'StudyFlow';
     }
   };
 
   return (
-    <header className="w-full bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/80 sticky top-0 z-20 px-4 md:px-6 h-12 flex items-center transition-colors duration-150">
+    <header className="w-full bg-surface-light dark:bg-surface-dark border-b border-zinc-200/80 dark:border-zinc-800/80 sticky top-0 z-20 px-4 md:px-6 h-12 flex items-center transition-colors duration-150">
       <div className="flex items-center justify-between gap-4 w-full">
         {/* Left: Dynamic Page Breadcrumb */}
         <div className="flex items-center gap-2 text-xs">
-          <span className="font-mono text-zinc-400 dark:text-zinc-500 hidden sm:inline">Workspace</span>
-          <span className="text-zinc-300 dark:text-zinc-700 hidden sm:inline">/</span>
-          <span className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <span>{getPageTitle()}</span>
-            {activeTab === 'grades' && (
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60">
-                Simulator
-              </span>
-            )}
           </span>
         </div>
 
@@ -92,11 +85,11 @@ export const Header: React.FC<HeaderProps> = ({
           {onOpenSearch && (
             <button
               onClick={onOpenSearch}
-              className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
+              className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
             >
               <Search className="h-3 w-3" />
-              <span>Search coursework…</span>
-              <kbd className="inline-flex items-center gap-0.5 px-1 py-0.2 text-[10px] font-mono bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-400">
+              <span>Search assignments…</span>
+              <kbd className="inline-flex items-center gap-0.5 px-1 py-0.5 text-xs tabular-nums bg-surface-light dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-400">
                 <Command className="h-2.5 w-2.5" /> K
               </kbd>
             </button>
@@ -113,29 +106,29 @@ export const Header: React.FC<HeaderProps> = ({
             {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </button>
 
-          {/* Scholar Profile Quick Access for Mobile */}
+          {/* Student Profile Quick Access for Mobile */}
           {onOpenProfile && (
             <button
               type="button"
               onClick={onOpenProfile}
-              title={`Scholar Profile (${user.name})`}
-              aria-label="Edit scholar profile"
-              className="flex md:hidden items-center justify-center min-h-[44px] min-w-[44px] p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 font-mono font-semibold text-xs"
+              title={`Profile (${user.name})`}
+              aria-label="Edit profile"
+              className="flex md:hidden items-center justify-center min-h-[44px] min-w-[44px] p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 tabular-nums font-semibold text-xs"
             >
-              {isAnonymous ? 'GS' : user.name.split(' ').map((n) => n[0]).join('')}
+              {isAnonymous ? 'G' : user.name.split(' ').map((n) => n[0]).join('')}
             </button>
           )}
 
           {/* Real Network & Sync Status Badge */}
           <div
-            className={`hidden sm:flex items-center gap-1.5 px-2 py-0.8 rounded-md border text-[11px] font-mono transition-colors ${
+            className={`hidden sm:flex items-center gap-1.5 px-2 py-0.8 rounded-md border text-xs tabular-nums transition-colors ${
               !isOnline
                 ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-400'
                 : isSyncing
                 ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-400'
                 : 'bg-zinc-50 dark:bg-zinc-900/60 border-zinc-200/70 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400'
             }`}
-            title={!isOnline ? 'Network disconnected — using local persistent storage' : isSyncing ? 'Synchronizing with Firestore cloud' : 'Connected to Firestore cloud'}
+            title={!isOnline ? 'You are offline. Changes are kept on this device and sent when you reconnect.' : isSyncing ? 'Saving your changes' : 'All changes saved'}
           >
             <span className="relative flex h-1.5 w-1.5">
               {!isOnline ? (
@@ -149,7 +142,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
               )}
             </span>
-            <span>{!isOnline ? 'Offline Cache' : isSyncing ? 'Syncing...' : 'Live Cloud'}</span>
+            <span>{!isOnline ? 'Offline' : isSyncing ? 'Saving…' : 'Saved'}</span>
           </div>
 
           {/* Help & Playbook Guide */}
@@ -157,8 +150,8 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={onOpenHelp}
-              title="StudyFlow Playbook & 45-Second Tour"
-              aria-label="StudyFlow Playbook & 45-Second Tour"
+              title="Help"
+              aria-label="Help"
               className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-lg border border-zinc-200/80 dark:border-zinc-750 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
             >
               <HelpCircle className="h-4 w-4" />
@@ -173,8 +166,8 @@ export const Header: React.FC<HeaderProps> = ({
                 else handleLinkGoogle();
               }}
               disabled={isLinking}
-              aria-label="Academic ledger backup & cloud sync"
-              title="Academic ledger backup & cloud sync"
+              aria-label="Backup and sync your data"
+              title="Backup and sync your data"
               className="flex items-center justify-center gap-1.5 px-3 min-h-[44px] min-w-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium transition-colors disabled:opacity-60 cursor-pointer"
             >
               <LogIn className="h-3.5 w-3.5 text-blue-600" />
@@ -186,11 +179,12 @@ export const Header: React.FC<HeaderProps> = ({
           {onOpenAddModal && (
             <button
               onClick={onOpenAddModal}
-              aria-label="Create new assignment deliverable"
+              aria-label="Add assignment"
               className="flex items-center gap-1.5 px-3.5 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white/90 text-xs font-medium shadow-2xs transition-transform active:scale-95"
             >
               <Plus className="h-4 w-4" />
-              <span>New Task</span>
+              <span className="hidden sm:inline">Add assignment</span>
+              <span className="sm:hidden">Add</span>
             </button>
           )}
         </div>
