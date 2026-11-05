@@ -27,3 +27,4 @@ playwright-report/
 playwright-install.log
 vite-dev.log
 .gstack-shots/
+dist-lh/
