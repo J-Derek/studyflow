@@ -269,8 +269,7 @@ export const GradesPage: React.FC = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2.5">
                     <div
-                      className="h-8 w-8 rounded-lg flex items-center justify-center text-white tabular-nums font-semibold text-xs shadow-2xs"
-                      style={{ backgroundColor: course.color }}
+                      className="h-8 w-8 rounded-lg flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 tabular-nums font-semibold text-xs"
                     >
                       {course.courseCode.slice(0, 2)}
                     </div>

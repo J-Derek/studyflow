@@ -187,15 +187,7 @@ export const CalendarPage: React.FC = () => {
                       daySessions.map((session) => (
                         <div
                           key={session.id}
-                          className={`p-2 rounded-md border text-xs transition relative group border-l-[3px] ${
-                            session.type === 'lecture'
-                              ? 'border-l-blue-600 border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-850/60 text-zinc-900 dark:text-zinc-100'
-                              : session.type === 'lab'
-                              ? 'border-l-purple-600 border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-850/60 text-zinc-900 dark:text-zinc-100'
-                              : session.type === 'review'
-                              ? 'border-l-amber-600 border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-850/60 text-zinc-900 dark:text-zinc-100'
-                              : 'border-l-emerald-600 border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-850/60 text-zinc-900 dark:text-zinc-100'
-                          }`}
+                          className="p-2 rounded-md border text-xs transition relative group border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-850/60 text-zinc-900 dark:text-zinc-100"
                         >
                           <div className="flex items-center justify-between mb-0.5">
                             <span className="tabular-nums text-xs font-medium text-zinc-600 dark:text-zinc-400">

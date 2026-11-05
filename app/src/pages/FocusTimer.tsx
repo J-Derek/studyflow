@@ -119,10 +119,10 @@ export const FocusTimerPage: React.FC = () => {
 
   const soundscapesList: { id: SoundscapeType; label: string; icon: React.ReactNode }[] = [
     { id: 'off', label: 'Off', icon: <VolumeX className="w-5 h-5 text-zinc-600 dark:text-zinc-400" /> },
-    { id: 'rain', label: 'Rain', icon: <CloudRain className="w-5 h-5 text-indigo-400" /> },
-    { id: 'brown', label: 'Brown noise', icon: <Waves className="w-5 h-5 text-cyan-400" /> },
-    { id: 'white', label: 'White noise', icon: <BookOpen className="w-5 h-5 text-amber-400" /> },
-    { id: 'binaural', label: 'Binaural tones', icon: <Brain className="w-5 h-5 text-purple-400" /> }
+    { id: 'rain', label: 'Rain', icon: <CloudRain className="w-5 h-5 text-zinc-600 dark:text-zinc-300" /> },
+    { id: 'brown', label: 'Brown noise', icon: <Waves className="w-5 h-5 text-zinc-600 dark:text-zinc-300" /> },
+    { id: 'white', label: 'White noise', icon: <BookOpen className="w-5 h-5 text-zinc-600 dark:text-zinc-300" /> },
+    { id: 'binaural', label: 'Binaural tones', icon: <Brain className="w-5 h-5 text-zinc-600 dark:text-zinc-300" /> }
   ];
 
   return (
@@ -212,7 +212,7 @@ export const FocusTimerPage: React.FC = () => {
 
           {/* Inner Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-4xl md:text-5xl font-light text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums ">
+            <span className="font-display text-5xl md:text-6xl font-medium text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums ">
               <span role="timer" aria-live="off" aria-label={`${timerMode === 'focus' ? 'Focus' : 'Break'} timer`}>{formatTimeLeft(timerSecondsLeft)}</span>
             </span>
             <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 mt-2">
@@ -242,7 +242,7 @@ export const FocusTimerPage: React.FC = () => {
           ) : (
             <button
               onClick={startTimer}
-              className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition shadow-2xs flex items-center gap-2 active:scale-95"
+              className="px-6 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-sm transition flex items-center gap-2 active:scale-95"
             >
               <Play className="h-3.5 w-3.5 fill-current" /> Start
             </button>
