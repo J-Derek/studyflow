@@ -123,42 +123,47 @@ flowchart TD
 
 ## 🧪 Testing & Quality Assurance
 
-### Run Unit Test Suites
-```bash
-npm test
-```
-Runs the Vitest unit suites:
-- `academicCalculations.test.ts`: GPA math, credit hour weighting, monotonicity, and what-if score boundary checks.
-- `subtasks.test.ts`: Subtask progress state machine and the 99% cap invariant.
-- `backupValidator.test.ts`: Prototype pollution injection defense and schema boundaries.
+All commands run from `app/`. CI (`.github/workflows/ci.yml`) runs the first four on every push.
 
-### Automated Browser E2E & Touch Target Audit
-```bash
-node scripts/run_phase4c_qa_audit.js
-```
-Validates cold-load console error count (`0`), verifies mobile touch target bounds ($\ge 44 \times 44\text{px}$) across all 28 interactive elements, and saves responsive snapshots to `qa-screenshots/`.
+| Command | What it proves | Needs |
+|---|---|---|
+| `npm test` | Unit tests: GPA (integer maths, property tests), subtasks, timer engine, `.ics` export round-tripped through a real parser across the 2026 New York daylight-saving changes, deadline maths, backup import with hostile input, Firestore mappers, late-snapshot race | Node |
+| `npm run test:rules` | Firestore security rules against the emulator: tenancy, field shape, NaN, string limits, server-time rules, list caps, timer revision compare-and-swap (two clients, one wins), forged focus sessions | Java |
+| `npm run test:e2e` | Playwright against the Auth + Firestore emulators: account switching and sign-out leave nothing behind (DOM, localStorage, IndexedDB, Cache Storage), guest-to-Google merge, timer survives refresh and syncs across tabs, grades sync, axe-core on every screen in light/dark and desktop/mobile, dialogs, keyboard-only walks, no horizontal scrolling at 320 to 1440 px | Java, Chromium (`npx playwright install chromium`) |
+| `npm run build` | Type-check and production build | Node |
+
+### What is not covered
+- No real screen reader (NVDA, VoiceOver) has been run; axe cannot judge reading order or meaning.
+- Google sign-in is tested against the Auth emulator's fake popup, not Google.
+- Firestore rules have not been deployed to the real project from this branch (see Deploying).
 
 ---
 
 ## 🔒 Security & Multi-Tenant Isolation
 
-StudyFlow enforces enterprise multi-tenant isolation:
-- **Subcollection Scoping**: All user data is nested exclusively under `/users/{userId}/` with Firestore rules verifying `request.auth.uid == userId`.
-- **Focus session history**: Updates are denied by the rules. Forged *creates* are not yet constrained; this is tracked as Phase 4A work and is not claimed as protection.
-- **Sign-out**: Unsubscribes Firestore listeners and resets the in-memory store. Clearing the Firestore IndexedDB cache is Phase 4A work and not yet done.
-- **Client-Side Sanitization**: All JSON imports are validated against schema boundaries, maximum item quotas ($\le 1000$ assignments), and prototype pollution vectors.
+- **Tenancy**: all data lives under `/users/{userId}/` and every rule checks `request.auth.uid == userId`. Everything else is denied.
+- **Field shape**: every collection lists its allowed keys, types and string limits (measured in UTF-16 units, so an emoji counts as 2). Timestamps that matter (`updatedAt`, timer start, session completion) must be server time.
+- **Focus sessions** can only be created in the same batch that stops a running timer, with an id tied to the timer revision, and only after enough server time has passed. They cannot be edited.
+- **Timer** writes carry a revision number that must rise by exactly one, so two devices cannot both win.
+- **Sign-out and account switch** remove listeners, the in-memory store, localStorage, sessionStorage, Cache Storage and the Firestore IndexedDB cache, then reload.
+- **Backups**: files over 5 MB, duplicate ids, unknown keys, bad times and `__proto__` style keys are rejected; at most 500 assignments (the same cap as the database list queries).
+- No compliance claim is made. Passing automated checks is not the same as being WCAG-conformant or secure against every attack.
+
+### Deploying
+Firestore rules and indexes deploy from this repository with the Firebase CLI in CI (job `deploy-rules`, `main` only, needs a `FIREBASE_SERVICE_ACCOUNT` secret). Never paste rules into the console. Ship the app version first, then the rules.
 
 ---
 
 ## 🗺️ Implementation Roadmap
 
 - [x] **Phase 1: Production MVP** — Deployed live on Vercel.
-- [x] **Phase 2: UI/UX Audit & Anti-Slop Redesign** — Neutralized AI fingerprints, unified dual-token styling.
-- [x] **Phase 3: Front-End Remediations** — Real editable student profiles, week-switching schedule, What-If simulator, and responsive navigation.
-- [ ] **Phase 4A: Backend Hardening & Automated Test Suites** — in progress: Firestore rules emulator suite, account-switch isolation tests, pure-logic tests, CI.
-- [ ] **Phase 4B: Vercel preview (4B-1) and production domain (4B-2)** — the app is live on a `vercel.app` URL; no custom domain bound yet.
-- [ ] **Phase 4C: Multi-Device QA & Accessibility Audit** — 0 console errors, mobile touch targets verified; full axe-core audit scheduled.
-- [x] **Phase 5: GitHub Push & Release Tagging** — Synchronized to [github.com/J-Derek/studyflow](https://github.com/J-Derek/studyflow).
+- [x] **Phase 2: UI/UX Audit & Anti-Slop Redesign** — plain copy, no invented statistics, honest status indicators.
+- [x] **Phase 3: Front-End Remediations** — editable profile, week-switching timetable, what-if calculator, responsive navigation.
+- [x] **Phase 4A: Backend Hardening & Automated Test Suites** — rules emulator suite, account-isolation suite, pure-logic suites, timer refactor, CI. *Open:* the new rules are not yet deployed to the real Firebase project.
+- [ ] **Phase 4B: Vercel preview (4B-1) and production domain (4B-2)** — preview deploys work and routing is verified there; no custom domain bound yet.
+- [x] **Phase 4C: Accessibility and performance** (automated part) — axe-core clean, keyboard and dialog tests, Lighthouse mobile run. *Open:* manual screen-reader pass.
+- [x] **Phase 5: GitHub Push & Release Tagging** — [github.com/J-Derek/studyflow](https://github.com/J-Derek/studyflow).
+- [ ] **Five-student usability test** — needs the product owner to arrange it.
 
 ---
 
