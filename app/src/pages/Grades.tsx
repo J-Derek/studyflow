@@ -279,6 +279,9 @@ export const GradesPage: React.FC = () => {
                         <span className="text-xs tabular-nums px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                           {course.credits} Credits
                         </span>
+                        {course.sample && (
+                          <span className="text-xs px-1.5 py-0.5 rounded border border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400">Sample</span>
+                        )}
                       </div>
                       <p className="text-xs text-zinc-600 dark:text-zinc-400 truncate max-w-[200px]">
                         {course.courseName}
