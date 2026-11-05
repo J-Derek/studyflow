@@ -13,7 +13,7 @@ export default {
           dark: '#090A0C',
         },
         surface: {
-          light: '#FFFFFF',
+          light: '#FBFCFE',
           dark: '#111215',
           elevatedLight: '#F1F3F5',
           elevatedDark: '#18191E',
@@ -33,6 +33,7 @@ export default {
         }
       },
       fontFamily: {
+        display: ['"Bricolage Grotesque Variable"', '"Inter Variable"', 'sans-serif'],
         sans: ['"Inter Variable"', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       }

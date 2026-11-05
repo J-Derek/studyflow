@@ -3,7 +3,17 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 type AuthApi = { signInOrLinkWithGoogle: () => Promise<unknown>; signOutUser: () => Promise<void> };
 
 async function boot(page: Page): Promise<void> {
-  await page.goto('/assignments');
+  // After a direct account switch the app reloads itself; a goto that lands in the middle of that
+  // reload is aborted by the browser. Retry once the reload has settled.
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await page.goto('/assignments');
+      break;
+    } catch (err) {
+      if (attempt >= 3 || !String(err).includes('ERR_ABORTED')) throw err;
+      await page.waitForLoadState('load').catch(() => undefined);
+    }
+  }
   // Wait for the anonymous session + sync to be bound to a user.
   await page.waitForFunction(() => {
     const s = (window as unknown as { __store?: { getState: () => { userId: string | null } } }).__store;
@@ -38,7 +48,7 @@ async function currentUid(page: Page): Promise<string | null> {
 async function waitForUidChange(page: Page, previous: string | null): Promise<string> {
   await page.waitForFunction(
     (prev) => {
-      const id = (window as unknown as { __store: { getState: () => { userId: string | null } } }).__store.getState().userId;
+      const id = (window as unknown as { __store: { getState: () => { userId: string | null } } | undefined }).__store?.getState()?.userId;
       return !!id && id !== prev;
     },
     previous
