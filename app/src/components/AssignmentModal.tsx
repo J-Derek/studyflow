@@ -111,7 +111,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
             <input
               type="text"
               required
-              placeholder="e.g. Distributed Consensus Algorithm Synthesis"
+              placeholder="e.g. Problem Set 2"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
@@ -125,7 +125,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
             <input
               type="text"
               required
-              placeholder="e.g. CS 4400 — Distributed Systems"
+              placeholder="e.g. CS 101 or Physics"
               value={course}
               onChange={(e) => setCourse(e.target.value)}
               className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
@@ -215,7 +215,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
             </label>
             <textarea
               rows={3}
-              placeholder="Key specifications, rubric links, or references..."
+              placeholder="Anything you want to remember (optional)"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition resize-none"

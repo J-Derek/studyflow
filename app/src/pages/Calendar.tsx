@@ -271,7 +271,7 @@ export const CalendarPage: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. CS 4400"
+                  placeholder="e.g. CS 101"
                   value={course}
                   onChange={(e) => setCourse(e.target.value)}
                   className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
