@@ -90,7 +90,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
             <h2 id="assignment-modal-title" className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">
               {assignmentToEdit ? 'Edit Assignment' : 'Create New Assignment'}
             </h2>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Specify requirements, course course, and deadline targets</p>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">Add the title, course and due date</p>
           </div>
           <button
             type="button"

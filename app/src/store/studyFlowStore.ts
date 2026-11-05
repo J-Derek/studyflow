@@ -26,6 +26,7 @@ import { calculateSubtaskProgress } from '../utils/subtasks';
 import { syncThemeColor } from '../utils/themeColor';
 import { complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
+import { clampScore } from '../utils/academicCalculations';
 
 export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades';
 
@@ -84,6 +85,8 @@ interface StudyFlowState {
   addAssignment: (assignment: Omit<Assignment, 'id' | 'createdAt'>) => void;
   updateAssignment: (id: string, updates: Partial<Assignment>) => void;
   deleteAssignment: (id: string) => void;
+  /** Puts a just-deleted assignment back (same id), for the Undo button. */
+  restoreAssignment: (assignment: Assignment) => void;
   toggleAssignmentComplete: (id: string) => void;
   toggleSubtask: (assignmentId: string, subtaskId: string) => void;
   addSubtask: (assignmentId: string, title: string) => void;
@@ -374,6 +377,18 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         }
       },
 
+      restoreAssignment: (assignment) => {
+        set((state) =>
+          state.assignments.some((a) => a.id === assignment.id) ? state : { assignments: [assignment, ...state.assignments] }
+        );
+        const uid = get().userId;
+        if (uid) {
+          syncAssignmentToFirestore(uid, assignment).catch((err) => {
+            console.warn('Sync error restoring assignment:', err);
+          });
+        }
+      },
+
       toggleAssignmentComplete: (id) => {
         set((state) => ({
           assignments: state.assignments.map((a) => {
@@ -510,7 +525,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (!course) return;
         const next: CourseGrade = {
           ...course,
-          assessments: course.assessments.map((a) => (a.id === assessmentId ? { ...a, score } : a))
+          assessments: course.assessments.map((a) => (a.id === assessmentId ? { ...a, score: clampScore(score) } : a))
         };
         set((state) => ({ grades: state.grades.map((c) => (c.id === courseId ? next : c)) }));
         const uid = get().userId;

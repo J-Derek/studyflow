@@ -1,6 +1,12 @@
 import type { CourseGrade } from '../types';
 
 // Standard 4.0 GPA scale mapping
+/** A score is a percentage: not-a-number becomes empty, anything else is held between 0 and 100. */
+export function clampScore(score: number | undefined): number | undefined {
+  if (score === undefined || !Number.isFinite(score)) return undefined;
+  return Math.min(100, Math.max(0, score));
+}
+
 export function percentageToGpa(pct: number): number {
   if (pct >= 93) return 4.0;
   if (pct >= 90) return 3.7;

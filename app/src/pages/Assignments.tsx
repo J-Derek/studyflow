@@ -14,7 +14,14 @@ import { getDaysRemaining } from '../utils/formatters';
 import { AssignmentModal } from '../components/AssignmentModal';
 
 export const AssignmentsPage: React.FC = () => {
-  const { assignments, toggleAssignmentComplete, deleteAssignment, toggleSubtask, addSubtask } = useStudyFlowStore();
+  const { assignments, toggleAssignmentComplete, deleteAssignment, restoreAssignment, toggleSubtask, addSubtask } = useStudyFlowStore();
+  // The last deleted assignment stays recoverable for a few seconds.
+  const [justDeleted, setJustDeleted] = useState<Assignment | null>(null);
+  useEffect(() => {
+    if (!justDeleted) return;
+    const t = window.setTimeout(() => setJustDeleted(null), 8000);
+    return () => window.clearTimeout(t);
+  }, [justDeleted]);
   const [newSubtaskInputs, setNewSubtaskInputs] = useState<Record<string, string>>({});
   const [addingFor, setAddingFor] = useState<string | null>(null);
 
@@ -271,7 +278,10 @@ export const AssignmentsPage: React.FC = () => {
                         <Edit3 className="h-3.5 w-3.5" />
                       </button>
                       <button
-                        onClick={() => deleteAssignment(asg.id)}
+                        onClick={() => {
+                          deleteAssignment(asg.id);
+                          setJustDeleted(asg);
+                        }}
                         className="p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                         title="Delete Assignment"
                         aria-label={`Delete assignment "${asg.title}"`}
@@ -378,6 +388,25 @@ export const AssignmentsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {justDeleted && (
+        <div
+          role="status"
+          className="fixed left-1/2 -translate-x-1/2 bottom-20 md:bottom-6 z-40 flex items-center gap-4 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2.5 text-sm shadow-lg max-w-[calc(100vw-2rem)]"
+        >
+          <span className="truncate">Deleted “{justDeleted.title}”</span>
+          <button
+            type="button"
+            onClick={() => {
+              restoreAssignment(justDeleted);
+              setJustDeleted(null);
+            }}
+            className="min-h-[44px] px-2 font-semibold underline underline-offset-2 cursor-pointer shrink-0"
+          >
+            Undo
+          </button>
+        </div>
+      )}
 
       <AssignmentModal
         isOpen={modalOpen}
