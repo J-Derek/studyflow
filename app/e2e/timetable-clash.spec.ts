@@ -50,5 +50,50 @@ test('a Sunday block is saved as day 0 and shows in the Sunday column', async ({
 
   const s = await page.evaluate(() => (window as unknown as { __store: { getState: () => S } }).__store.getState().sessions);
   expect(s.map((x) => [x.title, x.dayOfWeek])).toEqual([['Sunday revision', 0]]);
-  await expect(page.getByRole('heading', { name: 'Sunday revision' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Edit .*Sunday revision/ })).toBeVisible();
 });
+
+for (const [label, width] of [['desktop', 1280], ['phone', 375]] as const) {
+  test(`${label}: tapping a block edits its time, and a clash goes away once the times differ`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await ready(page);
+    await page.evaluate(() => {
+      const st = (window as unknown as { __store: { getState: () => S } }).__store.getState();
+      st.addSession({ title: 'Distributed Systems', course: 'ACS443', dayOfWeek: 3, startTime: '10:00', endTime: '11:30', type: 'lecture' });
+      st.addSession({ title: 'Differential Calculus', course: 'MAT344', dayOfWeek: 3, startTime: '10:00', endTime: '11:30', type: 'lecture' });
+    });
+    await expect(page.getByText('Clashes with another block')).toHaveCount(2);
+
+    await page.getByRole('button', { name: /Edit .*Distributed Systems/ }).click();
+    const dialog = page.getByRole('dialog', { name: 'Edit block' });
+    await expect(dialog).toBeVisible();
+    // it is filled with the block's own details, and warns about the OTHER block only
+    await expect(dialog.getByPlaceholder('e.g. Distributed Systems Lab')).toHaveValue('Distributed Systems');
+    await expect(dialog.getByLabel('Start time')).toHaveValue('10:00');
+    await expect(dialog.getByRole('status')).toContainText('Differential Calculus');
+    await expect(dialog.getByRole('status')).not.toContainText('Distributed Systems');
+
+    await dialog.getByLabel('Start time').fill('13:00');
+    await dialog.getByLabel('End time').fill('14:30');
+    await expect(dialog.getByRole('status')).toHaveCount(0);
+    await dialog.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+
+    await expect(page.getByText('Clashes with another block')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Edit .*Distributed Systems.*13:00 - 14:30/ })).toBeVisible();
+    const times = async () =>
+      page.evaluate(() => (window as unknown as { __store: { getState: () => { sessions: Array<{ title: string; startTime: string; endTime: string }> } } }).__store.getState().sessions.map((x) => `${x.title} ${x.startTime}-${x.endTime}`));
+    expect(await times()).toEqual(['Distributed Systems 13:00-14:30', 'Differential Calculus 10:00-11:30']);
+
+    // the change is kept after a reload
+    await page.reload();
+    await page.waitForFunction(() => !!(window as unknown as { __store?: { getState: () => S } }).__store?.getState().userId);
+    await expect(page.getByRole('button', { name: /Edit .*Distributed Systems.*13:00 - 14:30/ })).toBeVisible();
+
+    // a block can also be deleted from its edit dialog
+    page.once('dialog', (d) => void d.accept());
+    await page.getByRole('button', { name: /Edit .*Differential Calculus/ }).click();
+    await page.getByRole('dialog', { name: 'Edit block' }).getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(page.getByRole('button', { name: /Edit .*Differential Calculus/ })).toHaveCount(0);
+  });
+}
