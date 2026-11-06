@@ -1,4 +1,4 @@
-import type { StudySession } from '../types';
+import type { Assignment, StudySession } from '../types';
 
 export interface IcsOptions {
   /** IANA zone the lectures happen in, e.g. "Africa/Nairobi". Defaults to the device zone. */
@@ -8,6 +8,8 @@ export interface IcsOptions {
   semesterEnd?: string;
   /** Rises by one on every export so calendars treat re-imports as updates, not duplicates. */
   sequence?: number;
+  /** Deadlines to export as events with reminders. Completed and sample ones are skipped. */
+  assignments?: Assignment[];
   now?: Date;
 }
 
@@ -179,8 +181,18 @@ export function generateICalendarFeed(allSessions: StudySession[], options: IcsO
   let end = parseYmd(options.semesterEnd ?? '') ?? defaultEnd;
   if (Date.UTC(end.y, end.m - 1, end.d) < Date.UTC(start.y, start.m - 1, start.d)) end = defaultEnd;
 
-  const windowFrom = Date.UTC(start.y, start.m - 1, start.d) - DAY_MS;
-  const windowTo = Date.UTC(end.y, end.m - 1, end.d) + DAY_MS;
+  const deadlines = (options.assignments ?? [])
+    .filter((a) => !a.sample && a.status !== 'completed')
+    .map((a) => ({ a, due: parseYmd(a.dueDate) }))
+    .filter((x): x is { a: Assignment; due: { y: number; m: number; d: number } } => x.due !== null);
+
+  let windowFrom = Date.UTC(start.y, start.m - 1, start.d) - DAY_MS;
+  let windowTo = Date.UTC(end.y, end.m - 1, end.d) + DAY_MS;
+  for (const { due } of deadlines) {
+    const t = Date.UTC(due.y, due.m - 1, due.d);
+    windowFrom = Math.min(windowFrom, t - DAY_MS);
+    windowTo = Math.max(windowTo, t + 2 * DAY_MS);
+  }
 
   const lines: string[] = [
     'BEGIN:VCALENDAR',
@@ -222,6 +234,54 @@ export function generateICalendarFeed(allSessions: StudySession[], options: IcsO
       'STATUS:CONFIRMED',
       'END:VEVENT'
     );
+  }
+
+  // Deadlines: a timed event (30 minutes) when there is a due time, otherwise an all-day event.
+  // Each carries two display alarms so the phone or laptop calendar reminds the student.
+  for (const { a, due } of deadlines) {
+    const t = a.dueTime ? parseTime(a.dueTime) : null;
+    const day = `${due.y}${pad(due.m)}${pad(due.d)}`;
+    const uid = `a-${a.id.replace(/[^A-Za-z0-9._-]/g, '-')}@studyflow.app`;
+    const summary = escapeIcsText(`Due: ${a.title}${a.course ? ` (${a.course})` : ''}`);
+    const alarm = (trigger: string, text: string) => [
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY',
+      `DESCRIPTION:${escapeIcsText(text)}`,
+      `TRIGGER:${trigger}`,
+      'END:VALARM'
+    ];
+    const head = ['BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${dtstamp}`, `SEQUENCE:${sequence}`];
+    const tail = [
+      `SUMMARY:${summary}`,
+      `DESCRIPTION:${escapeIcsText(`StudyFlow deadline for ${a.course || 'your course'}.`)}`,
+      'CATEGORIES:DEADLINE',
+      'STATUS:CONFIRMED'
+    ];
+    if (t) {
+      const endMin = Math.min(t.h * 60 + t.m + 30, 23 * 60 + 59);
+      lines.push(
+        ...head,
+        `DTSTART;TZID=${zone}:${day}T${pad(t.h)}${pad(t.m)}00`,
+        `DTEND;TZID=${zone}:${day}T${pad(Math.floor(endMin / 60))}${pad(endMin % 60)}00`,
+        ...tail,
+        ...alarm('-P1D', `Due tomorrow: ${a.title}`),
+        ...alarm('-PT1H', `Due in 1 hour: ${a.title}`),
+        'END:VEVENT'
+      );
+    } else {
+      const next = addDays(due.y, due.m, due.d, 1);
+      lines.push(
+        ...head,
+        `DTSTART;VALUE=DATE:${day}`,
+        `DTEND;VALUE=DATE:${next.y}${pad(next.m)}${pad(next.d)}`,
+        'TRANSP:TRANSPARENT',
+        ...tail,
+        // 09:00 the day before, and 08:00 on the day itself (all-day events start at 00:00).
+        ...alarm('-PT15H', `Due tomorrow: ${a.title}`),
+        ...alarm('PT8H', `Due today: ${a.title}`),
+        'END:VEVENT'
+      );
+    }
   }
 
   lines.push('END:VCALENDAR');
