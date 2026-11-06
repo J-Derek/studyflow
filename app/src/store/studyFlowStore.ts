@@ -24,7 +24,7 @@ import {
 } from '../services/cloud';
 import { calculateSubtaskProgress } from '../utils/subtasks';
 import { syncThemeColor } from '../utils/themeColor';
-import { complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
+import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 import { clampScore } from '../utils/academicCalculations';
 
@@ -636,10 +636,22 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           pomodorosCompleted: state.pomodorosCompleted + 1
         })),
 
-      updateTimerSettings: (settings) =>
-        set((state) => ({
-          timerSettings: { ...state.timerSettings, ...settings }
-        })),
+      updateTimerSettings: (settings) => {
+        const state = get();
+        const merged = { ...state.timerSettings, ...settings };
+        // Keep every length within the limits (the screen only offers whole minutes; seconds stay possible for tests).
+        const within = (sec: number, maxMin: number) => (Number.isFinite(sec) ? Math.min(maxMin * 60, Math.max(1, Math.round(sec))) : 60);
+        merged.focusDuration = within(merged.focusDuration, TIMER_LIMITS_MIN.focus);
+        merged.shortBreakDuration = within(merged.shortBreakDuration, TIMER_LIMITS_MIN.shortBreak);
+        merged.longBreakDuration = within(merged.longBreakDuration, TIMER_LIMITS_MIN.longBreak);
+        set({ timerSettings: merged });
+        // An idle timer takes the new length straight away; a running or paused block keeps its own.
+        if (state.timer.status === 'idle') {
+          const next = switchMode(state.timer.mode, durationFor(state.timer.mode, merged));
+          set({ timer: next, nowMs: Date.now() });
+          if (state.userId) pushTimerState(state.userId, next);
+        }
+      },
 
       setSoundscape: (type, forMode) => {
         const { timer, soundscapeVolume } = get();

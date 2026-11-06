@@ -18,9 +18,39 @@ import {
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { formatTimeLeft } from '../utils/formatters';
-import { remainingSeconds } from '../lib/timerEngine';
+import { clampMinutes, remainingSeconds, TIMER_LIMITS_MIN } from '../lib/timerEngine';
 import type { SoundscapeType } from '../types';
 import confetti from 'canvas-confetti';
+
+/** One length in whole minutes. Saved when the student leaves the box or presses Enter. */
+const LengthField: React.FC<{ id: string; label: string; minutes: number; max: number; onCommit: (minutes: number) => void }> = ({ id, label, minutes, max, onCommit }) => (
+  <div>
+    <label htmlFor={id} className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+      {label}
+    </label>
+    <div className="flex items-center gap-1.5">
+      <input
+        key={minutes}
+        id={id}
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={max}
+        defaultValue={minutes}
+        onBlur={(e) => {
+          const next = clampMinutes(Number(e.currentTarget.value), max);
+          e.currentTarget.value = String(next);
+          if (next !== minutes) onCommit(next);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur();
+        }}
+        className="w-full min-h-[44px] px-3 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-surface-light dark:bg-zinc-900 text-sm tabular-nums text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      />
+      <span className="text-xs text-zinc-600 dark:text-zinc-400">min</span>
+    </div>
+  </div>
+);
 
 export const FocusTimerPage: React.FC = () => {
   const {
@@ -28,6 +58,8 @@ export const FocusTimerPage: React.FC = () => {
     nowMs,
     focusCompletedAtMs,
     pomodorosCompleted,
+    timerSettings,
+    updateTimerSettings,
     soundscape,
     breakSoundscape,
     soundscapeVolume,
@@ -166,7 +198,7 @@ export const FocusTimerPage: React.FC = () => {
                 : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
-            Focus (25m)
+            Focus ({Math.round(timerSettings.focusDuration / 60)}m)
           </button>
           <button
             onClick={() => setTimerMode('shortBreak')}
@@ -176,7 +208,7 @@ export const FocusTimerPage: React.FC = () => {
                 : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
-            Short Break (5m)
+            Short Break ({Math.round(timerSettings.shortBreakDuration / 60)}m)
           </button>
           <button
             onClick={() => setTimerMode('longBreak')}
@@ -186,10 +218,34 @@ export const FocusTimerPage: React.FC = () => {
                 : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
-            Long Break (15m)
+            Long Break ({Math.round(timerSettings.longBreakDuration / 60)}m)
           </button>
         </div>
       </div>
+
+      {/* Timer lengths */}
+      <details className="mx-auto w-full max-w-md rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark">
+        <summary className="cursor-pointer select-none px-4 min-h-[44px] flex items-center text-sm font-medium text-zinc-800 dark:text-zinc-200">
+          Change timer lengths
+        </summary>
+        <div className="px-4 pb-4 space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            <LengthField id="len-focus" label="Focus" minutes={Math.round(timerSettings.focusDuration / 60)} max={TIMER_LIMITS_MIN.focus} onCommit={(m) => updateTimerSettings({ focusDuration: m * 60 })} />
+            <LengthField id="len-short" label="Short break" minutes={Math.round(timerSettings.shortBreakDuration / 60)} max={TIMER_LIMITS_MIN.shortBreak} onCommit={(m) => updateTimerSettings({ shortBreakDuration: m * 60 })} />
+            <LengthField id="len-long" label="Long break" minutes={Math.round(timerSettings.longBreakDuration / 60)} max={TIMER_LIMITS_MIN.longBreak} onCommit={(m) => updateTimerSettings({ longBreakDuration: m * 60 })} />
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">Takes effect now if the timer is not running, otherwise from the next block.</p>
+            <button
+              type="button"
+              onClick={() => updateTimerSettings({ focusDuration: 25 * 60, shortBreakDuration: 5 * 60, longBreakDuration: 15 * 60 })}
+              className="min-h-[44px] px-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+            >
+              Back to 25 / 5 / 15
+            </button>
+          </div>
+        </div>
+      </details>
 
       {/* Circular Laboratory Gauge Display */}
       <div className="bg-surface-light dark:bg-surface-dark p-8 md:p-10 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex flex-col items-center justify-center relative overflow-hidden transition-colors">
