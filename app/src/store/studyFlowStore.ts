@@ -113,7 +113,10 @@ interface StudyFlowState {
   /** Set when a focus block finishes, so the page can celebrate. */
   focusCompletedAtMs: number | null;
   pomodorosCompleted: number;
+  /** Sound while focusing. */
   soundscape: SoundscapeType;
+  /** Sound during short and long breaks. */
+  breakSoundscape: SoundscapeType;
   soundscapeVolume: number;
   setTimerMode: (mode: TimerMode) => void;
   startTimer: () => void;
@@ -124,7 +127,8 @@ interface StudyFlowState {
   adoptRemoteTimer: (t: TimerState) => void;
   incrementPomodoros: () => void;
   updateTimerSettings: (settings: Partial<TimerSettings>) => void;
-  setSoundscape: (type: SoundscapeType) => void;
+  /** Chooses the sound for focus blocks or for breaks (defaults to the current mode). */
+  setSoundscape: (type: SoundscapeType, forMode?: 'focus' | 'break') => void;
   setSoundscapeVolume: (volume: number) => void;
 }
 
@@ -559,6 +563,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       focusCompletedAtMs: null,
       pomodorosCompleted: 0,
       soundscape: 'off',
+      breakSoundscape: 'off',
       soundscapeVolume: 0.35,
 
       setTimerMode: (mode) => {
@@ -570,9 +575,10 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       },
 
       startTimer: () => {
-        const { soundscape, soundscapeVolume, timer } = get();
+        const { soundscape, breakSoundscape, soundscapeVolume, timer } = get();
         if (timer.status === 'running') return;
-        if (soundscape !== 'off') playSoundscape(soundscape, soundscapeVolume);
+        const sound = timer.mode === 'focus' ? soundscape : breakSoundscape;
+        if (sound !== 'off') playSoundscape(sound, soundscapeVolume);
         const now = Date.now();
         const next = startEngine(timer, now);
         set({ timer: next, nowMs: now });
@@ -635,9 +641,12 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           timerSettings: { ...state.timerSettings, ...settings }
         })),
 
-      setSoundscape: (type) => {
+      setSoundscape: (type, forMode) => {
         const { timer, soundscapeVolume } = get();
-        set({ soundscape: type });
+        const target = forMode ?? (timer.mode === 'focus' ? 'focus' : 'break');
+        set(target === 'focus' ? { soundscape: type } : { breakSoundscape: type });
+        const playing = target === (timer.mode === 'focus' ? 'focus' : 'break');
+        if (!playing) return;
         if (type === 'off' || timer.status !== 'running') {
           stopSoundscape();
         } else {
@@ -664,6 +673,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         pomodorosCompleted: state.pomodorosCompleted,
         timer: state.timer,
         timerSettings: state.timerSettings,
+        soundscape: state.soundscape,
+        breakSoundscape: state.breakSoundscape,
         soundscapeVolume: state.soundscapeVolume
       }),
       onRehydrateStorage: () => (state) => {

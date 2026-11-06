@@ -76,4 +76,4 @@ export interface UserPreferences {
   timeZone?: string;
 }
 
-export type SoundscapeType = 'off' | 'rain' | 'brown' | 'white' | 'binaural';
+export type SoundscapeType = 'off' | 'rain' | 'waves' | 'pad' | 'keys' | 'brown' | 'breeze' | 'chimes';
