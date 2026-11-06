@@ -10,6 +10,7 @@ import { getDaysRemaining } from '../utils/formatters';
 import { calculateCumulativeGpa, getAcademicStanding } from '../utils/academicCalculations';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { FirstDeadlineCard } from '../components/FirstDeadlineCard';
+import { SignInButton } from '../components/SignInButton';
 import { GettingStartedChecklist } from '../components/GettingStartedChecklist';
 
 interface DashboardProps {
@@ -81,6 +82,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <button type="button" onClick={onOpenBackup} className="px-3 py-1.5 min-h-[44px] rounded-md bg-amber-900 dark:bg-amber-200 text-white dark:text-amber-950 font-medium text-xs cursor-pointer">Sign in with Google</button>
             )}
             <button type="button" onClick={dismissGuestNotice} className="px-3 py-1.5 min-h-[44px] rounded-md text-xs font-medium cursor-pointer hover:underline">Not now</button>
+          </div>
+        </div>
+      )}
+
+      {/* First visit: make signing in obvious for students who already use StudyFlow elsewhere */}
+      {isAnonymous && assignments.length === 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark px-4 py-3">
+          <p className="text-sm text-zinc-700 dark:text-zinc-300">Already use StudyFlow on another device? Sign in to see your plan here.</p>
+          <div className="sm:w-60 shrink-0">
+            <SignInButton />
           </div>
         </div>
       )}

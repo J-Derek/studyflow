@@ -11,6 +11,7 @@ import {
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { signInOrLinkWithGoogle } from '../lib/authActions';
 import { Avatar } from './Avatar';
+import { SignInButton } from './SignInButton';
 
 interface HeaderProps {
   onOpenAddModal?: () => void;
@@ -76,7 +77,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Left: Dynamic Page Breadcrumb */}
         <div className="flex items-center gap-2 text-xs">
                     <span className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <span>{getPageTitle()}</span>
+            <span className="hidden sm:inline">{getPageTitle()}</span>
           </span>
         </div>
 
@@ -160,19 +161,21 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* Guest Account Upgrade / Backup Button */}
-          {(
+          {isAnonymous ? (
+            <SignInButton variant="header" />
+          ) : (
             <button
               onClick={() => {
                 if (onOpenBackup) onOpenBackup();
                 else handleLinkGoogle();
               }}
               disabled={isLinking}
-              aria-label={isAnonymous ? 'Sign in to keep your data' : 'Your account'}
-              title={isAnonymous ? 'Sign in to keep your data' : 'Your account'}
+              aria-label="Your account"
+              title="Your account"
               className="flex items-center justify-center gap-1.5 px-3 min-h-[44px] min-w-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium transition-colors disabled:opacity-60 cursor-pointer"
             >
               <LogIn className="h-3.5 w-3.5 text-blue-600" />
-              <span className="hidden md:inline">{isLinking ? 'Signing in…' : isAnonymous ? 'Sign in' : 'Account'}</span>
+              <span className="hidden md:inline">{isLinking ? 'Signing in…' : 'Account'}</span>
             </button>
           )}
 

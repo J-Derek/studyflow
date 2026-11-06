@@ -17,6 +17,7 @@ import { useStudyFlowStore, getPathFromTab } from '../store/studyFlowStore';
 import { friendlyAuthMessage, signInOrLinkWithGoogle, signOutUser } from '../lib/authActions';
 import { cn } from '../utils/formatters';
 import { Avatar } from './Avatar';
+import { SignInButton } from './SignInButton';
 
 interface SidebarProps {
   onOpenBackup?: () => void;
@@ -260,19 +261,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
           </div>
 
           {/* Account actions */}
+          {isAnonymous ? (
+            <div className="pt-2 border-t border-zinc-200/60 dark:border-zinc-700/60">
+              <SignInButton />
+            </div>
+          ) : (
           <div className="pt-1.5 border-t border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-between text-xs tabular-nums">
-            {isAnonymous ? (
-              <span className="text-zinc-600 dark:text-zinc-400">Guest account</span>
-            ) : (
-              <button
-                onClick={handleSignOut}
-                disabled={isAuthLoading}
-                className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
-              >
-                <LogOut className="h-3 w-3" />
-                <span>Sign out</span>
-              </button>
-            )}
+            <button
+              onClick={handleSignOut}
+              disabled={isAuthLoading}
+              className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
+            >
+              <LogOut className="h-3 w-3" />
+              <span>Sign out</span>
+            </button>
 
             <button
               onClick={() => {
@@ -281,12 +283,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
               }}
               disabled={isAuthLoading}
               className="text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1 disabled:opacity-50 cursor-pointer"
-              title={isAnonymous ? 'Sign in to keep your data' : 'Your account'}
+              title="Your account"
             >
               <Cloud className="h-3 w-3" />
-              <span>{isAnonymous ? 'Sign in' : 'Account'}</span>
+              <span>Account</span>
             </button>
           </div>
+          )}
         </div>
       )}
     </aside>
