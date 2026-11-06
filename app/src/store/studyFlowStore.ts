@@ -818,6 +818,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         state.assignments = (state.assignments ?? []).map((x) => (isLegacySeedId('assignment', x.id) ? { ...x, sample: true } : x));
         state.sessions = (state.sessions ?? []).map((x) => (isLegacySeedId('session', x.id) ? { ...x, sample: true } : x));
         state.grades = (state.grades ?? []).map((x) => (isLegacySeedId('grade', x.id) ? { ...x, sample: true } : x));
+        // An older timetable saved Sunday as 7, which the cloud rules and .ics export reject. Sunday is 0.
+        state.sessions = state.sessions.map((x) => (x.dayOfWeek === 7 ? { ...x, dayOfWeek: 0 } : x));
       }
     }
   )
