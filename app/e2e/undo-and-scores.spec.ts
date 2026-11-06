@@ -23,6 +23,14 @@ test('deleting an assignment can be undone, and the assignment comes back', asyn
     })
   );
   await expect(page.getByText('TEST - undo me').first()).toBeVisible();
+  // let the new assignment reach the cloud first, as a student's own add-then-delete would
+  const ids = await page.evaluate(() => {
+    const s = (window as unknown as W).__store.getState();
+    return { uid: s.userId, id: s.assignments.find((a) => a.title === 'TEST - undo me')!.id };
+  });
+  await expect
+    .poll(async () => (await fetch(`http://127.0.0.1:8080/v1/projects/studyflow-e2e/databases/(default)/documents/users/${ids.uid}/assignments/${ids.id}`, { headers: { Authorization: 'Bearer owner' } })).status, { timeout: 15_000 })
+    .toBe(200);
 
   await page.getByRole('button', { name: 'Delete assignment "TEST - undo me"' }).click();
   await expect(page.getByRole('status')).toContainText('Deleted');

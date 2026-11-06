@@ -21,7 +21,7 @@ test('on a phone, a signed-in student can open Account and sign out', async ({ b
 
   // The header offers Account (the sidebar is hidden at this width).
   await page.getByRole('button', { name: 'Your account', exact: true }).click();
-  await expect(page.getByRole('dialog')).toContainText('Signed in with Google');
+  await expect(page.getByRole('dialog')).toContainText('Saved to your account');
   await page.evaluate(() => ((window as unknown as { __reloadMarker?: boolean }).__reloadMarker = true));
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
 

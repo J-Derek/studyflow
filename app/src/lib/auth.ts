@@ -141,7 +141,7 @@ function bindUser(user: User | null): void {
       return;
     }
   }
-  useStudyFlowStore.getState().setAuthUser(user.uid, user.isAnonymous, user.email, user.displayName);
+  useStudyFlowStore.getState().setAuthUser(user.uid, user.isAnonymous, user.email, user.displayName, user.photoURL);
   if (syncedUid !== user.uid) {
     syncedUid = user.uid;
     initFirestoreSync(user.uid);
