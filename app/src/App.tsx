@@ -16,6 +16,7 @@ const AssignmentsPage = lazy(() => import('./pages/Assignments').then((m) => ({ 
 const CalendarPage = lazy(() => import('./pages/Calendar').then((m) => ({ default: m.CalendarPage })));
 const FocusTimerPage = lazy(() => import('./pages/FocusTimer').then((m) => ({ default: m.FocusTimerPage })));
 const GradesPage = lazy(() => import('./pages/Grades').then((m) => ({ default: m.GradesPage })));
+const NotesPage = lazy(() => import('./pages/Notes').then((m) => ({ default: m.NotesPage })));
 
 export function App() {
   const { activeTab, theme } = useStudyFlowStore();
@@ -141,6 +142,7 @@ export function App() {
             {activeTab === 'calendar' && <CalendarPage />}
             {activeTab === 'timer' && <FocusTimerPage />}
             {activeTab === 'grades' && <GradesPage />}
+            {activeTab === 'notes' && <NotesPage />}
           </Suspense>
         </main>
 

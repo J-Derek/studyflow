@@ -14,7 +14,7 @@ interface BackupModalProps {
 }
 
 export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
-  const { assignments, sessions, grades, isAnonymous, userEmail, userPhotoUrl, customPhotoUrl, user } = useStudyFlowStore();
+  const { assignments, sessions, grades, notes, isAnonymous, userEmail, userPhotoUrl, customPhotoUrl, user } = useStudyFlowStore();
   const [authError, setAuthError] = useState<string | null>(null);
   const [isLinking, setIsLinking] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -36,7 +36,8 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
       ledger: {
         assignments: assignments.filter((x) => !x.sample),
         sessions: sessions.filter((x) => !x.sample),
-        grades: grades.filter((x) => !x.sample)
+        grades: grades.filter((x) => !x.sample),
+        notes
       }
     };
 

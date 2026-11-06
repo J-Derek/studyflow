@@ -155,7 +155,7 @@ async function retryPendingMerge(uid: string): Promise<void> {
   const pending = readPendingMerge(uid);
   if (!pending) return;
   try {
-    await mergeGuestDataIntoAccount(uid, { assignments: pending.assignments, sessions: pending.sessions, grades: pending.grades });
+    await mergeGuestDataIntoAccount(uid, { assignments: pending.assignments, sessions: pending.sessions, grades: pending.grades, notes: pending.notes });
     clearPendingMerge();
   } catch (err) {
     console.warn('Could not finish moving the guest records yet; will retry next time:', err);
@@ -223,7 +223,8 @@ export async function signInOrLinkWithGoogle(): Promise<User> {
       const guestData = {
         assignments: withoutSample(state.assignments),
         sessions: withoutSample(state.sessions),
-        grades: withoutSample(state.grades)
+        grades: withoutSample(state.grades),
+        notes: state.notes
       };
       mergeInProgress = true;
       let result: Awaited<ReturnType<typeof signInWithCredential>>;

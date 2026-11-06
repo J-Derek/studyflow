@@ -13,10 +13,10 @@ import {
   type Unsubscribe
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import type { Assignment, CourseGrade, StudySession } from '../types';
+import type { Assignment, CourseGrade, Note, StudySession } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
-import { assignmentToDoc, docToAssignment, docToGrade, docToProfile, docToSession, gradeToDoc, profileToDoc, sessionToDoc } from './firestoreMappers';
+import { assignmentToDoc, docToAssignment, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc } from './firestoreMappers';
 import { isLegacySeedId } from '../utils/sampleData';
 
 const LIST_CAP = 500;
@@ -165,6 +165,36 @@ export function initFirestoreSync(uid: string): () => void {
   );
   activeUnsubscribes.push(unsubAssignments);
 
+  let notesSeeded = false;
+  const unsubNotes = onSnapshot(
+    query(collection(db, 'users', uid, 'notes'), limit(LIST_CAP)),
+    async (snapshot) => {
+      if (!isCurrentUser(uid)) return;
+      if (snapshot.metadata.fromCache && snapshot.empty) return;
+
+      if (snapshot.empty && !notesSeeded) {
+        notesSeeded = true;
+        const local = useStudyFlowStore.getState().notes;
+        if (local.length > 0) {
+          const batch = writeBatch(db);
+          for (const n of local.slice(0, LIST_CAP)) {
+            batch.set(doc(db, 'users', uid, 'notes', n.id), { ...noteToDoc(n), updatedAt: serverTimestamp() });
+          }
+          await batch.commit().catch((err) => console.warn('Batched note upload warning:', err));
+        }
+        return;
+      }
+      notesSeeded = true;
+
+      const remote: Note[] = [];
+      snapshot.forEach((d) => remote.push(docToNote(d.id, d.data())));
+      remote.sort((a, b) => b.editedAt.localeCompare(a.editedAt));
+      if (isCurrentUser(uid)) useStudyFlowStore.setState({ notes: remote });
+    },
+    (err) => console.warn('Firestore notes listener warning (using offline cache):', err.message)
+  );
+  activeUnsubscribes.push(unsubNotes);
+
   let sessionsSeeded = false;
   const unsubSessions = onSnapshot(
     query(collection(db, 'users', uid, 'sessions'), limit(LIST_CAP)),
@@ -288,10 +318,11 @@ export function planMerge<T extends { id: string }>(existingIds: Set<string>, gu
 
 export async function mergeGuestDataIntoAccount(
   uid: string,
-  guest: { assignments: Assignment[]; sessions: StudySession[]; grades?: CourseGrade[] }
+  guest: { assignments: Assignment[]; sessions: StudySession[]; grades?: CourseGrade[]; notes?: Note[] }
 ): Promise<void> {
   const guestGrades = guest.grades ?? [];
-  if (guest.assignments.length === 0 && guest.sessions.length === 0 && guestGrades.length === 0) return;
+  const guestNotes = guest.notes ?? [];
+  if (guest.assignments.length === 0 && guest.sessions.length === 0 && guestGrades.length === 0 && guestNotes.length === 0) return;
   const [asgSnap, sesSnap, gradeSnap] = await Promise.all([
     getDocs(query(collection(db, 'users', uid, 'assignments'), limit(LIST_CAP))),
     getDocs(query(collection(db, 'users', uid, 'sessions'), limit(LIST_CAP))),
@@ -312,6 +343,19 @@ export async function mergeGuestDataIntoAccount(
     batch.set(doc(db, 'users', uid, 'sessions', x.id), { ...sessionToDoc(x), updatedAt: serverTimestamp() })
   );
   await batch.commit();
+
+  // Notes go in their own batch, so one collection can never block the others.
+  if (guestNotes.length > 0) {
+    const noteSnap = await getDocs(query(collection(db, 'users', uid, 'notes'), limit(LIST_CAP)));
+    const newNotes = planMerge(new Set(noteSnap.docs.map((d) => d.id)), guestNotes);
+    if (newNotes.length > 0) {
+      const noteBatch = writeBatch(db);
+      newNotes.slice(0, LIST_CAP).forEach((n) =>
+        noteBatch.set(doc(db, 'users', uid, 'notes', n.id), { ...noteToDoc(n), updatedAt: serverTimestamp() })
+      );
+      await noteBatch.commit();
+    }
+  }
 }
 
 function timerDocBody(t: TimerState, rev: number): Record<string, unknown> {
@@ -376,6 +420,14 @@ export function completeFocusSession(uid: string, t: TimerState): void {
   batch.commit().catch((err) => {
     console.warn('Focus session not recorded in the cloud:', err?.code ?? err);
   });
+}
+
+export async function syncNoteToFirestore(uid: string, note: Note): Promise<void> {
+  await setDoc(doc(db, 'users', uid, 'notes', note.id), { ...noteToDoc(note), updatedAt: serverTimestamp() });
+}
+
+export async function deleteNoteFromFirestore(uid: string, noteId: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', uid, 'notes', noteId));
 }
 
 export async function syncGradeToFirestore(uid: string, grade: CourseGrade): Promise<void> {

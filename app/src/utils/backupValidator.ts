@@ -1,4 +1,4 @@
-import type { Assignment, StudySession, CourseGrade, Priority, AssignmentStatus } from '../types';
+import type { Assignment, StudySession, CourseGrade, Note, Priority, AssignmentStatus } from '../types';
 
 export interface ValidatedBackupPayload {
   version: string;
@@ -7,6 +7,8 @@ export interface ValidatedBackupPayload {
     assignments: Assignment[];
     sessions: StudySession[];
     grades: CourseGrade[];
+    /** Absent when the file predates notes, so restoring it leaves the student's notes alone. */
+    notes?: Note[];
   };
 }
 
@@ -18,6 +20,7 @@ export type ValidationResult =
 const MAX_ASSIGNMENTS = 500;
 const MAX_SESSIONS = 500;
 const MAX_GRADES = 100;
+const MAX_NOTES = 500;
 const MAX_SUBTASKS_PER_ASSIGNMENT = 100;
 const MAX_ASSESSMENTS_PER_GRADE = 50;
 /** A realistic backup is well under 1 MB; anything near this is an attack or a mistake. */
@@ -280,6 +283,36 @@ export function validateBackupJson(rawJsonString: string): ValidationResult {
     }
   }
 
+  let notes: Note[] | undefined;
+  if (ledger.notes !== undefined) {
+    if (!Array.isArray(ledger.notes)) {
+      return { success: false, error: 'Invalid ledger structure: "notes" must be an array.' };
+    }
+    if (ledger.notes.length > MAX_NOTES) {
+      return { success: false, error: `Exceeded maximum allowable notes (${MAX_NOTES}).` };
+    }
+    notes = [];
+    for (let i = 0; i < ledger.notes.length; i++) {
+      const n = ledger.notes[i] as Record<string, unknown> | null;
+      const ok =
+        n !== null && typeof n === 'object' &&
+        typeof n.id === 'string' && n.id.length > 0 && n.id.length <= 100 &&
+        typeof n.title === 'string' && typeof n.body === 'string' && typeof n.course === 'string' &&
+        typeof n.createdAt === 'string' && typeof n.editedAt === 'string';
+      if (!ok) return { success: false, error: `Malformed note at index ${i}.` };
+      const note = n as unknown as Note;
+      notes.push({
+        id: note.id,
+        title: note.title.trim().slice(0, 200) || 'Untitled note',
+        body: note.body.slice(0, 20000),
+        course: note.course.trim().slice(0, 50),
+        pinned: note.pinned === true,
+        createdAt: note.createdAt.slice(0, 50),
+        editedAt: note.editedAt.slice(0, 50)
+      });
+    }
+  }
+
   const cleanAssignments = (ledger.assignments as Assignment[]).map(cleanAssignment);
   const cleanSessions = sessions.map(cleanSession);
   const cleanGrades = grades.map(cleanGrade);
@@ -287,7 +320,8 @@ export function validateBackupJson(rawJsonString: string): ValidationResult {
   const lists: Array<[string, Array<{ id: string }>]> = [
     ['assignment', cleanAssignments],
     ['session', cleanSessions],
-    ['course', cleanGrades]
+    ['course', cleanGrades],
+    ['note', notes ?? []]
   ];
   for (const [label, list] of lists) {
     const dup = firstDuplicate(list);

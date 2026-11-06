@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assignmentToDoc, docToAssignment, docToProfile, MAX_PHOTO_CHARS, profileToDoc, sessionToDoc, validPhoto } from './firestoreMappers';
+import { assignmentToDoc, docToAssignment, docToNote, docToProfile, MAX_NOTE_BODY, MAX_PHOTO_CHARS, noteToDoc, profileToDoc, sessionToDoc, validPhoto } from './firestoreMappers';
 import type { Assignment } from '../types';
 
 const base: Assignment = {
@@ -116,5 +116,31 @@ describe('profile documents', () => {
     expect(back.user.semesterStart).toBeUndefined();
     expect(back.user.semesterEnd).toBeUndefined();
     expect(back.photo).toBeNull();
+  });
+});
+
+describe('note documents', () => {
+  const note = { id: 'n1', title: 'Week 3: contracts', body: 'Offer, acceptance, consideration.', course: 'LAW 101', pinned: true, createdAt: '2026-11-01T08:00:00.000Z', editedAt: '2026-11-02T09:30:00.000Z' };
+
+  it('round-trips a note', () => {
+    expect(docToNote('n1', noteToDoc(note))).toEqual(note);
+  });
+
+  it('emits only the keys the rules allow', () => {
+    expect(Object.keys(noteToDoc(note)).sort()).toEqual(['body', 'course', 'createdAt', 'editedAt', 'id', 'pinned', 'title']);
+  });
+
+  it('never stores an empty title, and stays within the rules limits', () => {
+    const doc = noteToDoc({ ...note, title: '   ', body: 'x'.repeat(MAX_NOTE_BODY + 500), course: 'c'.repeat(80) });
+    expect(doc.title).toBe('Untitled note');
+    expect((doc.body as string).length).toBe(MAX_NOTE_BODY);
+    expect((doc.course as string).length).toBe(50);
+  });
+
+  it('copes with missing or wrong-typed stored fields', () => {
+    const back = docToNote('n2', { title: 5, body: null, pinned: 'yes' });
+    expect(back.title).toBe('Untitled note');
+    expect(back.body).toBe('');
+    expect(back.pinned).toBe(false);
   });
 });

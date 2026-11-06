@@ -8,6 +8,7 @@ import type {
   UserPreferences,
   Assessment,
   CourseGrade,
+  Note,
   SoundscapeType,
   Subtask
 } from '../types';
@@ -19,6 +20,8 @@ import {
   deleteSessionFromFirestore,
   syncOnboardingDismissed,
   syncProfile,
+  syncNoteToFirestore,
+  deleteNoteFromFirestore,
   syncGradeToFirestore,
   deleteGradeFromFirestore,
   pushTimerState,
@@ -31,7 +34,7 @@ import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 import { clampScore } from '../utils/academicCalculations';
 import { normalizeAssessments } from '../utils/assessments';
 
-export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades';
+export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades' | 'notes';
 
 export function getTabFromPath(path: string): NavigationTab {
   const clean = path.replace(/\/$/, '').toLowerCase();
@@ -39,6 +42,7 @@ export function getTabFromPath(path: string): NavigationTab {
   if (clean === '/calendar') return 'calendar';
   if (clean === '/timer') return 'timer';
   if (clean === '/grades') return 'grades';
+  if (clean === '/notes') return 'notes';
   return 'dashboard';
 }
 
@@ -74,13 +78,13 @@ interface StudyFlowState {
   loadSampleData: () => void;
   icsExportCount: number;
   bumpIcsExport: () => void;
-  importLedger: (ledger: { assignments: Assignment[]; sessions: StudySession[]; grades: CourseGrade[] }) => void;
+  importLedger: (ledger: { assignments: Assignment[]; sessions: StudySession[]; grades: CourseGrade[]; notes?: Note[] }) => void;
   clearSampleData: () => void;
   clearAllData: () => void;
 
   // Active Navigation Tab
-  activeTab: 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades';
-  setActiveTab: (tab: 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades') => void;
+  activeTab: NavigationTab;
+  setActiveTab: (tab: NavigationTab) => void;
 
   // Theme Mode
   theme: 'light' | 'dark';
@@ -95,6 +99,15 @@ interface StudyFlowState {
   /** Puts a just-deleted assignment back (same id), for the Undo button. */
   restoreAssignment: (assignment: Assignment) => void;
   toggleAssignmentComplete: (id: string) => void;
+
+  // Notes
+  notes: Note[];
+  /** Adds a note and returns its id. */
+  addNote: (input: { title: string; body: string; course: string; pinned?: boolean }) => string;
+  updateNote: (id: string, updates: Partial<Pick<Note, 'title' | 'body' | 'course' | 'pinned'>>, opts?: { touch?: boolean }) => void;
+  deleteNote: (id: string) => void;
+  /** Puts a just-deleted note back (same id), for the Undo button. */
+  restoreNote: (note: Note) => void;
   toggleSubtask: (assignmentId: string, subtaskId: string) => void;
   addSubtask: (assignmentId: string, title: string) => void;
   deleteSubtask: (assignmentId: string, subtaskId: string) => void;
@@ -197,6 +210,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           assignments: [],
           sessions: [],
           grades: [],
+          notes: [],
           onboardingDismissed: false,
           guestNoticeDismissed: false,
           pomodorosCompleted: 0,
@@ -272,6 +286,15 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const removedA = state.assignments.filter((x) => !keepA.has(x.id));
         const removedS = state.sessions.filter((x) => !keepS.has(x.id));
         set({ assignments: ledger.assignments, sessions: ledger.sessions, grades: ledger.grades });
+        if (ledger.notes) {
+          const keepN = new Set(ledger.notes.map((x) => x.id));
+          const removedN = state.notes.filter((x) => !keepN.has(x.id));
+          set({ notes: ledger.notes });
+          if (uid) {
+            ledger.notes.forEach((x) => syncNoteToFirestore(uid, x).catch(console.warn));
+            removedN.forEach((x) => deleteNoteFromFirestore(uid, x.id).catch(console.warn));
+          }
+        }
         if (uid) {
           // A restore replaces the account's data in the cloud too; otherwise the next snapshot undoes it.
           ledger.assignments.forEach((x) => syncAssignmentToFirestore(uid, x).catch(console.warn));
@@ -308,11 +331,13 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           state.assignments.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(console.warn));
           state.sessions.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(console.warn));
           state.grades.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(console.warn));
+          state.notes.forEach((x) => deleteNoteFromFirestore(uid, x.id).catch(console.warn));
         }
         set({
           assignments: [],
           sessions: [],
           grades: [],
+          notes: [],
           pomodorosCompleted: 0,
           focusMinutes: 0
         });
@@ -420,6 +445,62 @@ export const useStudyFlowStore = create<StudyFlowState>()(
             console.warn('Sync error restoring assignment:', err);
           });
         }
+      },
+
+      notes: [],
+      addNote: (input) => {
+        const now = new Date().toISOString();
+        const note: Note = {
+          id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          title: input.title.trim().slice(0, 200) || 'Untitled note',
+          body: input.body.slice(0, 20000),
+          course: input.course.trim().slice(0, 50),
+          pinned: input.pinned === true,
+          createdAt: now,
+          editedAt: now
+        };
+        set((state) => ({ notes: [note, ...state.notes] }));
+        const uid = get().userId;
+        if (uid) syncNoteToFirestore(uid, note).catch((err) => console.warn('Sync error adding note:', err));
+        return note.id;
+      },
+
+      updateNote: (id, updates, opts) => {
+        let updated: Note | undefined;
+        set((state) => ({
+          notes: state.notes.map((n) => {
+            if (n.id !== id) return n;
+            updated = {
+              ...n,
+              ...(updates.title !== undefined ? { title: updates.title.trim().slice(0, 200) || 'Untitled note' } : {}),
+              ...(updates.body !== undefined ? { body: updates.body.slice(0, 20000) } : {}),
+              ...(updates.course !== undefined ? { course: updates.course.trim().slice(0, 50) } : {}),
+              ...(updates.pinned !== undefined ? { pinned: updates.pinned } : {}),
+              editedAt: opts?.touch === false ? n.editedAt : new Date().toISOString()
+            };
+            return updated;
+          })
+        }));
+        const uid = get().userId;
+        if (uid && updated) syncNoteToFirestore(uid, updated).catch((err) => console.warn('Sync error updating note:', err));
+      },
+
+      deleteNote: (id) => {
+        const removed = get().notes.find((n) => n.id === id);
+        set((state) => ({ notes: state.notes.filter((n) => n.id !== id) }));
+        const uid = get().userId;
+        if (uid) {
+          deleteNoteFromFirestore(uid, id).catch((err) => {
+            console.warn('Sync error deleting note, putting it back:', err);
+            if (removed) set((state) => (state.notes.some((n) => n.id === id) ? state : { notes: [removed, ...state.notes] }));
+          });
+        }
+      },
+
+      restoreNote: (note) => {
+        set((state) => (state.notes.some((n) => n.id === note.id) ? state : { notes: [note, ...state.notes] }));
+        const uid = get().userId;
+        if (uid) syncNoteToFirestore(uid, note).catch((err) => console.warn('Sync error restoring note:', err));
       },
 
       toggleAssignmentComplete: (id) => {
@@ -719,6 +800,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         assignments: state.assignments,
         sessions: state.sessions,
         grades: state.grades,
+        notes: state.notes,
         pomodorosCompleted: state.pomodorosCompleted,
         focusMinutes: state.focusMinutes,
         timer: state.timer,

@@ -1,4 +1,4 @@
-import type { Assignment, CourseGrade, StudySession } from '../types';
+import type { Assignment, CourseGrade, Note, StudySession } from '../types';
 
 /**
  * When a guest signs in to a Google account that already exists, the guest's records are copied into
@@ -13,6 +13,7 @@ export interface PendingMerge {
   assignments: Assignment[];
   sessions: StudySession[];
   grades: CourseGrade[];
+  notes?: Note[];
 }
 
 export function savePendingMerge(pending: PendingMerge): void {
@@ -37,7 +38,8 @@ export function readPendingMerge(uid: string): PendingMerge | null {
       uid,
       assignments: Array.isArray(pending.assignments) ? pending.assignments : [],
       sessions: Array.isArray(pending.sessions) ? pending.sessions : [],
-      grades: Array.isArray(pending.grades) ? pending.grades : []
+      grades: Array.isArray(pending.grades) ? pending.grades : [],
+      notes: Array.isArray(pending.notes) ? pending.notes : []
     };
   } catch {
     return null;
