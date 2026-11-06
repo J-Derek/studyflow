@@ -1,9 +1,9 @@
 import { useDialog } from '../lib/useDialog';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Download, Upload, CheckCircle2, AlertTriangle, Database, Copy } from 'lucide-react';
 import { GoogleIcon } from './GoogleIcon';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { friendlyAuthMessage, signInOrLinkWithGoogle, signOutUser } from '../lib/authActions';
+import { friendlyAuthMessage, signInOrLinkWithGoogle, signOutUser, warmUpGoogleSignIn } from '../lib/authActions';
 import { MAX_BACKUP_BYTES, validateBackupJson } from '../utils/backupValidator';
 import { inAppBrowser } from '../utils/inAppBrowser';
 
@@ -20,6 +20,11 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
   const [copySuccess, setCopySuccess] = useState(false);
 
   const dialogRef = useDialog(isOpen, onClose);
+
+  // Get Google's sign-in ready while the student reads the dialog, so the pop-up opens instantly on click.
+  useEffect(() => {
+    if (isOpen && isAnonymous) void warmUpGoogleSignIn();
+  }, [isOpen, isAnonymous]);
 
   if (!isOpen) return null;
 

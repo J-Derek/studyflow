@@ -1,5 +1,6 @@
 import {
   browserPopupRedirectResolver,
+  getRedirectResult,
   GoogleAuthProvider,
   linkWithPopup,
   onAuthStateChanged,
@@ -160,6 +161,15 @@ export function startAuthSession(): () => void {
     unsubscribeAllFirestoreSync();
     syncedUid = null;
   };
+}
+
+/**
+ * Gets Google's sign-in machinery ready before the student clicks. The first popup otherwise has to
+ * download it first, and browsers only allow a popup that opens right after the click.
+ * Asking for the redirect result is the supported way to start that setup; it resolves to null here.
+ */
+export function warmUpGoogleSignIn(): void {
+  getRedirectResult(auth, browserPopupRedirectResolver).catch(() => null);
 }
 
 export class AuthGuidanceError extends Error {
