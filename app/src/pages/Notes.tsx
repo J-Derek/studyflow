@@ -138,8 +138,8 @@ export const NotesPage: React.FC = () => {
                   {n.course && <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">{n.course}</span>}
                   <span>{formatDate(n.editedAt)}</span>
                 </span>
-                <span className="block mt-1.5 font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 break-words line-clamp-2">{n.title}</span>
-                {n.body && <span className="block mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words line-clamp-4">{n.body}</span>}
+                <span className="block mt-1.5 font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">{n.title}</span>
+                {n.body && <span className="block mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap [overflow-wrap:anywhere] line-clamp-4">{n.body}</span>}
               </button>
               <button
                 type="button"

@@ -120,7 +120,7 @@ export const CalendarPage: React.FC = () => {
           <button
             onClick={() => exportTimetable()}
             title="Export calendar to Apple Calendar, Google Calendar, or Outlook (.ics)"
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-surface-dark hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs transition shadow-2xs active:scale-95"
+            className="min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-surface-dark hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs transition shadow-2xs active:scale-95"
           >
             <Download className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
             <span className="hidden sm:inline tabular-nums">Export .ICS</span>
@@ -129,7 +129,7 @@ export const CalendarPage: React.FC = () => {
           <div className="flex items-center gap-1 bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-lg p-0.5 shadow-2xs">
             <button
               onClick={() => setWeekOffset((prev) => prev - 1)}
-              className="p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
               aria-label="Previous week"
               title="Previous week"
             >
@@ -140,7 +140,7 @@ export const CalendarPage: React.FC = () => {
             </span>
             <button
               onClick={() => setWeekOffset((prev) => prev + 1)}
-              className="p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
               aria-label="Next week"
               title="Next week"
             >
@@ -151,7 +151,7 @@ export const CalendarPage: React.FC = () => {
           {weekOffset !== 0 && (
             <button
               onClick={() => setWeekOffset(0)}
-              className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs transition"
+              className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs transition"
               title="Return to current week"
               aria-label="Return to current week"
             >
@@ -161,7 +161,7 @@ export const CalendarPage: React.FC = () => {
           
           <button
             onClick={() => openAdd()}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-xs transition shadow-2xs active:scale-95"
+            className="min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-xs transition shadow-2xs active:scale-95"
           >
             <Plus className="h-3.5 w-3.5" /> <span>Add Block</span>
           </button>
@@ -259,7 +259,7 @@ export const CalendarPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => deleteSession(session.id)}
-                            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition p-1 hover:text-rose-600 dark:hover:text-rose-400"
+                            className="hidden [@media(hover:hover)]:block absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition p-1 hover:text-rose-600 dark:hover:text-rose-400"
                             title="Delete block"
                             aria-label={`Delete block ${session.title}`}
                           >
@@ -274,7 +274,7 @@ export const CalendarPage: React.FC = () => {
                 {/* Quick Add slot button */}
                 <button
                   onClick={() => openAdd(day.dayNumber)}
-                  className="mt-3 w-full py-1 rounded-md border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 text-xs tabular-nums transition"
+                  className="min-h-[44px] md:min-h-0 mt-3 w-full py-1 rounded-md border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 text-xs tabular-nums transition"
                 >
                   + Add Block
                 </button>

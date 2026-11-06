@@ -121,7 +121,7 @@ export const AssignmentsPage: React.FC = () => {
 
         {/* Secondary Dropdown Filters */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {/* Course filter */}
             <div className="flex items-center gap-1.5">
               <span className="text-zinc-600 dark:text-zinc-400 tabular-nums text-xs">Course:</span>
@@ -217,13 +217,13 @@ export const AssignmentsPage: React.FC = () => {
                       )}
                     </button>
 
-                    <div className="flex items-center gap-2 overflow-hidden min-w-0">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1 min-w-0 sm:overflow-hidden">
                       <span className="tabular-nums text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
                         {asg.course.split('—')[0].trim()}
                       </span>
 
                       <span
-                        className={`text-xs font-medium truncate ${
+                        className={`text-xs font-medium [overflow-wrap:anywhere] order-last w-full sm:order-none sm:w-auto sm:truncate ${
                           isCompleted ? 'line-through text-zinc-600 dark:text-zinc-400' : 'text-zinc-900 dark:text-zinc-100'
                         }`}
                       >
