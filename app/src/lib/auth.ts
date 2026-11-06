@@ -14,6 +14,7 @@ import { clearIndexedDbPersistence, terminate, waitForPendingWrites } from 'fire
 import { auth, db, googleProvider } from './firebase';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { initFirestoreSync, mergeGuestDataIntoAccount, unsubscribeAllFirestoreSync } from '../services/firestoreSync';
+import { deleteAllFiles } from './localFiles';
 import { inAppBrowser } from '../utils/inAppBrowser';
 import { withoutSample } from '../utils/sampleData';
 import { clearPendingMerge, readPendingMerge, savePendingMerge } from './pendingMerge';
@@ -45,6 +46,8 @@ export async function wipeLocalUserData(opts: { clearFirestoreCache: boolean }):
   } catch {
     /* storage unavailable */
   }
+  // PDFs attached to notes live only in this browser, so they must not outlive the signed-in student.
+  await deleteAllFiles().catch(() => undefined);
   try {
     if (typeof caches !== 'undefined') {
       const keys = await caches.keys();

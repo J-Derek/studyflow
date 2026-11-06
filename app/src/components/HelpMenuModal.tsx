@@ -1,4 +1,5 @@
 import { useDialog } from '../lib/useDialog';
+import { deleteAllFiles } from '../lib/localFiles';
 import React, { useState } from 'react';
 import { 
   X, 
@@ -114,6 +115,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
   const handleClearAll = () => {
     if (window.confirm('Delete ALL your assignments, timetable and grades? This cannot be undone. Make a backup first if you might want them back.')) {
       clearAllData();
+      void deleteAllFiles();
       setIsSandboxSuccess('All data deleted.');
       setTimeout(() => setIsSandboxSuccess(null), 3000);
     }
@@ -333,9 +335,10 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                   <li>As a guest, StudyFlow knows no name or email. You are a random ID.</li>
                   <li>If you link Google, StudyFlow also gets the name and email on that Google account, so it can show who you are and sign you back in.</li>
                   <li>Your assignments, timetable, grades, notes, focus sessions and profile details (name, university, semester dates, time zone) are saved to Google Firebase and kept on this device so the app works offline.</li>
+                  <li>PDFs you add to a note stay on this device only. They are never uploaded, do not appear on your other devices, and are removed when you sign out or delete all your data.</li>
                   <li>Only your own account can read or write your records. Other students cannot see them.</li>
                   <li>There are no ads and no analytics. The site is hosted on Vercel, which keeps ordinary server logs.</li>
-                  <li>Backup exports everything to a file you keep. “Delete all my data” removes your assignments, timetable blocks, grades and notes from this device and from the cloud. Deleting the account itself is not built yet.</li>
+                  <li>Backup exports everything to a file you keep. “Delete all my data” removes your assignments, timetable blocks, grades, notes and PDFs from this device and from the cloud. Deleting the account itself is not built yet.</li>
                 </ul>
               </div>
             </div>

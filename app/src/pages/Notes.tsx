@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { deleteFilesForNote } from '../lib/localFiles';
 import { Pin, Plus, Search } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Note } from '../types';
@@ -20,7 +21,12 @@ export const NotesPage: React.FC = () => {
 
   useEffect(() => {
     if (!justDeleted) return;
-    const t = window.setTimeout(() => setJustDeleted(null), 8000);
+    const gone = justDeleted;
+    const t = window.setTimeout(() => {
+      // The undo window is over: the note's PDFs (kept on this device only) go with it.
+      deleteFilesForNote(gone.id).catch(() => undefined);
+      setJustDeleted(null);
+    }, 8000);
     return () => window.clearTimeout(t);
   }, [justDeleted]);
 
@@ -162,6 +168,8 @@ export const NotesPage: React.FC = () => {
             close();
           }}
           onDelete={(n) => {
+            // A second delete replaces the undo toast, so finish removing the first note's PDFs now.
+            if (justDeleted) deleteFilesForNote(justDeleted.id).catch(() => undefined);
             deleteNote(n.id);
             setJustDeleted(n);
             close();
