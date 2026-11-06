@@ -29,6 +29,8 @@ import {
 } from '../services/cloud';
 import { calculateSubtaskProgress } from '../utils/subtasks';
 import { syncThemeColor } from '../utils/themeColor';
+import { readSavedMode, resolveTheme, saveMode, systemPrefersDark, type ThemeMode } from '../utils/themePreference';
+import { hasSavedDevicePrefs, readDevicePrefs, saveDevicePrefs } from '../utils/devicePrefs';
 import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 import { clampScore } from '../utils/academicCalculations';
@@ -87,9 +89,13 @@ interface StudyFlowState {
   setActiveTab: (tab: NavigationTab) => void;
 
   // Theme Mode
+  /** The theme being shown right now. */
   theme: 'light' | 'dark';
+  /** What the student chose: light, dark, or "system" (match the device, and follow it when it changes). */
+  themeMode: ThemeMode;
   toggleTheme: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
+  setThemeMode: (mode: ThemeMode) => void;
 
   // Assignments
   assignments: Assignment[];
@@ -164,6 +170,11 @@ const defaultSettings: TimerSettings = {
   autoStartFocus: false
 };
 
+// Timer lengths and sound choices belong to this device, so they are kept in their own entry and
+// survive signing out (see utils/devicePrefs).
+const savedPrefs = readDevicePrefs();
+const initialTimerSettings: TimerSettings = { ...defaultSettings, ...savedPrefs.timerSettings };
+
 function durationFor(mode: TimerMode, settings: TimerSettings): number {
   if (mode === 'shortBreak') return settings.shortBreakDuration;
   if (mode === 'longBreak') return settings.longBreakDuration;
@@ -216,7 +227,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           guestNoticeDismissed: false,
           pomodorosCompleted: 0,
           focusMinutes: 0,
-          timer: idleTimer('focus', defaultSettings.focusDuration),
+          timer: idleTimer('focus', get().timerSettings.focusDuration),
           focusCompletedAtMs: null,
           user: {
             name: 'Student',
@@ -355,19 +366,32 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         }
       },
 
-      theme: 'light',
+      // The choice is kept per device in its own entry, so signing out does not reset it.
+      themeMode: readSavedMode() ?? 'light',
+      theme: resolveTheme(readSavedMode() ?? 'light', systemPrefersDark()),
       toggleTheme: () => {
         set((state) => {
           const next = state.theme === 'light' ? 'dark' : 'light';
+          saveMode(next);
           if (typeof document !== 'undefined') {
             document.documentElement.classList.toggle('dark', next === 'dark');
             syncThemeColor(next === 'dark');
           }
-          return { theme: next };
+          return { theme: next, themeMode: next };
         });
       },
+      setThemeMode: (mode) => {
+        const theme = resolveTheme(mode, systemPrefersDark());
+        set({ themeMode: mode, theme });
+        saveMode(mode);
+        if (typeof document !== 'undefined') {
+          document.documentElement.classList.toggle('dark', theme === 'dark');
+          syncThemeColor(theme === 'dark');
+        }
+      },
       setTheme: (theme) => {
-        set({ theme });
+        set({ theme, themeMode: theme });
+        saveMode(theme);
         if (typeof document !== 'undefined') {
           document.documentElement.classList.toggle('dark', theme === 'dark');
           syncThemeColor(theme === 'dark');
@@ -688,15 +712,15 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       },
 
       // Focus Timer
-      timerSettings: defaultSettings,
-      timer: idleTimer('focus', defaultSettings.focusDuration),
+      timerSettings: initialTimerSettings,
+      timer: idleTimer('focus', initialTimerSettings.focusDuration),
       nowMs: Date.now(),
       focusCompletedAtMs: null,
       pomodorosCompleted: 0,
       focusMinutes: 0,
-      soundscape: 'off',
-      breakSoundscape: 'off',
-      soundscapeVolume: 0.35,
+      soundscape: savedPrefs.soundscape ?? 'off',
+      breakSoundscape: savedPrefs.breakSoundscape ?? 'off',
+      soundscapeVolume: savedPrefs.soundscapeVolume ?? 0.35,
 
       setTimerMode: (mode) => {
         stopSoundscape();
@@ -778,6 +802,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         merged.shortBreakDuration = within(merged.shortBreakDuration, TIMER_LIMITS_MIN.shortBreak);
         merged.longBreakDuration = within(merged.longBreakDuration, TIMER_LIMITS_MIN.longBreak);
         set({ timerSettings: merged });
+        saveDevicePrefs({ timerSettings: merged });
         // An idle timer takes the new length straight away; a running or paused block keeps its own.
         if (state.timer.status === 'idle') {
           const next = switchMode(state.timer.mode, durationFor(state.timer.mode, merged));
@@ -790,6 +815,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const { timer, soundscapeVolume } = get();
         const target = forMode ?? (timer.mode === 'focus' ? 'focus' : 'break');
         set(target === 'focus' ? { soundscape: type } : { breakSoundscape: type });
+        saveDevicePrefs({ soundscape: get().soundscape, breakSoundscape: get().breakSoundscape });
         const playing = target === (timer.mode === 'focus' ? 'focus' : 'break');
         if (!playing) return;
         if (type === 'off' || timer.status !== 'running') {
@@ -801,6 +827,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
 
       setSoundscapeVolume: (volume) => {
         set({ soundscapeVolume: volume });
+        saveDevicePrefs({ soundscapeVolume: volume });
         setAudioVolume(volume);
       }
     }),
@@ -829,6 +856,26 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (!state) return;
         // Older saves only counted blocks; estimate their minutes at the old fixed 25.
         if (typeof state.focusMinutes !== 'number') state.focusMinutes = (state.pomodorosCompleted ?? 0) * 25;
+        // Before "match my device" existed the theme lived only in the saved data. Keep that choice.
+        const savedMode = readSavedMode();
+        if (savedMode === null) {
+          state.themeMode = state.theme === 'dark' ? 'dark' : 'light';
+          saveMode(state.themeMode);
+        } else {
+          state.themeMode = savedMode;
+          state.theme = resolveTheme(savedMode, systemPrefersDark());
+        }
+        // Timer and sound choices live in their own entry so signing out keeps them. Carry an older save over once.
+        if (hasSavedDevicePrefs()) {
+          Object.assign(state, readDevicePrefs());
+        } else {
+          saveDevicePrefs({
+            timerSettings: state.timerSettings,
+            soundscape: state.soundscape,
+            breakSoundscape: state.breakSoundscape,
+            soundscapeVolume: state.soundscapeVolume
+          });
+        }
         // Earlier builds seeded demo rows as the student's own data. Flag them so they are labelled
         // and excluded from GPA, backups and exports.
         state.assignments = (state.assignments ?? []).map((x) => (isLegacySeedId('assignment', x.id) ? { ...x, sample: true } : x));
