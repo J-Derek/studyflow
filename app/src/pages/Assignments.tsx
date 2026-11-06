@@ -82,7 +82,7 @@ export const AssignmentsPage: React.FC = () => {
   return (
     <div className="space-y-5 animate-fade-in pb-16">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Assignments</h1>
+        <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Assignments</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Everything due, in one list.</p>
       </div>
 
@@ -169,7 +169,7 @@ export const AssignmentsPage: React.FC = () => {
           <div className="py-12 text-center p-6">
             <CheckSquare className="h-8 w-8 text-zinc-600 dark:text-zinc-400 mx-auto mb-2" />
             <h2 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
-              {assignments.length === 0 ? 'Your assignments data is empty' : 'No assignments match filters'}
+              {assignments.length === 0 ? 'No assignments yet' : 'No assignments match filters'}
             </h2>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mt-0.5">
               {assignments.length === 0 
@@ -183,7 +183,7 @@ export const AssignmentsPage: React.FC = () => {
                   className="px-3.5 py-1.5 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  <span>Add First Assignment</span>
+                  <span>Add your first assignment</span>
                 </button>
               </div>
             )}

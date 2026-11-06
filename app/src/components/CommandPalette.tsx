@@ -82,17 +82,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: 'nav-asg', label: 'Go to Assignments', category: 'Navigation', icon: CheckSquare, action: () => { setActiveTab('assignments'); onClose(); } },
     { id: 'nav-cal', label: 'Go to Timetable', category: 'Navigation', icon: Calendar, action: () => { setActiveTab('calendar'); onClose(); } },
     { id: 'nav-timer', label: 'Go to Focus timer', category: 'Navigation', icon: Timer, action: () => { setActiveTab('timer'); onClose(); } },
-    { id: 'nav-grades', label: 'Go to GPA Predictor & Simulator', category: 'Navigation', icon: Award, action: () => { setActiveTab('grades'); onClose(); } }
+    { id: 'nav-grades', label: 'Go to Grades', category: 'Navigation', icon: Award, action: () => { setActiveTab('grades'); onClose(); } }
   ];
 
   const actionItems: CommandItem[] = [
-    { id: 'act-new', label: 'Create New Assignment', category: 'Actions', icon: Plus, action: () => { onClose(); onOpenAddModal(); } },
-    { id: 'act-focus', label: 'Launch 25m Focus Session', category: 'Actions', icon: Sparkles, action: () => { setActiveTab('timer'); setTimerMode('focus'); startTimer(); onClose(); } },
+    { id: 'act-new', label: 'Add an assignment', category: 'Actions', icon: Plus, action: () => { onClose(); onOpenAddModal(); } },
+    { id: 'act-focus', label: 'Start a 25-minute focus session', category: 'Actions', icon: Sparkles, action: () => { setActiveTab('timer'); setTimerMode('focus'); startTimer(); onClose(); } },
     { id: 'act-theme', label: `Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`, category: 'Actions', icon: theme === 'light' ? Moon : Sun, action: () => { toggleTheme(); onClose(); } },
-    { id: 'act-ics', label: 'Export Timetable to Apple/Google (.ICS)', category: 'Actions', icon: Download, action: () => { exportTimetable(); onClose(); } },
+    { id: 'act-ics', label: 'Download timetable for your calendar (.ics)', category: 'Actions', icon: Download, action: () => { exportTimetable(); onClose(); } },
     {
       id: 'act-backup',
-      label: 'Export all my data (JSON backup)',
+      label: 'Sign in, or download all my data',
       category: 'Actions',
       icon: Database,
       action: () => {

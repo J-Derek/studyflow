@@ -177,10 +177,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
             <button
               onClick={handleSignOut}
               disabled={isAuthLoading}
-              title="Sign out"
-              className="p-1 rounded-md text-zinc-600 dark:text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              className="flex items-center gap-1 px-2 min-h-[32px] rounded-md text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
             >
               <LogOut className="h-3 w-3" />
+              <span>Sign out</span>
             </button>
           )}
         </div>
@@ -196,10 +196,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
             }}
             disabled={isAuthLoading}
             className="text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1 disabled:opacity-50"
-            title="Open Data Portability & Cloud Sync"
+            title={isAnonymous ? 'Sign in to keep your data' : 'Your account'}
           >
             <Cloud className="h-3 w-3" />
-            <span>{isAnonymous ? 'Back up' : 'Account'}</span>
+            <span>{isAnonymous ? 'Sign in' : 'Account'}</span>
           </button>
         </div>
       </div>
