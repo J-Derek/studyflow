@@ -73,7 +73,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
       icon: Timer,
       color: 'text-rose-500',
       bgColor: 'bg-rose-500/10',
-      description: 'Work for 25 minutes, then rest. Pick rain, brown noise, white noise or binaural tones to play while you work. The sounds are generated in your browser, so nothing is downloaded.',
+      description: 'Work in timed blocks (25 minutes to start, and you can change that), then rest. Play a soft sound while you work: rain, ocean waves, calm music, soft keys or a warm hum. Breaks can have their own sound. The sounds are generated in your browser, so nothing is downloaded.',
       bulletPoints: [
         'Sounds are made in your browser, no audio files',
         'Keeps the screen on while the timer runs, where your browser allows it',

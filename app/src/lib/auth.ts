@@ -16,6 +16,7 @@ import { useStudyFlowStore } from '../store/studyFlowStore';
 import { initFirestoreSync, mergeGuestDataIntoAccount, unsubscribeAllFirestoreSync } from '../services/firestoreSync';
 import { inAppBrowser } from '../utils/inAppBrowser';
 import { withoutSample } from '../utils/sampleData';
+import { clearPendingMerge, readPendingMerge, savePendingMerge } from './pendingMerge';
 
 export const STORAGE_KEY = 'studyflow_storage_v1';
 
@@ -145,6 +146,19 @@ function bindUser(user: User | null): void {
   if (syncedUid !== user.uid) {
     syncedUid = user.uid;
     initFirestoreSync(user.uid);
+    if (!user.isAnonymous && !mergeInProgress) void retryPendingMerge(user.uid);
+  }
+}
+
+/** Finishes moving guest records that could not be copied earlier (see pendingMerge.ts). */
+async function retryPendingMerge(uid: string): Promise<void> {
+  const pending = readPendingMerge(uid);
+  if (!pending) return;
+  try {
+    await mergeGuestDataIntoAccount(uid, { assignments: pending.assignments, sessions: pending.sessions, grades: pending.grades });
+    clearPendingMerge();
+  } catch (err) {
+    console.warn('Could not finish moving the guest records yet; will retry next time:', err);
   }
 }
 
@@ -212,16 +226,28 @@ export async function signInOrLinkWithGoogle(): Promise<User> {
         grades: withoutSample(state.grades)
       };
       mergeInProgress = true;
+      let result: Awaited<ReturnType<typeof signInWithCredential>>;
       try {
-        const result = await signInWithCredential(auth, credential);
+        result = await signInWithCredential(auth, credential);
+      } catch (err) {
+        mergeInProgress = false; // nothing has changed yet: the guest copy is still on screen
+        throw err;
+      }
+      // The account has switched and the on-screen guest copy is about to clear, so keep the records safe first.
+      savePendingMerge({ uid: result.user.uid, ...guestData });
+      try {
         bindUser(result.user);
         await mergeGuestDataIntoAccount(result.user.uid, guestData);
-        return result.user;
-      } finally {
+      } catch {
         mergeInProgress = false;
-        // The guest's cached records are now in the account; remove the guest copy from this device.
-        void wipeAndReload();
+        // Do not wipe or reload. The records wait on this device and are retried the next time the app opens.
+        throw new AuthGuidanceError('auth/merge-failed', 'Could not move the guest records yet.');
       }
+      mergeInProgress = false;
+      clearPendingMerge();
+      // The guest's records are now in the account; remove the guest copy from this device.
+      void wipeAndReload();
+      return result.user;
     }
   }
   const result = await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);

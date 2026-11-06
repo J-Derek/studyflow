@@ -17,6 +17,7 @@ import { useStudyFlowStore, getPathFromTab } from '../store/studyFlowStore';
 import { friendlyAuthMessage, signInOrLinkWithGoogle, signOutUser } from '../lib/authActions';
 import { cn } from '../utils/formatters';
 import { Avatar } from './Avatar';
+import { SignInButton } from './SignInButton';
 
 interface SidebarProps {
   onOpenBackup?: () => void;
@@ -35,6 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
     isAnonymous,
     userEmail,
     userPhotoUrl,
+    customPhotoUrl,
     theme,
     setTheme
   } = useStudyFlowStore();
@@ -208,7 +210,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
             title="Edit profile"
             className="rounded-full hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <Avatar name={displayName} photoUrl={userPhotoUrl} isGuest={isAnonymous} className="h-8 w-8" />
+            <Avatar name={displayName} photoUrl={customPhotoUrl || userPhotoUrl} isGuest={isAnonymous && !customPhotoUrl} className="h-8 w-8" />
             <span className="sr-only">{displayName}, edit profile</span>
           </button>
           <button
@@ -246,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
               title="Edit profile"
               className="flex items-center gap-2 overflow-hidden text-left hover:opacity-80 transition-opacity cursor-pointer group flex-1 min-w-0"
             >
-              <Avatar name={displayName} photoUrl={userPhotoUrl} isGuest={isAnonymous} className="h-8 w-8" />
+              <Avatar name={displayName} photoUrl={customPhotoUrl || userPhotoUrl} isGuest={isAnonymous && !customPhotoUrl} className="h-8 w-8" />
               <div className="truncate flex-1 min-w-0">
                 <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {displayName}
@@ -260,19 +262,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
           </div>
 
           {/* Account actions */}
+          {isAnonymous ? (
+            <div className="pt-2 border-t border-zinc-200/60 dark:border-zinc-700/60">
+              <SignInButton />
+            </div>
+          ) : (
           <div className="pt-1.5 border-t border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-between text-xs tabular-nums">
-            {isAnonymous ? (
-              <span className="text-zinc-600 dark:text-zinc-400">Guest account</span>
-            ) : (
-              <button
-                onClick={handleSignOut}
-                disabled={isAuthLoading}
-                className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
-              >
-                <LogOut className="h-3 w-3" />
-                <span>Sign out</span>
-              </button>
-            )}
+            <button
+              onClick={handleSignOut}
+              disabled={isAuthLoading}
+              className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
+            >
+              <LogOut className="h-3 w-3" />
+              <span>Sign out</span>
+            </button>
 
             <button
               onClick={() => {
@@ -281,12 +284,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
               }}
               disabled={isAuthLoading}
               className="text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1 disabled:opacity-50 cursor-pointer"
-              title={isAnonymous ? 'Sign in to keep your data' : 'Your account'}
+              title="Your account"
             >
               <Cloud className="h-3 w-3" />
-              <span>{isAnonymous ? 'Sign in' : 'Account'}</span>
+              <span>Account</span>
             </button>
           </div>
+          )}
         </div>
       )}
     </aside>

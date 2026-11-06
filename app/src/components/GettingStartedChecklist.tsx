@@ -45,7 +45,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
     {
       id: 'step-focus',
       title: 'Finish a focus session',
-      desc: 'Run a 25-minute Pomodoro round with ambient sound',
+      desc: 'Finish one timed focus block, with a soft sound if you like',
       completed: pomodorosCompleted > 0,
       icon: Timer,
       action: () => setActiveTab('timer')

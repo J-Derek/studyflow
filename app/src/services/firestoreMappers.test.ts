@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assignmentToDoc, docToAssignment, sessionToDoc } from './firestoreMappers';
+import { assignmentToDoc, docToAssignment, docToProfile, MAX_PHOTO_CHARS, profileToDoc, sessionToDoc, validPhoto } from './firestoreMappers';
 import type { Assignment } from '../types';
 
 const base: Assignment = {
@@ -75,5 +75,46 @@ describe('grade mappers', () => {
   it('keeps the sample flag', () => {
     expect(gradeToDoc({ ...g, sample: true }).sample).toBe(true);
     expect(docToGrade('g1', gradeToDoc({ ...g, sample: true })).sample).toBe(true);
+  });
+});
+
+describe('profile documents', () => {
+  const user = { name: 'Amina Wanjiru', university: 'University of Nairobi', program: 'BSc Computer Science', semester: 'Semester 1, 2026', semesterStart: '2026-09-07', semesterEnd: '2026-12-18', timeZone: 'Africa/Nairobi' };
+
+  it('round-trips a full profile with a picture', () => {
+    const photo = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+    const doc = profileToDoc('u1', user, photo);
+    expect(doc.photo).toBe(photo);
+    const back = docToProfile(doc);
+    expect(back.user).toMatchObject(user);
+    expect(back.photo).toBe(photo);
+  });
+
+  it('leaves out optional fields that are not set', () => {
+    const doc = profileToDoc('u1', { name: 'A', university: 'U', program: 'P', semester: 'S' }, null);
+    expect(Object.keys(doc).sort()).toEqual(['name', 'program', 'semester', 'uid', 'university']);
+  });
+
+  it('keeps required text within the rules limits and never empty', () => {
+    const doc = profileToDoc('u1', { name: '   ', university: 'x'.repeat(500), program: '', semester: '' }, null);
+    expect(doc.name).toBe('Student');
+    expect((doc.university as string).length).toBe(150);
+    expect(doc.program).toBe('My programme');
+    expect(doc.semester).toBe('Current semester');
+  });
+
+  it('refuses anything that is not a small JPEG data URL', () => {
+    expect(validPhoto('data:image/png;base64,AAAA')).toBe(false);
+    expect(validPhoto('https://example.com/me.jpg')).toBe(false);
+    expect(validPhoto('data:image/jpeg;base64,' + 'A'.repeat(MAX_PHOTO_CHARS))).toBe(false);
+    expect(validPhoto(null)).toBe(false);
+    expect(profileToDoc('u1', user, 'javascript:alert(1)').photo).toBeUndefined();
+  });
+
+  it('ignores malformed dates and unknown values coming back', () => {
+    const back = docToProfile({ name: 'A', semesterStart: 'tomorrow', semesterEnd: 20261218, photo: 'nope' });
+    expect(back.user.semesterStart).toBeUndefined();
+    expect(back.user.semesterEnd).toBeUndefined();
+    expect(back.photo).toBeNull();
   });
 });

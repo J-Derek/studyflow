@@ -99,3 +99,12 @@ export function sameRun(a: TimerState, b: TimerState, toleranceMs = 15_000): boo
   if (a.status === 'paused') return Math.abs(a.elapsedBeforeMs - b.elapsedBeforeMs) <= 2000;
   return true;
 }
+
+/** Longest length a student can choose, in minutes. */
+export const TIMER_LIMITS_MIN = { focus: 180, shortBreak: 60, longBreak: 90 } as const;
+
+/** Whole minutes between 1 and `max`; anything that is not a number becomes 1. */
+export function clampMinutes(value: number, max: number): number {
+  if (!Number.isFinite(value)) return 1;
+  return Math.min(max, Math.max(1, Math.round(value)));
+}

@@ -1,4 +1,4 @@
-import type { Assignment, CourseGrade, StudySession, Subtask } from '../types';
+import type { Assignment, CourseGrade, StudySession, Subtask, UserPreferences } from '../types';
 
 type Doc = Record<string, unknown>;
 
@@ -135,4 +135,54 @@ export function docToGrade(id: string, data: Doc): CourseGrade {
       })),
     sample: data.sample === true ? true : undefined
   };
+}
+
+const DATE_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+const PHOTO_PREFIX = 'data:image/jpeg;base64,';
+export const MAX_PHOTO_CHARS = 60000;
+
+/** Only a small JPEG data URL is allowed through; anything else is treated as "no picture". */
+export function validPhoto(photo: string | null | undefined): photo is string {
+  return typeof photo === 'string' && photo.startsWith(PHOTO_PREFIX) && photo.length <= MAX_PHOTO_CHARS;
+}
+
+/**
+ * The student's profile as stored under users/{uid}. Fields that are not set are left out (the sync turns
+ * them into deletions); the rules reject unknown keys, so only known ones are emitted.
+ */
+export function profileToDoc(uid: string, user: UserPreferences, photo: string | null): Doc {
+  const out: Doc = {
+    uid,
+    name: user.name.trim().slice(0, 100) || 'Student',
+    university: user.university.trim().slice(0, 150) || 'My university',
+    program: user.program.trim().slice(0, 150) || 'My programme',
+    semester: user.semester.trim().slice(0, 50) || 'Current semester'
+  };
+  if (user.semesterStart && DATE_RE.test(user.semesterStart)) out.semesterStart = user.semesterStart;
+  if (user.semesterEnd && DATE_RE.test(user.semesterEnd)) out.semesterEnd = user.semesterEnd;
+  if (user.timeZone) out.timeZone = user.timeZone.slice(0, 64);
+  if (validPhoto(photo)) out.photo = photo;
+  return out;
+}
+
+/** The reverse: what a stored profile document means for the app. Missing optional fields come back unset. */
+export function docToProfile(data: Doc): { user: Partial<UserPreferences>; photo: string | null } {
+  const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
+  const user: Partial<UserPreferences> = {};
+  const name = str(data.name);
+  const university = str(data.university);
+  const program = str(data.program);
+  const semester = str(data.semester);
+  if (name) user.name = name;
+  if (university) user.university = university;
+  if (program) user.program = program;
+  if (semester) user.semester = semester;
+  const start = str(data.semesterStart);
+  const end = str(data.semesterEnd);
+  const zone = str(data.timeZone);
+  user.semesterStart = start && DATE_RE.test(start) ? start : undefined;
+  user.semesterEnd = end && DATE_RE.test(end) ? end : undefined;
+  user.timeZone = zone || undefined;
+  const photo = str(data.photo);
+  return { user, photo: validPhoto(photo) ? photo : null };
 }

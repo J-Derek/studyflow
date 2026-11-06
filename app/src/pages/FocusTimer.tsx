@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Play,
   Pause,
@@ -9,15 +9,48 @@ import {
   VolumeX,
   CloudRain,
   Waves,
-  BookOpen,
-  Brain,
+  Wind,
+  Bell,
+  Music,
+  Music2,
+  Moon,
   Headphones
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { formatTimeLeft } from '../utils/formatters';
-import { remainingSeconds } from '../lib/timerEngine';
+import { clampMinutes, remainingSeconds, TIMER_LIMITS_MIN } from '../lib/timerEngine';
 import type { SoundscapeType } from '../types';
 import confetti from 'canvas-confetti';
+
+/** One length in whole minutes. Saved when the student leaves the box or presses Enter. */
+const LengthField: React.FC<{ id: string; label: string; minutes: number; max: number; onCommit: (minutes: number) => void }> = ({ id, label, minutes, max, onCommit }) => (
+  <div>
+    <label htmlFor={id} className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+      {label}
+    </label>
+    <div className="flex items-center gap-1.5">
+      <input
+        key={minutes}
+        id={id}
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={max}
+        defaultValue={minutes}
+        onBlur={(e) => {
+          const next = clampMinutes(Number(e.currentTarget.value), max);
+          e.currentTarget.value = String(next);
+          if (next !== minutes) onCommit(next);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur();
+        }}
+        className="w-full min-h-[44px] px-3 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-surface-light dark:bg-zinc-900 text-sm tabular-nums text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      />
+      <span className="text-xs text-zinc-600 dark:text-zinc-400">min</span>
+    </div>
+  </div>
+);
 
 export const FocusTimerPage: React.FC = () => {
   const {
@@ -25,7 +58,10 @@ export const FocusTimerPage: React.FC = () => {
     nowMs,
     focusCompletedAtMs,
     pomodorosCompleted,
+    timerSettings,
+    updateTimerSettings,
     soundscape,
+    breakSoundscape,
     soundscapeVolume,
     setTimerMode,
     startTimer,
@@ -36,6 +72,11 @@ export const FocusTimerPage: React.FC = () => {
   } = useStudyFlowStore();
 
   const timerMode = timer.mode;
+  // Which sound is being chosen: the one for focus blocks or the one for breaks.
+  const [pickedTarget, setPickedTarget] = useState<'focus' | 'break' | null>(null);
+  const soundTarget: 'focus' | 'break' = pickedTarget ?? (timer.mode === 'focus' ? 'focus' : 'break');
+  const chosenSound = soundTarget === 'focus' ? soundscape : breakSoundscape;
+  const soundIsPlayingNow = timer.status === 'running' && (timer.mode === 'focus') === (soundTarget === 'focus');
   const timerIsRunning = timer.status === 'running';
   const timerSecondsLeft = remainingSeconds(timer, nowMs);
 
@@ -117,13 +158,20 @@ export const FocusTimerPage: React.FC = () => {
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
-  const soundscapesList: { id: SoundscapeType; label: string; icon: React.ReactNode }[] = [
-    { id: 'off', label: 'Off', icon: <VolumeX className="w-5 h-5 text-zinc-600 dark:text-zinc-400" /> },
-    { id: 'rain', label: 'Rain', icon: <CloudRain className="w-5 h-5 text-zinc-600 dark:text-zinc-300" /> },
-    { id: 'brown', label: 'Brown noise', icon: <Waves className="w-5 h-5 text-zinc-600 dark:text-zinc-300" /> },
-    { id: 'white', label: 'White noise', icon: <BookOpen className="w-5 h-5 text-zinc-600 dark:text-zinc-300" /> },
-    { id: 'binaural', label: 'Binaural tones', icon: <Brain className="w-5 h-5 text-zinc-600 dark:text-zinc-300" /> }
-  ];
+  const icon = (el: React.ReactNode) => el;
+  const sounds: Record<SoundscapeType, { label: string; hint: string; icon: React.ReactNode }> = {
+    off: { label: 'Off', hint: 'Silence', icon: icon(<VolumeX className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />) },
+    rain: { label: 'Soft rain', hint: 'Gentle drops', icon: icon(<CloudRain className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />) },
+    waves: { label: 'Ocean waves', hint: 'Slow and steady', icon: icon(<Waves className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />) },
+    pad: { label: 'Calm music', hint: 'Warm, slow chords', icon: icon(<Music className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />) },
+    keys: { label: 'Soft keys', hint: 'Quiet piano notes', icon: icon(<Music2 className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />) },
+    brown: { label: 'Warm hum', hint: 'Low, smooth noise', icon: icon(<Moon className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />) },
+    breeze: { label: 'Light breeze', hint: 'Airy and quiet', icon: icon(<Wind className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />) },
+    chimes: { label: 'Soft chimes', hint: 'Far-off bells', icon: icon(<Bell className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />) }
+  };
+  const focusChoices: SoundscapeType[] = ['off', 'rain', 'waves', 'pad', 'keys', 'brown'];
+  const breakChoices: SoundscapeType[] = ['off', 'breeze', 'chimes', 'pad', 'waves', 'rain'];
+  const soundscapesList = (soundTarget === 'focus' ? focusChoices : breakChoices).map((id) => ({ id, ...sounds[id] }));
 
   return (
     <div className="space-y-6 animate-fade-in pb-16 max-w-2xl mx-auto">
@@ -150,7 +198,7 @@ export const FocusTimerPage: React.FC = () => {
                 : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
-            Focus (25m)
+            Focus ({Math.round(timerSettings.focusDuration / 60)}m)
           </button>
           <button
             onClick={() => setTimerMode('shortBreak')}
@@ -160,7 +208,7 @@ export const FocusTimerPage: React.FC = () => {
                 : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
-            Short Break (5m)
+            Short Break ({Math.round(timerSettings.shortBreakDuration / 60)}m)
           </button>
           <button
             onClick={() => setTimerMode('longBreak')}
@@ -170,10 +218,34 @@ export const FocusTimerPage: React.FC = () => {
                 : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
-            Long Break (15m)
+            Long Break ({Math.round(timerSettings.longBreakDuration / 60)}m)
           </button>
         </div>
       </div>
+
+      {/* Timer lengths */}
+      <details className="mx-auto w-full max-w-md rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark">
+        <summary className="cursor-pointer select-none px-4 min-h-[44px] flex items-center text-sm font-medium text-zinc-800 dark:text-zinc-200">
+          Change timer lengths
+        </summary>
+        <div className="px-4 pb-4 space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            <LengthField id="len-focus" label="Focus" minutes={Math.round(timerSettings.focusDuration / 60)} max={TIMER_LIMITS_MIN.focus} onCommit={(m) => updateTimerSettings({ focusDuration: m * 60 })} />
+            <LengthField id="len-short" label="Short break" minutes={Math.round(timerSettings.shortBreakDuration / 60)} max={TIMER_LIMITS_MIN.shortBreak} onCommit={(m) => updateTimerSettings({ shortBreakDuration: m * 60 })} />
+            <LengthField id="len-long" label="Long break" minutes={Math.round(timerSettings.longBreakDuration / 60)} max={TIMER_LIMITS_MIN.longBreak} onCommit={(m) => updateTimerSettings({ longBreakDuration: m * 60 })} />
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">Takes effect now if the timer is not running, otherwise from the next block.</p>
+            <button
+              type="button"
+              onClick={() => updateTimerSettings({ focusDuration: 25 * 60, shortBreakDuration: 5 * 60, longBreakDuration: 15 * 60 })}
+              className="min-h-[44px] px-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+            >
+              Back to 25 / 5 / 15
+            </button>
+          </div>
+        </div>
+      </details>
 
       {/* Circular Laboratory Gauge Display */}
       <div className="bg-surface-light dark:bg-surface-dark p-8 md:p-10 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex flex-col items-center justify-center relative overflow-hidden transition-colors">
@@ -279,20 +351,20 @@ export const FocusTimerPage: React.FC = () => {
             <div>
               <h2 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <span>Background sound</span>
-                {soundscape !== 'off' && timerIsRunning && (
+                {chosenSound !== 'off' && soundIsPlayingNow && (
                   <span className="flex items-center gap-0.5 text-xs text-emerald-600 dark:text-emerald-400 tabular-nums">
                     Playing
                   </span>
                 )}
               </h2>
               <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                Optional. Plays while the timer runs. Binaural tones work best with headphones.
+                Optional. Plays softly while the timer runs. Choose one sound for focusing and another for breaks.
               </p>
             </div>
           </div>
 
           {/* Volume slider */}
-          {soundscape !== 'off' && (
+          {chosenSound !== 'off' && (
             <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
               <Volume2 className="h-3 w-3 text-zinc-600 dark:text-zinc-400" />
               <input
@@ -312,14 +384,32 @@ export const FocusTimerPage: React.FC = () => {
           )}
         </div>
 
+        {/* Which timer mode the sound is for */}
+        <div role="group" aria-label="Choose sound for" className="inline-flex p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80">
+          {(['focus', 'break'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              aria-pressed={soundTarget === t}
+              onClick={() => setPickedTarget(t)}
+              className={`px-3 min-h-[44px] rounded-md text-xs font-medium cursor-pointer transition-colors ${
+                soundTarget === t ? 'bg-surface-light dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs' : 'text-zinc-600 dark:text-zinc-400'
+              }`}
+            >
+              {t === 'focus' ? 'When I focus' : 'On breaks'}
+            </button>
+          ))}
+        </div>
+
         {/* Soundscape Options Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           {soundscapesList.map((item) => (
             <button
               key={item.id}
-              onClick={() => setSoundscape(item.id)}
+              onClick={() => setSoundscape(item.id, soundTarget)}
+              aria-pressed={chosenSound === item.id}
               className={`p-2.5 rounded-lg border text-left transition-colors flex flex-col justify-between ${
-                soundscape === item.id
+                chosenSound === item.id
                   ? 'border-blue-500/80 bg-blue-50/50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 shadow-2xs'
                   : 'border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
               }`}
@@ -330,7 +420,7 @@ export const FocusTimerPage: React.FC = () => {
               <div>
                 <p className="text-xs font-medium leading-tight">{item.label}</p>
                 <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 mt-0.5">
-                  {soundscape === item.id ? (timerIsRunning ? 'Playing' : 'Selected') : ''}
+                  {chosenSound === item.id ? (soundIsPlayingNow ? 'Playing' : 'Selected') : item.hint}
                 </p>
               </div>
             </button>

@@ -69,12 +69,17 @@ service cloud.firestore {
 
     function isValidUser(data, userId) {
       return data.keys().hasAll(['uid', 'name', 'university', 'program', 'semester', 'updatedAt']) &&
-             data.keys().hasOnly(['uid', 'name', 'university', 'program', 'semester', 'updatedAt', 'onboarding']) &&
+             data.keys().hasOnly(['uid', 'name', 'university', 'program', 'semester', 'semesterStart', 'semesterEnd', 'timeZone', 'photo', 'updatedAt', 'onboarding']) &&
              data.uid is string && data.uid == userId &&
              validString(data.name, 1, 100) &&
              validString(data.university, 1, 150) &&
              validString(data.program, 1, 150) &&
              validString(data.semester, 1, 50) &&
+             (!('semesterStart' in data) || (data.semesterStart is string && data.semesterStart.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))) &&
+             (!('semesterEnd' in data) || (data.semesterEnd is string && data.semesterEnd.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))) &&
+             (!('timeZone' in data) || validString(data.timeZone, 1, 64)) &&
+             // A small square JPEG the student chose, kept as text (the app resizes it to about 10 KB).
+             (!('photo' in data) || (data.photo is string && data.photo.size() <= 60000 && data.photo.matches('data:image/jpeg;base64,.*'))) &&
              isServerTime(data.updatedAt) &&
              (!('onboarding' in data) ||
                (data.onboarding is map &&

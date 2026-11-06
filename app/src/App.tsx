@@ -171,6 +171,10 @@ export function App() {
         <ProfileModal
           isOpen={isProfileOpen}
           onClose={() => setIsProfileOpen(false)}
+          onOpenHelp={() => {
+            setIsProfileOpen(false);
+            setIsHelpOpen(true);
+          }}
         />
 
         {/* StudyFlow Playbook & 45-Second Tour Modal */}

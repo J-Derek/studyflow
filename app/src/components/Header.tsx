@@ -11,6 +11,7 @@ import {
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { signInOrLinkWithGoogle } from '../lib/authActions';
 import { Avatar } from './Avatar';
+import { SignInButton } from './SignInButton';
 
 interface HeaderProps {
   onOpenAddModal?: () => void;
@@ -27,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenProfile,
   onOpenHelp 
 }) => {
-  const { theme, toggleTheme, isAnonymous, isSyncing, activeTab, user, userPhotoUrl } = useStudyFlowStore();
+  const { theme, toggleTheme, isAnonymous, isSyncing, activeTab, user, userPhotoUrl, customPhotoUrl } = useStudyFlowStore();
   const [isLinking, setIsLinking] = useState(false);
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
@@ -72,16 +73,16 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="w-full bg-surface-light dark:bg-surface-dark border-b border-zinc-200/80 dark:border-zinc-800/80 sticky top-0 z-20 px-4 md:px-6 h-12 flex items-center transition-colors duration-150">
-      <div className="flex items-center justify-between gap-4 w-full">
+      <div className="flex items-center justify-between gap-2 sm:gap-4 w-full min-w-0">
         {/* Left: Dynamic Page Breadcrumb */}
         <div className="flex items-center gap-2 text-xs">
                     <span className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <span>{getPageTitle()}</span>
+            <span className="hidden sm:inline">{getPageTitle()}</span>
           </span>
         </div>
 
         {/* Right: Search, Sync Pip, Theme & Actions */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 ml-auto">
           {/* Quick Search trigger */}
           {onOpenSearch && (
             <button
@@ -102,7 +103,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={toggleTheme}
             aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
             title={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
-            className="flex md:hidden items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+            className="hidden sm:flex md:hidden items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
           >
             {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </button>
@@ -116,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
               aria-label="Edit profile"
               className="flex md:hidden items-center justify-center min-h-[44px] min-w-[44px] p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700"
             >
-              <Avatar name={user.name} photoUrl={userPhotoUrl} isGuest={isAnonymous} className="h-8 w-8" />
+              <Avatar name={user.name} photoUrl={customPhotoUrl || userPhotoUrl} isGuest={isAnonymous && !customPhotoUrl} className="h-8 w-8" />
             </button>
           )}
 
@@ -153,26 +154,28 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onOpenHelp}
               title="Help"
               aria-label="Help"
-              className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-lg border border-zinc-200/80 dark:border-zinc-750 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+              className="hidden sm:flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-lg border border-zinc-200/80 dark:border-zinc-750 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
             >
               <HelpCircle className="h-4 w-4" />
             </button>
           )}
 
           {/* Guest Account Upgrade / Backup Button */}
-          {(
+          {isAnonymous ? (
+            <SignInButton variant="header" />
+          ) : (
             <button
               onClick={() => {
                 if (onOpenBackup) onOpenBackup();
                 else handleLinkGoogle();
               }}
               disabled={isLinking}
-              aria-label={isAnonymous ? 'Sign in to keep your data' : 'Your account'}
-              title={isAnonymous ? 'Sign in to keep your data' : 'Your account'}
+              aria-label="Your account"
+              title="Your account"
               className="flex items-center justify-center gap-1.5 px-3 min-h-[44px] min-w-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium transition-colors disabled:opacity-60 cursor-pointer"
             >
               <LogIn className="h-3.5 w-3.5 text-blue-600" />
-              <span className="hidden md:inline">{isLinking ? 'Signing in…' : isAnonymous ? 'Sign in' : 'Account'}</span>
+              <span className="hidden md:inline">{isLinking ? 'Signing in…' : 'Account'}</span>
             </button>
           )}
 

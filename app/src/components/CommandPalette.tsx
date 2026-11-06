@@ -87,7 +87,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   const actionItems: CommandItem[] = [
     { id: 'act-new', label: 'Add an assignment', category: 'Actions', icon: Plus, action: () => { onClose(); onOpenAddModal(); } },
-    { id: 'act-focus', label: 'Start a 25-minute focus session', category: 'Actions', icon: Sparkles, action: () => { setActiveTab('timer'); setTimerMode('focus'); startTimer(); onClose(); } },
+    { id: 'act-focus', label: 'Start a focus session', category: 'Actions', icon: Sparkles, action: () => { setActiveTab('timer'); setTimerMode('focus'); startTimer(); onClose(); } },
     { id: 'act-theme', label: `Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`, category: 'Actions', icon: theme === 'light' ? Moon : Sun, action: () => { toggleTheme(); onClose(); } },
     { id: 'act-ics', label: 'Download timetable for your calendar (.ics)', category: 'Actions', icon: Download, action: () => { exportTimetable(); onClose(); } },
     {

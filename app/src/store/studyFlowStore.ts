@@ -6,6 +6,7 @@ import type {
   TimerMode,
   TimerSettings,
   UserPreferences,
+  Assessment,
   CourseGrade,
   SoundscapeType,
   Subtask
@@ -17,6 +18,7 @@ import {
   syncSessionToFirestore,
   deleteSessionFromFirestore,
   syncOnboardingDismissed,
+  syncProfile,
   syncGradeToFirestore,
   deleteGradeFromFirestore,
   pushTimerState,
@@ -24,9 +26,10 @@ import {
 } from '../services/cloud';
 import { calculateSubtaskProgress } from '../utils/subtasks';
 import { syncThemeColor } from '../utils/themeColor';
-import { complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
+import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 import { clampScore } from '../utils/academicCalculations';
+import { normalizeAssessments } from '../utils/assessments';
 
 export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades';
 
@@ -52,6 +55,9 @@ interface StudyFlowState {
   isAnonymous: boolean;
   userEmail: string | null;
   userPhotoUrl: string | null;
+  /** A picture the student chose on this device (small, kept locally). Wins over the Google photo. */
+  customPhotoUrl: string | null;
+  setCustomPhoto: (url: string | null) => void;
   isSyncing: boolean;
   setAuthUser: (uid: string | null, isAnonymous: boolean, email?: string | null, displayName?: string | null, photoUrl?: string | null) => void;
   resetStore: () => void;
@@ -101,6 +107,8 @@ interface StudyFlowState {
   // Academic Grades & GPA
   grades: CourseGrade[];
   updateAssessmentScore: (courseId: string, assessmentId: string, score: number | undefined) => void;
+  /** Replaces a course's assessments (names, weights, scores), after tidying them. */
+  setCourseAssessments: (courseId: string, assessments: Assessment[]) => void;
   addCourseGrade: (course: Omit<CourseGrade, 'id'>) => void;
   deleteCourseGrade: (courseId: string) => void;
 
@@ -113,7 +121,12 @@ interface StudyFlowState {
   /** Set when a focus block finishes, so the page can celebrate. */
   focusCompletedAtMs: number | null;
   pomodorosCompleted: number;
+  /** Minutes of focus completed. Counted as blocks finish, so changing the timer length never rewrites history. */
+  focusMinutes: number;
+  /** Sound while focusing. */
   soundscape: SoundscapeType;
+  /** Sound during short and long breaks. */
+  breakSoundscape: SoundscapeType;
   soundscapeVolume: number;
   setTimerMode: (mode: TimerMode) => void;
   startTimer: () => void;
@@ -124,7 +137,8 @@ interface StudyFlowState {
   adoptRemoteTimer: (t: TimerState) => void;
   incrementPomodoros: () => void;
   updateTimerSettings: (settings: Partial<TimerSettings>) => void;
-  setSoundscape: (type: SoundscapeType) => void;
+  /** Chooses the sound for focus blocks or for breaks (defaults to the current mode). */
+  setSoundscape: (type: SoundscapeType, forMode?: 'focus' | 'break') => void;
   setSoundscapeVolume: (volume: number) => void;
 }
 
@@ -150,6 +164,12 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       isAnonymous: true,
       userEmail: null,
       userPhotoUrl: null,
+      customPhotoUrl: null,
+      setCustomPhoto: (url) => {
+        set({ customPhotoUrl: url });
+        const uid = get().userId;
+        if (uid) syncProfile(uid).catch(console.warn);
+      },
       isSyncing: false,
       setAuthUser: (uid, isAnonymous, email, displayName, photoUrl) => {
         set((state) => ({
@@ -172,6 +192,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           isAnonymous: true,
           userEmail: null,
           userPhotoUrl: null,
+          customPhotoUrl: null,
           isSyncing: false,
           assignments: [],
           sessions: [],
@@ -179,13 +200,14 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           onboardingDismissed: false,
           guestNoticeDismissed: false,
           pomodorosCompleted: 0,
+          focusMinutes: 0,
           timer: idleTimer('focus', defaultSettings.focusDuration),
           focusCompletedAtMs: null,
           user: {
             name: 'Student',
             university: 'Academic Workspace',
             program: 'Undergraduate',
-            semester: 'Current Term'
+            semester: 'Current semester'
           }
         });
       },
@@ -194,13 +216,16 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         name: 'Student',
         university: 'Academic Workspace',
         program: 'Undergraduate',
-        semester: 'Current Term'
+        semester: 'Current semester'
       },
 
-      updateUser: (updates) =>
+      updateUser: (updates) => {
         set((state) => ({
           user: { ...state.user, ...updates }
-        })),
+        }));
+        const uid = get().userId;
+        if (uid) syncProfile(uid).catch(console.warn);
+      },
 
       guestNoticeDismissed: false,
       dismissGuestNotice: () => set({ guestNoticeDismissed: true }),
@@ -288,7 +313,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           assignments: [],
           sessions: [],
           grades: [],
-          pomodorosCompleted: 0
+          pomodorosCompleted: 0,
+          focusMinutes: 0
         });
       },
 
@@ -368,15 +394,18 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       },
 
       deleteAssignment: (id) => {
-        const previousAssignments = get().assignments;
+        const removed = get().assignments.find((a) => a.id === id);
         set((state) => ({
           assignments: state.assignments.filter((a) => a.id !== id)
         }));
         const uid = get().userId;
         if (uid) {
           deleteAssignmentFromFirestore(uid, id).catch((err) => {
-            console.warn('Sync error deleting assignment, rolling back state:', err);
-            set({ assignments: previousAssignments });
+            console.warn('Sync error deleting assignment, putting it back:', err);
+            // Put back only this assignment, so anything done since is not undone.
+            if (removed) {
+              set((state) => (state.assignments.some((a) => a.id === id) ? state : { assignments: [removed, ...state.assignments] }));
+            }
           });
         }
       },
@@ -536,6 +565,15 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (uid) syncGradeToFirestore(uid, next).catch((err) => console.warn('Sync error updating grade:', err));
       },
 
+      setCourseAssessments: (courseId, assessments) => {
+        const course = get().grades.find((c) => c.id === courseId);
+        if (!course) return;
+        const next: CourseGrade = { ...course, assessments: normalizeAssessments(assessments) };
+        set((state) => ({ grades: state.grades.map((c) => (c.id === courseId ? next : c)) }));
+        const uid = get().userId;
+        if (uid) syncGradeToFirestore(uid, next).catch((err) => console.warn('Sync error updating grade:', err));
+      },
+
       addCourseGrade: (course) => {
         const newCourse: CourseGrade = {
           ...course,
@@ -558,7 +596,9 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       nowMs: Date.now(),
       focusCompletedAtMs: null,
       pomodorosCompleted: 0,
+      focusMinutes: 0,
       soundscape: 'off',
+      breakSoundscape: 'off',
       soundscapeVolume: 0.35,
 
       setTimerMode: (mode) => {
@@ -570,9 +610,10 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       },
 
       startTimer: () => {
-        const { soundscape, soundscapeVolume, timer } = get();
+        const { soundscape, breakSoundscape, soundscapeVolume, timer } = get();
         if (timer.status === 'running') return;
-        if (soundscape !== 'off') playSoundscape(soundscape, soundscapeVolume);
+        const sound = timer.mode === 'focus' ? soundscape : breakSoundscape;
+        if (sound !== 'off') playSoundscape(sound, soundscapeVolume);
         const now = Date.now();
         const next = startEngine(timer, now);
         set({ timer: next, nowMs: now });
@@ -609,6 +650,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           timer: next,
           nowMs: now,
           pomodorosCompleted: wasFocus ? state.pomodorosCompleted + 1 : state.pomodorosCompleted,
+          focusMinutes: wasFocus ? state.focusMinutes + Math.round(timer.durationSec / 60) : state.focusMinutes,
           focusCompletedAtMs: wasFocus ? now : state.focusCompletedAtMs
         }));
         if (wasFocus) playCompletionChime();
@@ -630,14 +672,29 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           pomodorosCompleted: state.pomodorosCompleted + 1
         })),
 
-      updateTimerSettings: (settings) =>
-        set((state) => ({
-          timerSettings: { ...state.timerSettings, ...settings }
-        })),
+      updateTimerSettings: (settings) => {
+        const state = get();
+        const merged = { ...state.timerSettings, ...settings };
+        // Keep every length within the limits (the screen only offers whole minutes; seconds stay possible for tests).
+        const within = (sec: number, maxMin: number) => (Number.isFinite(sec) ? Math.min(maxMin * 60, Math.max(1, Math.round(sec))) : 60);
+        merged.focusDuration = within(merged.focusDuration, TIMER_LIMITS_MIN.focus);
+        merged.shortBreakDuration = within(merged.shortBreakDuration, TIMER_LIMITS_MIN.shortBreak);
+        merged.longBreakDuration = within(merged.longBreakDuration, TIMER_LIMITS_MIN.longBreak);
+        set({ timerSettings: merged });
+        // An idle timer takes the new length straight away; a running or paused block keeps its own.
+        if (state.timer.status === 'idle') {
+          const next = switchMode(state.timer.mode, durationFor(state.timer.mode, merged));
+          set({ timer: next, nowMs: Date.now() });
+          if (state.userId) pushTimerState(state.userId, next);
+        }
+      },
 
-      setSoundscape: (type) => {
+      setSoundscape: (type, forMode) => {
         const { timer, soundscapeVolume } = get();
-        set({ soundscape: type });
+        const target = forMode ?? (timer.mode === 'focus' ? 'focus' : 'break');
+        set(target === 'focus' ? { soundscape: type } : { breakSoundscape: type });
+        const playing = target === (timer.mode === 'focus' ? 'focus' : 'break');
+        if (!playing) return;
         if (type === 'off' || timer.status !== 'running') {
           stopSoundscape();
         } else {
@@ -657,17 +714,23 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         guestNoticeDismissed: state.guestNoticeDismissed,
         icsExportCount: state.icsExportCount,
         user: state.user,
+        customPhotoUrl: state.customPhotoUrl,
         theme: state.theme,
         assignments: state.assignments,
         sessions: state.sessions,
         grades: state.grades,
         pomodorosCompleted: state.pomodorosCompleted,
+        focusMinutes: state.focusMinutes,
         timer: state.timer,
         timerSettings: state.timerSettings,
+        soundscape: state.soundscape,
+        breakSoundscape: state.breakSoundscape,
         soundscapeVolume: state.soundscapeVolume
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
+        // Older saves only counted blocks; estimate their minutes at the old fixed 25.
+        if (typeof state.focusMinutes !== 'number') state.focusMinutes = (state.pomodorosCompleted ?? 0) * 25;
         // Earlier builds seeded demo rows as the student's own data. Flag them so they are labelled
         // and excluded from GPA, backups and exports.
         state.assignments = (state.assignments ?? []).map((x) => (isLegacySeedId('assignment', x.id) ? { ...x, sample: true } : x));

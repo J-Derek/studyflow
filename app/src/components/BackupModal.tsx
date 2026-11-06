@@ -14,7 +14,7 @@ interface BackupModalProps {
 }
 
 export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
-  const { assignments, sessions, grades, isAnonymous, userEmail, userPhotoUrl, user } = useStudyFlowStore();
+  const { assignments, sessions, grades, isAnonymous, userEmail, userPhotoUrl, customPhotoUrl, user } = useStudyFlowStore();
   const [authError, setAuthError] = useState<string | null>(null);
   const [isLinking, setIsLinking] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -180,7 +180,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
             <div className="space-y-2">
             <div className="p-3 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Avatar name={user.name} photoUrl={userPhotoUrl} className="h-9 w-9" />
+                <Avatar name={user.name} photoUrl={customPhotoUrl || userPhotoUrl} className="h-9 w-9" />
                 <div>
                   <p className="text-xs font-medium text-emerald-900 dark:text-emerald-100">{user.name}</p>
                   <p className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400">{userEmail}</p>

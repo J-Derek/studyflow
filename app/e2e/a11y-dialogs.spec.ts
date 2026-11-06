@@ -15,7 +15,7 @@ async function start(page: Page, theme: 'light' | 'dark'): Promise<void> {
 
 const openers: Array<[string, (p: Page) => Promise<void>]> = [
   ['help', async (p) => { await p.getByRole('button', { name: 'Help', exact: true }).click(); }],
-  ['sign-in', async (p) => { await p.getByRole('button', { name: 'Sign in to keep your data', exact: true }).click(); }],
+  ['sign-in', async (p) => { await p.getByRole('button', { name: /^Sign in to keep your data/ }).first().click(); }],
   ['profile', async (p) => { await p.getByRole('button', { name: /edit profile/i }).first().click(); }],
   ['add assignment', async (p) => { await p.getByRole('button', { name: 'Add assignment' }).first().click(); }],
   ['command palette', async (p) => { await p.keyboard.press('Control+k'); }]
