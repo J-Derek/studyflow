@@ -115,6 +115,7 @@ interface StudyFlowState {
   // Study Sessions (Calendar)
   sessions: StudySession[];
   addSession: (session: Omit<StudySession, 'id'>) => void;
+  updateSession: (id: string, updates: Partial<Omit<StudySession, 'id'>>) => void;
   deleteSession: (id: string) => void;
 
   // Academic Grades & GPA
@@ -615,6 +616,21 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (uid) {
           syncSessionToFirestore(uid, newSession).catch((err) => {
             console.warn('Sync error adding session:', err);
+          });
+        }
+      },
+
+      updateSession: (id, updates) => {
+        const previousSessions = get().sessions;
+        const current = previousSessions.find((s) => s.id === id);
+        if (!current) return;
+        const updated: StudySession = { ...current, ...updates, id };
+        set((state) => ({ sessions: state.sessions.map((s) => (s.id === id ? updated : s)) }));
+        const uid = get().userId;
+        if (uid) {
+          syncSessionToFirestore(uid, updated).catch((err) => {
+            console.warn('Sync error updating session, rolling back state:', err);
+            set({ sessions: previousSessions });
           });
         }
       },

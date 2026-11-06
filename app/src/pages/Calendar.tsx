@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Clock, ChevronLeft, ChevronRight, Plus, X, Download, RotateCcw } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
+import { useDialog } from '../lib/useDialog';
 import { exportTimetable } from '../lib/exportTimetable';
 import { clashingIds, findClashes, toMinutes } from '../utils/timetable';
 import type { StudySession } from '../types';
@@ -8,9 +9,11 @@ import type { StudySession } from '../types';
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export const CalendarPage: React.FC = () => {
-  const { sessions, addSession, deleteSession } = useStudyFlowStore();
+  const { sessions, addSession, updateSession, deleteSession } = useStudyFlowStore();
 
   const [modalOpen, setModalOpen] = useState(false);
+  // The block being edited, or null when adding a new one.
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
   const [title, setTitle] = useState('');
   const [course, setCourse] = useState('');
@@ -50,26 +53,59 @@ export const CalendarPage: React.FC = () => {
   const clashing = useMemo(() => clashingIds(sessions), [sessions]);
   const timesInvalid = toMinutes(endTime) <= toMinutes(startTime);
   const newClashes = useMemo(
-    () => (timesInvalid ? [] : findClashes(sessions, { dayOfWeek, startTime, endTime })),
-    [sessions, dayOfWeek, startTime, endTime, timesInvalid]
+    () =>
+      timesInvalid
+        ? []
+        : findClashes(
+            sessions.filter((s) => s.id !== editingId),
+            { dayOfWeek, startTime, endTime }
+          ),
+    [sessions, editingId, dayOfWeek, startTime, endTime, timesInvalid]
   );
 
-  const handleAddSession = (e: React.FormEvent) => {
+  const closeModal = () => {
+    setModalOpen(false);
+    setEditingId(null);
+  };
+  const dialogRef = useDialog(modalOpen, closeModal);
+
+  const openAdd = (day?: number) => {
+    setEditingId(null);
+    setTitle('');
+    setCourse('');
+    setStartTime('10:00');
+    setEndTime('11:30');
+    setSessionType('lecture');
+    if (day !== undefined) setDayOfWeek(day);
+    setModalOpen(true);
+  };
+
+  const openEdit = (session: StudySession) => {
+    setEditingId(session.id);
+    setTitle(session.title);
+    setCourse(session.course);
+    setDayOfWeek(session.dayOfWeek);
+    setStartTime(session.startTime);
+    setEndTime(session.endTime);
+    setSessionType(session.type);
+    setModalOpen(true);
+  };
+
+  const handleSaveSession = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !course || timesInvalid) return;
 
-    addSession({
-      title,
-      course,
-      dayOfWeek,
-      startTime,
-      endTime,
-      type: sessionType
-    });
+    const data = { title, course, dayOfWeek, startTime, endTime, type: sessionType };
+    if (editingId) updateSession(editingId, data);
+    else addSession(data);
+    closeModal();
+  };
 
-    setTitle('');
-    setCourse('');
-    setModalOpen(false);
+  const handleDeleteEditing = () => {
+    if (!editingId) return;
+    if (!window.confirm('Delete this block?')) return;
+    deleteSession(editingId);
+    closeModal();
   };
 
   return (
@@ -84,7 +120,7 @@ export const CalendarPage: React.FC = () => {
           <button
             onClick={() => exportTimetable()}
             title="Export calendar to Apple Calendar, Google Calendar, or Outlook (.ics)"
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-surface-dark hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs transition shadow-2xs active:scale-95"
+            className="min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-surface-dark hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs transition shadow-2xs active:scale-95"
           >
             <Download className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
             <span className="hidden sm:inline tabular-nums">Export .ICS</span>
@@ -93,7 +129,7 @@ export const CalendarPage: React.FC = () => {
           <div className="flex items-center gap-1 bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-lg p-0.5 shadow-2xs">
             <button
               onClick={() => setWeekOffset((prev) => prev - 1)}
-              className="p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
               aria-label="Previous week"
               title="Previous week"
             >
@@ -104,7 +140,7 @@ export const CalendarPage: React.FC = () => {
             </span>
             <button
               onClick={() => setWeekOffset((prev) => prev + 1)}
-              className="p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
               aria-label="Next week"
               title="Next week"
             >
@@ -115,7 +151,7 @@ export const CalendarPage: React.FC = () => {
           {weekOffset !== 0 && (
             <button
               onClick={() => setWeekOffset(0)}
-              className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs transition"
+              className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs transition"
               title="Return to current week"
               aria-label="Return to current week"
             >
@@ -124,8 +160,8 @@ export const CalendarPage: React.FC = () => {
           )}
           
           <button
-            onClick={() => setModalOpen(true)}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-xs transition shadow-2xs active:scale-95"
+            onClick={() => openAdd()}
+            className="min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-xs transition shadow-2xs active:scale-95"
           >
             <Plus className="h-3.5 w-3.5" /> <span>Add Block</span>
           </button>
@@ -144,7 +180,7 @@ export const CalendarPage: React.FC = () => {
             </p>
           </div>
           <button
-            onClick={() => setModalOpen(true)}
+            onClick={() => openAdd()}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium shrink-0 cursor-pointer shadow-2xs"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -197,33 +233,38 @@ export const CalendarPage: React.FC = () => {
                       daySessions.map((session) => (
                         <div
                           key={session.id}
-                          className="p-2 rounded-md border text-xs transition relative group border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-850/60 text-zinc-900 dark:text-zinc-100"
+                          className={`rounded-md border text-xs transition relative group bg-zinc-50/70 dark:bg-zinc-850/60 text-zinc-900 dark:text-zinc-100 ${
+                            clashing.has(session.id) ? 'border-amber-400 dark:border-amber-600' : 'border-zinc-200/80 dark:border-zinc-800/80'
+                          }`}
                         >
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="tabular-nums text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(session)}
+                            title="Tap to edit"
+                            className="block w-full min-h-[44px] text-left p-2 pr-8 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/60 cursor-pointer"
+                          >
+                            <span className="block tabular-nums text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-0.5">
+                              <span className="sr-only">Edit </span>
                               {session.course.split('—')[0].trim()}
                             </span>
-                            <button
-                              onClick={() => deleteSession(session.id)}
-                              className="opacity-0 group-hover:opacity-100 transition p-0.5 hover:text-rose-600 dark:hover:text-rose-400"
-                              title="Delete block"
-                              aria-label={`Delete block ${session.title}`}
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                          
-                          <h3 className="font-medium text-zinc-900 dark:text-zinc-100 text-xs leading-snug line-clamp-2">{session.title}</h3>
-                          
-                          <div className="mt-1 flex items-center gap-1 text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
-                            <Clock className="h-2.5 w-2.5" />
-                            <span>
+                            <span className="block font-medium text-zinc-900 dark:text-zinc-100 text-xs leading-snug line-clamp-2">{session.title}</span>
+                            <span className="mt-1 flex items-center gap-1 text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
+                              <Clock className="h-2.5 w-2.5" aria-hidden="true" />
                               {session.startTime} - {session.endTime}
                             </span>
-                          </div>
-                          {clashing.has(session.id) && (
-                            <p className="mt-1 text-xs font-medium text-amber-800 dark:text-amber-300">Clashes with another block</p>
-                          )}
+                            {clashing.has(session.id) && (
+                              <span className="mt-1 block text-xs font-medium text-amber-800 dark:text-amber-300">Clashes with another block</span>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteSession(session.id)}
+                            className="hidden [@media(hover:hover)]:block absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition p-1 hover:text-rose-600 dark:hover:text-rose-400"
+                            title="Delete block"
+                            aria-label={`Delete block ${session.title}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
                         </div>
                       ))
                     )}
@@ -232,11 +273,8 @@ export const CalendarPage: React.FC = () => {
 
                 {/* Quick Add slot button */}
                 <button
-                  onClick={() => {
-                    setDayOfWeek(day.dayNumber);
-                    setModalOpen(true);
-                  }}
-                  className="mt-3 w-full py-1 rounded-md border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 text-xs tabular-nums transition"
+                  onClick={() => openAdd(day.dayNumber)}
+                  className="min-h-[44px] md:min-h-0 mt-3 w-full py-1 rounded-md border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 text-xs tabular-nums transition"
                 >
                   + Add Block
                 </button>
@@ -248,12 +286,22 @@ export const CalendarPage: React.FC = () => {
 
       {/* Add Session Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/60 dark:bg-black/80 backdrop-blur-sm animate-fade-in motion-reduce:animate-none">
-          <div className="bg-surface-light dark:bg-surface-dark rounded-xl w-full max-w-md shadow-2xl border border-zinc-200/80 dark:border-zinc-800/80 overflow-hidden transition-colors">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/60 dark:bg-black/80 backdrop-blur-sm animate-fade-in motion-reduce:animate-none"
+          onClick={closeModal}
+        >
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={editingId ? 'Edit block' : 'Add a block'}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-surface-light dark:bg-surface-dark rounded-xl w-full max-w-md shadow-2xl border border-zinc-200/80 dark:border-zinc-800/80 overflow-hidden transition-colors max-h-[calc(100dvh-2rem)] overflow-y-auto"
+          >
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-850/40">
-              <h2 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">Add a block</h2>
+              <h2 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">{editingId ? 'Edit block' : 'Add a block'}</h2>
               <button
-                onClick={() => setModalOpen(false)}
+                onClick={closeModal}
                 className="p-1 rounded-md text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
                 title="Close modal"
                 aria-label="Close modal"
@@ -262,7 +310,7 @@ export const CalendarPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleAddSession} className="p-5 space-y-3.5">
+            <form onSubmit={handleSaveSession} className="p-5 space-y-3.5">
               <div>
                 <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   Session Title
@@ -369,10 +417,19 @@ export const CalendarPage: React.FC = () => {
                 </p>
               )}
 
-              <div className="pt-2 flex justify-end gap-2 border-t border-zinc-100 dark:border-zinc-800">
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-zinc-100 dark:border-zinc-800">
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteEditing}
+                    className="mr-auto px-3 py-1.5 rounded-md text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
+                  >
+                    Delete
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => setModalOpen(false)}
+                  onClick={closeModal}
                   className="px-3 py-1.5 rounded-md text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                 >
                   Cancel
@@ -381,7 +438,7 @@ export const CalendarPage: React.FC = () => {
                   type="submit"
                   className="px-3.5 py-1.5 rounded-md text-xs font-medium text-white dark:text-zinc-900 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs"
                 >
-                  Add Block
+                  {editingId ? 'Save changes' : 'Add Block'}
                 </button>
               </div>
             </form>
