@@ -83,7 +83,18 @@ for (const [label, width] of [['desktop', 1280], ['phone', 375]] as const) {
     await expect(page.getByRole('button', { name: /Edit .*Distributed Systems.*13:00 - 14:30/ })).toBeVisible();
     const times = async () =>
       page.evaluate(() => (window as unknown as { __store: { getState: () => { sessions: Array<{ title: string; startTime: string; endTime: string }> } } }).__store.getState().sessions.map((x) => `${x.title} ${x.startTime}-${x.endTime}`));
-    expect(await times()).toEqual(['Distributed Systems 13:00-14:30', 'Differential Calculus 10:00-11:30']);
+    expect((await times()).sort()).toEqual(['Differential Calculus 10:00-11:30', 'Distributed Systems 13:00-14:30']);
+
+    // wait until the change has reached the database, as it would within a moment in real use
+    const uid = await page.evaluate(() => (window as unknown as { __store: { getState: () => S } }).__store.getState().userId);
+    await expect
+      .poll(async () => {
+        const res = await page.request.get(`http://127.0.0.1:8080/v1/projects/studyflow-e2e/databases/(default)/documents/users/${uid}/sessions`, {
+          headers: { Authorization: 'Bearer owner' }
+        });
+        return JSON.stringify(await res.json()).includes('13:00');
+      })
+      .toBe(true);
 
     // the change is kept after a reload
     await page.reload();
