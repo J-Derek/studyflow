@@ -292,6 +292,26 @@ export const AssignmentsPage: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="pl-7 pr-2">
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(asg)}
+                    className="text-left text-xs cursor-pointer"
+                  >
+                    {asg.notes ? (
+                      <>
+                        <span className="line-clamp-2 whitespace-pre-wrap text-zinc-700 dark:text-zinc-300">{asg.notes}</span>
+                        <span className="sr-only"> (edit note for {asg.title})</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-zinc-600 dark:text-zinc-400 underline-offset-2 hover:underline">Add a note</span>
+                        <span className="sr-only"> to {asg.title}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
                 {(effectiveSubtasks.length > 0 || addingFor === asg.id) && (
                   <div className="pl-7 pr-2 pt-2 border-t border-zinc-100 dark:border-zinc-800/60 space-y-1.5">
                     {effectiveSubtasks.length > 0 && (

@@ -52,12 +52,20 @@ export const SignInButton: React.FC<SignInButtonProps> = ({ variant = 'block', c
         type="button"
         onClick={start}
         disabled={busy}
-        className={`inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-surface-light dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-100 font-medium transition-colors disabled:opacity-60 cursor-pointer ${
+        aria-label="Sign in with Google"
+        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-zinc-300 dark:border-zinc-600 bg-surface-light dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-100 font-medium transition-colors disabled:opacity-60 cursor-pointer ${
           variant === 'header' ? 'min-h-[44px] px-3 text-sm' : 'w-full min-h-[44px] px-3.5 text-sm'
         } ${className}`}
       >
         <GoogleIcon className="h-[18px] w-[18px] shrink-0" />
-        <span>{busy ? 'Opening Google…' : 'Sign in with Google'}</span>
+        {variant === 'header' ? (
+          <>
+            <span className="sm:hidden">{busy ? 'Opening…' : 'Sign in'}</span>
+            <span className="hidden sm:inline">{busy ? 'Opening Google…' : 'Sign in with Google'}</span>
+          </>
+        ) : (
+          <span>{busy ? 'Opening Google…' : 'Sign in with Google'}</span>
+        )}
       </button>
       {error && (
         <span

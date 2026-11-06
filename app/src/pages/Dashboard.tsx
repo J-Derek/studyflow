@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   CheckCircle2, 
   Circle, 
   ArrowRight,
   Flame,
+  Pencil,
+  Plus,
 } from 'lucide-react';
+import type { Assignment } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { getDaysRemaining } from '../utils/formatters';
 import { calculateCumulativeGpa, getAcademicStanding } from '../utils/academicCalculations';
@@ -22,8 +25,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenAddModal,
   onOpenBackup
 }) => {
-  const { isAnonymous, guestNoticeDismissed, dismissGuestNotice, assignments, sessions, grades, pomodorosCompleted, setActiveTab, toggleAssignmentComplete } = useStudyFlowStore();
+  const { timerSettings, isAnonymous, guestNoticeDismissed, dismissGuestNotice, assignments, sessions, grades, pomodorosCompleted, setActiveTab, toggleAssignmentComplete } = useStudyFlowStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // The assignment being edited from this screen (opens the same dialog as the Assignments page).
+  const [editing, setEditing] = useState<Assignment | null>(null);
+  // Right after the very first assignment is saved, say what happened and where to change it.
+  const [justSaved, setJustSaved] = useState<string | null>(null);
+  const previousCount = useRef(assignments.length);
+  useEffect(() => {
+    if (previousCount.current === 0 && assignments.length > 0) {
+      setJustSaved(assignments[0]!.title);
+      const t = window.setTimeout(() => setJustSaved(null), 10000);
+      previousCount.current = assignments.length;
+      return () => window.clearTimeout(t);
+    }
+    previousCount.current = assignments.length;
+  }, [assignments]);
+  const openAdd = () => (onOpenAddModal ? onOpenAddModal() : setIsModalOpen(true));
 
   // Statistics Computations
   const totalAssignments = assignments.length;
@@ -34,7 +52,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Real-time Dynamic GPA & Academic Standing
   const { gpaString, gpa, hasData: hasGpa } = calculateCumulativeGpa(grades);
   const academicStanding = getAcademicStanding(gpa);
-  const focusHours = ((pomodorosCompleted * 25) / 60).toFixed(1);
+  const focusHours = ((pomodorosCompleted * (timerSettings.focusDuration / 60)) / 60).toFixed(1);
   const todayLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
   // Urgent / Upcoming assignments sorted by due date
@@ -102,6 +120,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
       )}
 
       {/* One dominant thing first: what is due next. Everything else is quiet. */}
+      {justSaved && (
+        <p role="status" className="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-2.5 text-sm text-emerald-900 dark:text-emerald-200">
+          Saved “{justSaved}”. Use <strong>Edit</strong> to change it, or <strong>Add assignment</strong> to add more.
+        </p>
+      )}
+
       {nextUp && (
         <section aria-labelledby="next-up-heading" className="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark p-5 md:p-7">
           <h2 id="next-up-heading" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Next up</h2>
@@ -111,6 +135,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span aria-hidden="true">·</span>
             <span className={`tabular-nums font-medium ${nextUpDue.isUrgent ? 'text-red-600 dark:text-red-400' : ''}`}>{nextUpDue.label}</span>
           </p>
+          {nextUp.notes && (
+            <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap line-clamp-3">{nextUp.notes}</p>
+          )}
           <div className="mt-5 flex flex-wrap gap-2.5">
             <button
               type="button"
@@ -119,6 +146,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
             >
               <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
               <span>Mark done</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(nextUp)}
+              className="inline-flex items-center gap-2 px-4 min-h-[44px] rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-100 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer"
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              <span>Edit</span>
             </button>
           </div>
         </section>
@@ -160,13 +195,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {urgentAssignments.length} in queue
               </span>
             </div>
-            <button
-              onClick={() => setActiveTab('assignments')}
-              className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 min-h-[44px] inline-flex items-center gap-1 py-2 px-1 transition-colors group cursor-pointer"
-            >
-              <span>View all ({assignments.length})</span>
-              <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={openAdd}
+                className="text-xs font-medium text-zinc-800 dark:text-zinc-100 min-h-[44px] inline-flex items-center gap-1 py-2 px-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Add assignment</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('assignments')}
+                className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 min-h-[44px] inline-flex items-center gap-1 py-2 px-1 transition-colors group cursor-pointer"
+              >
+                <span>View all ({assignments.length})</span>
+                <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </div>
           </div>
 
           <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark overflow-hidden divide-y divide-zinc-200/70 dark:divide-zinc-800/70 shadow-2xs">
@@ -225,6 +270,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       <span className="tabular-nums text-xs text-zinc-600 dark:text-zinc-400 hidden sm:inline capitalize">
                         {asg.priority}
                       </span>
+
+                      <button
+                        type="button"
+                        onClick={() => setEditing(asg)}
+                        aria-label={`Edit assignment "${asg.title}"`}
+                        title="Edit"
+                        className="min-h-[44px] min-w-[44px] -my-2 flex items-center justify-center rounded-md text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+                      >
+                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
 
                       {/* Due Countdown — plain monospace, red only if overdue */}
                       <span
@@ -285,7 +340,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      <AssignmentModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <AssignmentModal
+        isOpen={isModalOpen || !!editing}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditing(null);
+        }}
+        assignmentToEdit={editing}
+      />
     </div>
   );
 };

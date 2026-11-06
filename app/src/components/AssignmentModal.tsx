@@ -214,8 +214,9 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
               Notes (optional)
             </label>
             <textarea
-              rows={3}
-              placeholder="Anything you want to remember (optional)"
+              rows={4}
+              maxLength={2000}
+              placeholder="What to include, page numbers, what the lecturer said…"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition resize-none"
