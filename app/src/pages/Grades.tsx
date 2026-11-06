@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Assessment } from '../types';
+import { GradingEditor } from '../components/GradingEditor';
 import {
   percentageToGpa,
   percentageToLetter,
@@ -18,7 +19,9 @@ import {
 } from '../utils/academicCalculations';
 
 export const GradesPage: React.FC = () => {
-  const { grades, updateAssessmentScore, addCourseGrade, deleteCourseGrade } = useStudyFlowStore();
+  const { grades, updateAssessmentScore, setCourseAssessments, addCourseGrade, deleteCourseGrade } = useStudyFlowStore();
+  // The course whose weights are being edited (one at a time).
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string>(grades[0]?.id || '');
   const [simulatedFinalScore, setSimulatedFinalScore] = useState<number>(85);
   const [showAddCourseModal, setShowAddCourseModal] = useState<boolean>(false);
@@ -290,14 +293,30 @@ export const GradesPage: React.FC = () => {
                   </div>
 
                   <div className="text-right flex items-center gap-1.5">
-                    <span className="text-sm tabular-nums font-semibold text-zinc-900 dark:text-white ">{currentPct.toFixed(1)}%</span>
-                    <span className="px-1.5 py-0.5 rounded text-xs tabular-nums font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700">
-                      {letter}
-                    </span>
+                    {gradedWeight > 0 ? (
+                      <>
+                        <span className="text-sm tabular-nums font-semibold text-zinc-900 dark:text-white ">{currentPct.toFixed(1)}%</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs tabular-nums font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700">
+                          {letter}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-zinc-600 dark:text-zinc-400">No scores yet</span>
+                    )}
                   </div>
                 </div>
 
-                {/* Assessments list with live score inputs */}
+                {editingCourseId === course.id ? (
+                  <GradingEditor
+                    course={course}
+                    onCancel={() => setEditingCourseId(null)}
+                    onSave={(next) => {
+                      setCourseAssessments(course.id, next);
+                      setEditingCourseId(null);
+                    }}
+                  />
+                ) : (
+                /* Assessments list with live score inputs */
                 <div className="space-y-1.5 pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
                   <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
                     Weights ({gradedWeight}% Graded)
@@ -334,16 +353,27 @@ export const GradesPage: React.FC = () => {
                     ))}
                   </div>
                 </div>
+                )}
 
                 {/* Footer Controls */}
                 <div className="flex items-center justify-between pt-1 text-xs">
-                  <button
-                    onClick={() => setSelectedCourseId(course.id)}
-                    className="text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1 text-xs"
-                  >
-                    <span>Try the final</span>
-                    <ChevronRight className="h-3 w-3" />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setSelectedCourseId(course.id)}
+                      className="text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1 text-xs min-h-[44px]"
+                    >
+                      <span>Try the final</span>
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
+                    {editingCourseId !== course.id && (
+                      <button
+                        onClick={() => setEditingCourseId(course.id)}
+                        className="text-zinc-700 dark:text-zinc-300 font-medium hover:underline text-xs min-h-[44px] cursor-pointer"
+                      >
+                        Edit grading
+                      </button>
+                    )}
+                  </div>
 
                   {grades.length > 1 && (
                     <button
