@@ -18,6 +18,7 @@ import {
   syncSessionToFirestore,
   deleteSessionFromFirestore,
   syncOnboardingDismissed,
+  syncProfile,
   syncGradeToFirestore,
   deleteGradeFromFirestore,
   pushTimerState,
@@ -164,7 +165,11 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       userEmail: null,
       userPhotoUrl: null,
       customPhotoUrl: null,
-      setCustomPhoto: (url) => set({ customPhotoUrl: url }),
+      setCustomPhoto: (url) => {
+        set({ customPhotoUrl: url });
+        const uid = get().userId;
+        if (uid) syncProfile(uid).catch(console.warn);
+      },
       isSyncing: false,
       setAuthUser: (uid, isAnonymous, email, displayName, photoUrl) => {
         set((state) => ({
@@ -214,10 +219,13 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         semester: 'Current semester'
       },
 
-      updateUser: (updates) =>
+      updateUser: (updates) => {
         set((state) => ({
           user: { ...state.user, ...updates }
-        })),
+        }));
+        const uid = get().userId;
+        if (uid) syncProfile(uid).catch(console.warn);
+      },
 
       guestNoticeDismissed: false,
       dismissGuestNotice: () => set({ guestNoticeDismissed: true }),

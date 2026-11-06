@@ -141,6 +141,27 @@ describe('user profile', () => {
   it('rejects a client-sent updatedAt', async () => {
     await assertFails(setDoc(ref(), user({ updatedAt: Timestamp.fromMillis(1) })));
   });
+  it('accepts semester dates, a time zone and a small JPEG picture', async () => {
+    await assertSucceeds(setDoc(ref(), user({ semesterStart: '2026-09-07', semesterEnd: '2026-12-18', timeZone: 'Africa/Nairobi', photo: 'data:image/jpeg;base64,/9j/4AAQSkZJRg==' })));
+  });
+  it('rejects malformed dates, an oversized time zone, and unsafe or oversized pictures', async () => {
+    await assertFails(setDoc(ref(), user({ semesterStart: 'tomorrow' })));
+    await assertFails(setDoc(ref(), user({ semesterEnd: '2026-1-1' })));
+    await assertFails(setDoc(ref(), user({ timeZone: 'x'.repeat(65) })));
+    await assertFails(setDoc(ref(), user({ photo: 'https://example.com/me.jpg' })));
+    await assertFails(setDoc(ref(), user({ photo: 'data:image/svg+xml;base64,PHN2Zz4=' })));
+    await assertFails(setDoc(ref(), user({ photo: 'data:image/jpeg;base64,' + 'A'.repeat(60000) })));
+    await assertFails(setDoc(ref(), user({ photo: 12345 })));
+  });
+  it('lets the student remove the picture and the dates again', async () => {
+    await assertSucceeds(setDoc(ref(), user({ semesterStart: '2026-09-07', photo: 'data:image/jpeg;base64,/9j/4AAQ' })));
+    await assertSucceeds(setDoc(ref(), { ...user(), semesterStart: deleteField(), photo: deleteField() }, { merge: true }));
+  });
+  it("does not let another student read or change someone else's picture", async () => {
+    await assertSucceeds(setDoc(ref(), user({ photo: 'data:image/jpeg;base64,/9j/4AAQ' })));
+    await assertFails(getDoc(doc(asBob(), 'users', ALICE)));
+    await assertFails(setDoc(doc(asBob(), 'users', ALICE), user({ photo: 'data:image/jpeg;base64,/9j/EVIL' })));
+  });
   it('makes uid immutable', async () => {
     await assertSucceeds(setDoc(ref(), user()));
     await assertFails(updateDoc(ref(), { uid: BOB, updatedAt: serverTimestamp() }));

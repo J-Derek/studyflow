@@ -9,13 +9,14 @@ import {
   limit,
   query,
   serverTimestamp,
+  deleteField,
   type Unsubscribe
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { Assignment, CourseGrade, StudySession } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
-import { assignmentToDoc, docToAssignment, docToGrade, docToSession, gradeToDoc, sessionToDoc } from './firestoreMappers';
+import { assignmentToDoc, docToAssignment, docToGrade, docToProfile, docToSession, gradeToDoc, profileToDoc, sessionToDoc } from './firestoreMappers';
 import { isLegacySeedId } from '../utils/sampleData';
 
 const LIST_CAP = 500;
@@ -59,27 +60,36 @@ export function initFirestoreSync(uid: string): () => void {
   unsubscribeAllFirestoreSync();
 
   const userDocRef = doc(db, 'users', uid);
-  const { user } = useStudyFlowStore.getState();
-  setDoc(
-    userDocRef,
-    {
-      uid,
-      name: user.name,
-      university: user.university,
-      program: user.program,
-      semester: user.semester,
-      updatedAt: serverTimestamp()
-    },
-    { merge: true }
-  ).catch((err) => console.warn('User root doc write warning:', err));
 
+  // The profile follows the student across devices. Read first, then decide: a stored profile wins on a
+  // new device; if there is none yet, this device's profile is the one that gets stored.
+  let profileSeeded = false;
+  let photoShared = false;
   const unsubUser = onSnapshot(
     userDocRef,
     (snap) => {
       if (!isCurrentUser(uid)) return;
-      const dismissed = snap.data()?.onboarding?.dismissed === true;
+      const data = snap.data();
+      const dismissed = data?.onboarding?.dismissed === true;
       if (dismissed !== useStudyFlowStore.getState().onboardingDismissed) {
         useStudyFlowStore.setState({ onboardingDismissed: dismissed });
+      }
+
+      if (data && typeof data.name === 'string') {
+        const remote = docToProfile(data);
+        useStudyFlowStore.setState((st) => ({
+          user: { ...st.user, ...remote.user },
+          customPhotoUrl: remote.photo ?? st.customPhotoUrl
+        }));
+        // This device has a picture the stored profile lacks: share it (once).
+        if (remote.photo === null && useStudyFlowStore.getState().customPhotoUrl && !photoShared) {
+          photoShared = true;
+          syncProfile(uid).catch((err) => console.warn('Profile picture sync warning:', err));
+        }
+      } else if (!snap.metadata.fromCache && !profileSeeded) {
+        // Nothing stored yet, and this answer came from the server: store this device's profile.
+        profileSeeded = true;
+        syncProfile(uid).catch((err) => console.warn('Profile sync warning:', err));
       }
     },
     (err) => console.warn('Firestore profile listener warning:', err.message)
@@ -248,6 +258,16 @@ export async function syncSessionToFirestore(uid: string, session: StudySession)
 
 export async function deleteSessionFromFirestore(uid: string, sessionId: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid, 'sessions', sessionId));
+}
+
+/** Saves the student's profile (and chosen picture) to their account. Unset optional fields are removed. */
+export async function syncProfile(uid: string): Promise<void> {
+  const s = useStudyFlowStore.getState();
+  const data: Record<string, unknown> = { ...profileToDoc(uid, s.user, s.customPhotoUrl), updatedAt: serverTimestamp() };
+  for (const key of ['semesterStart', 'semesterEnd', 'timeZone', 'photo']) {
+    if (data[key] === undefined) data[key] = deleteField();
+  }
+  await setDoc(doc(db, 'users', uid), data, { merge: true });
 }
 
 export async function syncOnboardingDismissed(uid: string): Promise<void> {
