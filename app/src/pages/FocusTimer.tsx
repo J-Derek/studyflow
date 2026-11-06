@@ -297,7 +297,7 @@ export const FocusTimerPage: React.FC = () => {
         <div className="mt-7 flex items-center justify-center gap-3">
           <button
             onClick={resetTimer}
-            className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700/80 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition active:scale-95"
+            className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700/80 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition active:scale-95"
             title="Reset Timer"
             aria-label="Reset Timer"
           >
@@ -307,14 +307,14 @@ export const FocusTimerPage: React.FC = () => {
           {timerIsRunning ? (
             <button
               onClick={pauseTimer}
-              className="px-6 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium text-xs hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs flex items-center gap-2 active:scale-95"
+              className="min-h-[44px] md:min-h-0 px-6 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium text-xs hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs flex items-center gap-2 active:scale-95"
             >
               <Pause className="h-3.5 w-3.5" /> Pause Session
             </button>
           ) : (
             <button
               onClick={startTimer}
-              className="px-6 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-sm transition flex items-center gap-2 active:scale-95"
+              className="min-h-[44px] md:min-h-0 px-6 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-sm transition flex items-center gap-2 active:scale-95"
             >
               <Play className="h-3.5 w-3.5 fill-current" /> Start
             </button>
@@ -329,7 +329,7 @@ export const FocusTimerPage: React.FC = () => {
                 disableForReducedMotion: true
               });
             }}
-            className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700/80 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition active:scale-95"
+            className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700/80 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition active:scale-95"
             title="Test Milestone Celebration"
             aria-label="Test milestone celebration"
           >

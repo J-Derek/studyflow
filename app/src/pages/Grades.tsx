@@ -158,7 +158,7 @@ export const GradesPage: React.FC = () => {
               aria-label="Course to simulate"
               value={selectedCourse.id}
               onChange={(e) => setSelectedCourseId(e.target.value)}
-              className="px-2.5 py-1 rounded-md text-xs tabular-nums bg-zinc-50 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 focus:outline-none"
+              className="min-h-[44px] md:min-h-0 px-2.5 py-1 rounded-md text-xs tabular-nums bg-zinc-50 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 focus:outline-none"
             >
               {grades.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -193,7 +193,7 @@ export const GradesPage: React.FC = () => {
                 max="100"
                 value={simulatedFinalScore}
                 onChange={(e) => setSimulatedFinalScore(Number(e.target.value))}
-                className="w-full h-1 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                className="w-full h-11 md:h-1 py-[20px] md:py-0 bg-clip-content bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
 
               <div className="flex justify-between text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
@@ -237,7 +237,7 @@ export const GradesPage: React.FC = () => {
 
           <button
             onClick={() => setShowAddCourseModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 text-xs font-medium shadow-2xs transition-transform active:scale-95"
+            className="min-h-[44px] md:min-h-0 flex items-center gap-1.5 px-3 py-1 rounded-md bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 text-xs font-medium shadow-2xs transition-transform active:scale-95"
           >
             <Plus className="h-3 w-3" />
             <span>Add Course</span>
@@ -345,7 +345,7 @@ export const GradesPage: React.FC = () => {
                               const val = e.target.value === '' ? undefined : Number(e.target.value);
                               updateAssessmentScore(course.id, a.id, val);
                             }}
-                            className="w-14 px-1.5 py-0.5 text-right tabular-nums text-xs font-semibold rounded border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="min-h-[44px] md:min-h-0 w-16 md:w-14 px-1.5 py-0.5 text-right tabular-nums text-xs font-semibold rounded border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                           />
                           <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">%</span>
                         </div>
