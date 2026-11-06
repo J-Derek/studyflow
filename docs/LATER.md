@@ -17,4 +17,5 @@ What a student wants: collect the lecturer's notes and slides in one orderly pla
 - **Cheaper options to decide between:** (a) text-only course notes stored in the database (no files);
   (b) let students attach a link to Google Drive / OneDrive instead of uploading; (c) paid storage with a
   per-student limit (say 25 MB) and rules that only the owner can read it.
+- **Update:** PDFs attached to a note are now kept on the device only (IndexedDB, 25 MB each, no sync, wiped on sign-out). Cloud storage is still open.
 - Privacy: uploaded lecture material may be copyrighted. The privacy note would need to say who can see it (only the owner).
