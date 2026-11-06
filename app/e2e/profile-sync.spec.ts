@@ -8,7 +8,17 @@ type S = {
   updateUser: (u: object) => void;
   setCustomPhoto: (u: string | null) => void;
 };
-const store = (page: Page) => page.evaluate(() => (window as unknown as { __store: { getState: () => S } }).__store.getState());
+// The app reloads itself once while the guest records are moved, so reading can briefly fail: retry through it.
+async function store(page: Page): Promise<S> {
+  for (let i = 0; i < 30; i++) {
+    try {
+      return await page.evaluate(() => (window as unknown as { __store: { getState: () => S } }).__store.getState());
+    } catch {
+      await page.waitForTimeout(250);
+    }
+  }
+  throw new Error('The store never became available');
+}
 
 async function boot(page: Page): Promise<void> {
   await page.goto('/');

@@ -250,6 +250,62 @@ describe('assignments: timestamps and updates', () => {
   });
 });
 
+describe('notes', () => {
+  const note = (over: Record<string, unknown> = {}) => ({
+    id: 'n1',
+    title: 'Week 3',
+    body: 'Offer, acceptance, consideration.',
+    course: 'LAW 101',
+    pinned: false,
+    createdAt: '2026-11-01T08:00:00.000Z',
+    editedAt: '2026-11-01T08:00:00.000Z',
+    updatedAt: serverTimestamp(),
+    ...over
+  });
+  const nDoc = (db: Db, id = 'n1') => doc(db, 'users', ALICE, 'notes', id);
+
+  it('lets the owner create, read, edit and delete a note', async () => {
+    await assertSucceeds(setDoc(nDoc(asAlice()), note()));
+    await assertSucceeds(getDoc(nDoc(asAlice())));
+    await assertSucceeds(setDoc(nDoc(asAlice()), note({ body: 'Updated', editedAt: '2026-11-02T08:00:00.000Z' })));
+    await assertSucceeds(deleteDoc(nDoc(asAlice())));
+  });
+  it("keeps one student's notes from every other student", async () => {
+    await assertSucceeds(setDoc(nDoc(asAlice()), note()));
+    await assertFails(getDoc(nDoc(asBob())));
+    await assertFails(setDoc(nDoc(asBob()), note({ body: 'overwritten' })));
+    await assertFails(deleteDoc(nDoc(asBob())));
+    await assertFails(getDocs(query(collection(asBob(), 'users', ALICE, 'notes'), limit(10))));
+    await assertFails(getDoc(nDoc(anon())));
+  });
+  it('accepts an empty course and a long body, and rejects oversized ones', async () => {
+    await assertSucceeds(setDoc(nDoc(asAlice()), note({ course: '' })));
+    await assertSucceeds(setDoc(nDoc(asAlice(), 'n2'), note({ id: 'n2', body: 'x'.repeat(20000) })));
+    await assertFails(setDoc(nDoc(asAlice(), 'n3'), note({ id: 'n3', body: 'x'.repeat(20001) })));
+    await assertFails(setDoc(nDoc(asAlice(), 'n4'), note({ id: 'n4', title: 'x'.repeat(201) })));
+    await assertFails(setDoc(nDoc(asAlice(), 'n5'), note({ id: 'n5', course: 'c'.repeat(51) })));
+  });
+  it('rejects a missing or empty title, wrong types, extra keys and a mismatched id', async () => {
+    await assertFails(setDoc(nDoc(asAlice()), note({ title: '' })));
+    await assertFails(setDoc(nDoc(asAlice()), note({ pinned: 'yes' })));
+    await assertFails(setDoc(nDoc(asAlice()), note({ body: 5 })));
+    await assertFails(setDoc(nDoc(asAlice()), note({ isPublic: true })));
+    await assertFails(setDoc(nDoc(asAlice(), 'other'), note({ id: 'n1' })));
+    const noBody: Record<string, unknown> = note();
+    delete noBody.body;
+    await assertFails(setDoc(nDoc(asAlice()), noBody));
+  });
+  it('requires a server-set updatedAt and keeps id and createdAt fixed', async () => {
+    await assertFails(setDoc(nDoc(asAlice()), note({ updatedAt: Timestamp.fromMillis(1) })));
+    await assertSucceeds(setDoc(nDoc(asAlice()), note()));
+    await assertFails(setDoc(nDoc(asAlice()), note({ createdAt: '2020-01-01T00:00:00.000Z' })));
+  });
+  it('caps list queries', async () => {
+    await assertSucceeds(getDocs(query(collection(asAlice(), 'users', ALICE, 'notes'), limit(500))));
+    await assertFails(getDocs(query(collection(asAlice(), 'users', ALICE, 'notes'), limit(501))));
+  });
+});
+
 describe('sessions (timetable)', () => {
   it('accepts valid, rejects bad day, bad time, unknown type, extra key', async () => {
     await assertSucceeds(setDoc(sDoc(asAlice()), ses({ sample: true })));

@@ -43,6 +43,18 @@ export interface Assessment {
   score?: number; // percentage 0-100 or null/undefined if upcoming
 }
 
+/** A student's own note, optionally filed under a course. Plain text. */
+export interface Note {
+  id: string;
+  title: string;
+  body: string;
+  /** Free text such as "CS 301"; empty when the note is not filed under a course. */
+  course: string;
+  pinned: boolean;
+  createdAt: string; // ISO
+  editedAt: string; // ISO
+}
+
 export interface CourseGrade {
   id: string;
   courseCode: string;

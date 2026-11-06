@@ -20,5 +20,7 @@ export const syncGradeToFirestore = lazy('syncGradeToFirestore');
 export const deleteGradeFromFirestore = lazy('deleteGradeFromFirestore');
 export const syncOnboardingDismissed = lazy('syncOnboardingDismissed');
 export const syncProfile = lazy('syncProfile');
+export const syncNoteToFirestore = lazy('syncNoteToFirestore');
+export const deleteNoteFromFirestore = lazy('deleteNoteFromFirestore');
 export const pushTimerState = lazy('pushTimerState');
 export const completeFocusSession = lazy('completeFocusSession');

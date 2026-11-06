@@ -332,10 +332,10 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                 <ul className="list-disc pl-4 space-y-1">
                   <li>As a guest, StudyFlow knows no name or email. You are a random ID.</li>
                   <li>If you link Google, StudyFlow also gets the name and email on that Google account, so it can show who you are and sign you back in.</li>
-                  <li>Your assignments, timetable, grades, focus sessions and profile details (name, university, semester dates, time zone) are saved to Google Firebase and kept on this device so the app works offline.</li>
+                  <li>Your assignments, timetable, grades, notes, focus sessions and profile details (name, university, semester dates, time zone) are saved to Google Firebase and kept on this device so the app works offline.</li>
                   <li>Only your own account can read or write your records. Other students cannot see them.</li>
                   <li>There are no ads and no analytics. The site is hosted on Vercel, which keeps ordinary server logs.</li>
-                  <li>Backup exports everything to a file you keep. “Delete all my data” removes your assignments, timetable blocks and grades from this device and from the cloud. Deleting the account itself is not built yet.</li>
+                  <li>Backup exports everything to a file you keep. “Delete all my data” removes your assignments, timetable blocks, grades and notes from this device and from the cloud. Deleting the account itself is not built yet.</li>
                 </ul>
               </div>
             </div>

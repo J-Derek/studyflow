@@ -113,6 +113,19 @@ service cloud.firestore {
              isServerTime(data.updatedAt);
     }
 
+    function isValidNote(data) {
+      return data.keys().hasAll(['id', 'title', 'body', 'course', 'pinned', 'createdAt', 'editedAt', 'updatedAt']) &&
+             data.keys().hasOnly(['id', 'title', 'body', 'course', 'pinned', 'createdAt', 'editedAt', 'updatedAt']) &&
+             validString(data.id, 1, 100) &&
+             validString(data.title, 1, 200) &&
+             data.body is string && data.body.size() <= 20000 &&
+             data.course is string && data.course.size() <= 50 &&
+             data.pinned is bool &&
+             validString(data.createdAt, 1, 50) &&
+             validString(data.editedAt, 1, 50) &&
+             isServerTime(data.updatedAt);
+    }
+
     function isValidSession(data) {
       return data.keys().hasAll(['id', 'title', 'course', 'dayOfWeek', 'startTime', 'endTime', 'type', 'updatedAt']) &&
              data.keys().hasOnly([
@@ -201,6 +214,18 @@ service cloud.firestore {
                          request.resource.data.id == assignmentId;
         allow update: if isOwner(userId) &&
                          isValidAssignment(request.resource.data) &&
+                         immutable(['id', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      match /notes/{noteId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId) && request.query.limit <= 500;
+        allow create: if isOwner(userId) &&
+                         isValidNote(request.resource.data) &&
+                         request.resource.data.id == noteId;
+        allow update: if isOwner(userId) &&
+                         isValidNote(request.resource.data) &&
                          immutable(['id', 'createdAt']);
         allow delete: if isOwner(userId);
       }

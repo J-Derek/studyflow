@@ -66,6 +66,8 @@ export const Header: React.FC<HeaderProps> = ({
         return 'Focus timer';
       case 'grades':
         return 'Grades';
+      case 'notes':
+        return 'Notes';
       default:
         return 'StudyFlow';
     }

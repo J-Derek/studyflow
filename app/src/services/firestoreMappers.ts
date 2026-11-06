@@ -1,4 +1,4 @@
-import type { Assignment, CourseGrade, StudySession, Subtask, UserPreferences } from '../types';
+import type { Assignment, CourseGrade, Note, StudySession, Subtask, UserPreferences } from '../types';
 
 type Doc = Record<string, unknown>;
 
@@ -185,4 +185,35 @@ export function docToProfile(data: Doc): { user: Partial<UserPreferences>; photo
   user.timeZone = zone || undefined;
   const photo = str(data.photo);
   return { user, photo: validPhoto(photo) ? photo : null };
+}
+
+export const MAX_NOTE_TITLE = 200;
+export const MAX_NOTE_BODY = 20000;
+export const MAX_NOTE_COURSE = 50;
+
+/** A note as stored. The limits match firestore.rules; the app's own inputs stop well short of them. */
+export function noteToDoc(n: Note): Doc {
+  return {
+    id: n.id,
+    title: n.title.trim().slice(0, MAX_NOTE_TITLE) || 'Untitled note',
+    body: n.body.slice(0, MAX_NOTE_BODY),
+    course: n.course.trim().slice(0, MAX_NOTE_COURSE),
+    pinned: n.pinned === true,
+    createdAt: n.createdAt,
+    editedAt: n.editedAt
+  };
+}
+
+export function docToNote(id: string, data: Doc): Note {
+  const str = (v: unknown, fallback = '') => (typeof v === 'string' ? v : fallback);
+  const created = str(data.createdAt, new Date(0).toISOString());
+  return {
+    id,
+    title: str(data.title, 'Untitled note') || 'Untitled note',
+    body: str(data.body),
+    course: str(data.course),
+    pinned: data.pinned === true,
+    createdAt: created,
+    editedAt: str(data.editedAt, created)
+  };
 }

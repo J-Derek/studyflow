@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, CheckSquare, Calendar as CalendarIcon, Timer, Award } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Calendar as CalendarIcon, Timer, Award, NotebookPen } from 'lucide-react';
 import { useStudyFlowStore, getPathFromTab } from '../store/studyFlowStore';
 import { cn } from '../utils/formatters';
 
@@ -9,10 +9,12 @@ export const MobileNav: React.FC = () => {
 
   const items = [
     { id: 'dashboard' as const, label: 'Today', icon: LayoutDashboard },
-    { id: 'assignments' as const, label: 'Assignments', icon: CheckSquare, badge: pendingCount },
+    // Six items share a narrow row, so "Assignments" is shown as "Tasks" here (its full name is still read out).
+    { id: 'assignments' as const, label: 'Tasks', fullName: 'assignments', icon: CheckSquare, badge: pendingCount },
     { id: 'calendar' as const, label: 'Timetable', icon: CalendarIcon },
     { id: 'timer' as const, label: 'Timer', icon: Timer },
-    { id: 'grades' as const, label: 'Grades', icon: Award }
+    { id: 'grades' as const, label: 'Grades', icon: Award },
+    { id: 'notes' as const, label: 'Notes', icon: NotebookPen }
   ];
 
   return (
@@ -34,7 +36,7 @@ export const MobileNav: React.FC = () => {
             }}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
-              'flex flex-col items-center justify-center min-h-[48px] min-w-[48px] px-2 py-1 rounded-lg transition-colors duration-150 relative cursor-pointer select-none',
+              'flex flex-col items-center justify-center min-h-[48px] min-w-0 flex-1 px-0.5 py-1 rounded-lg transition-colors duration-150 relative cursor-pointer select-none',
               isActive 
                 ? 'text-zinc-950 dark:text-zinc-50 font-medium' 
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
@@ -48,7 +50,8 @@ export const MobileNav: React.FC = () => {
                 </span>
               )}
             </div>
-            <span className="text-xs mt-0.5 tracking-tight">{item.label}</span>
+            <span className="text-[11px] leading-tight mt-0.5 tracking-tight whitespace-nowrap">{item.label}</span>
+            {'fullName' in item && <span className="sr-only"> ({item.fullName})</span>}
             {item.badge !== undefined && item.badge > 0 && <span className="sr-only">, {item.badge} to do</span>}
           </a>
         );

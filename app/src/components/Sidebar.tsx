@@ -10,6 +10,7 @@ import {
   Sun,
   Moon,
   Award,
+  NotebookPen,
   PanelLeftClose,
   PanelLeftOpen
 } from 'lucide-react';
@@ -71,7 +72,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
     { id: 'assignments' as const, label: 'Assignments', icon: CheckSquare, badge: pendingCount },
     { id: 'calendar' as const, label: 'Timetable', icon: CalendarIcon },
     { id: 'timer' as const, label: 'Focus Timer', icon: Timer },
-    { id: 'grades' as const, label: 'Grades', icon: Award }
+    { id: 'grades' as const, label: 'Grades', icon: Award },
+    { id: 'notes' as const, label: 'Notes', icon: NotebookPen }
   ];
 
   // Labels stay in the page for screen readers when the sidebar is collapsed.
