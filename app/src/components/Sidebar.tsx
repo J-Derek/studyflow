@@ -6,7 +6,6 @@ import {
   Timer,
   GraduationCap,
   Cloud,
-  LogOut,
   Sun,
   Moon,
   Award,
@@ -15,20 +14,22 @@ import {
   PanelLeftOpen
 } from 'lucide-react';
 import { useStudyFlowStore, getPathFromTab } from '../store/studyFlowStore';
-import { friendlyAuthMessage, signInOrLinkWithGoogle, signOutUser } from '../lib/authActions';
+import { friendlyAuthMessage, signInOrLinkWithGoogle } from '../lib/authActions';
 import { cn } from '../utils/formatters';
+import { AccountMenu } from './AccountMenu';
 import { Avatar } from './Avatar';
 import { SignInButton } from './SignInButton';
 
 interface SidebarProps {
   onOpenBackup?: () => void;
   onOpenProfile?: () => void;
+  onOpenHelp?: () => void;
   /** Icon-only rail instead of the full sidebar. */
   collapsed?: boolean;
   onToggleCollapsed?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, collapsed = false, onToggleCollapsed }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, onOpenHelp, collapsed = false, onToggleCollapsed }) => {
   const {
     activeTab,
     setActiveTab,
@@ -49,17 +50,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
       await signInOrLinkWithGoogle();
     } catch (err) {
       console.error('Google sign-in error:', friendlyAuthMessage(err) ?? err);
-    } finally {
-      setIsAuthLoading(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      setIsAuthLoading(true);
-      await signOutUser();
-    } catch (err) {
-      console.error('Sign out error:', err);
     } finally {
       setIsAuthLoading(false);
     }
@@ -203,8 +193,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
         </nav>
       </div>
 
-      {/* Account */}
-      {collapsed ? (
+      {/* Account: signed-in students see just their picture, which opens a details panel. */}
+      {!isAnonymous ? (
+        <div className={cn('flex', collapsed ? 'justify-center' : 'px-1')}>
+          <AccountMenu placement="up" onOpenProfile={onOpenProfile} onOpenBackup={onOpenBackup} onOpenHelp={onOpenHelp} />
+        </div>
+      ) : collapsed ? (
         <div className="flex flex-col items-center gap-2">
           <button
             type="button"
@@ -222,24 +216,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
               else handleGoogleAuth();
             }}
             disabled={isAuthLoading}
-            aria-label={isAnonymous ? 'Sign in to keep your data' : 'Your account'}
-            title={isAnonymous ? 'Sign in to keep your data' : 'Your account'}
+            aria-label="Sign in to keep your data"
+            title="Sign in to keep your data"
             className="h-9 w-9 flex items-center justify-center rounded-lg text-blue-600 dark:text-blue-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 cursor-pointer"
           >
             <Cloud className="h-4 w-4" />
           </button>
-          {!isAnonymous && (
-            <button
-              type="button"
-              onClick={handleSignOut}
-              disabled={isAuthLoading}
-              aria-label="Sign out"
-              title="Sign out"
-              className="h-9 w-9 flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          )}
         </div>
       ) : (
         <div className="p-2.5 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/70 dark:border-zinc-800/80 rounded-xl space-y-2 transition-colors">
@@ -263,36 +245,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
             </button>
           </div>
 
-          {/* Account actions */}
-          {isAnonymous ? (
-            <div className="pt-2 border-t border-zinc-200/60 dark:border-zinc-700/60">
-              <SignInButton />
-            </div>
-          ) : (
-          <div className="pt-1.5 border-t border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-between text-xs tabular-nums">
-            <button
-              onClick={handleSignOut}
-              disabled={isAuthLoading}
-              className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
-            >
-              <LogOut className="h-3 w-3" />
-              <span>Sign out</span>
-            </button>
-
-            <button
-              onClick={() => {
-                if (onOpenBackup) onOpenBackup();
-                else handleGoogleAuth();
-              }}
-              disabled={isAuthLoading}
-              className="text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1 disabled:opacity-50 cursor-pointer"
-              title="Your account"
-            >
-              <Cloud className="h-3 w-3" />
-              <span>Account</span>
-            </button>
+          {/* Guests sign in here */}
+          <div className="pt-2 border-t border-zinc-200/60 dark:border-zinc-700/60">
+            <SignInButton />
           </div>
-          )}
         </div>
       )}
     </aside>

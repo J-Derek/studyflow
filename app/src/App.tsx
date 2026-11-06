@@ -97,6 +97,7 @@ export function App() {
       <Sidebar
         onOpenBackup={() => setIsBackupOpen(true)}
         onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenHelp={() => setIsHelpOpen(true)}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={toggleSidebar}
       />

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Pencil, Pin, PinOff, Trash2, X } from 'lucide-react';
+import { BookOpen, Pencil, Pin, PinOff, Trash2, X } from 'lucide-react';
 import type { Note } from '../types';
 import { useDialog } from '../lib/useDialog';
 import { LinkedText } from './LinkedText';
+import { NoteReader } from './NoteReader';
 
 export const NOTE_TITLE_MAX = 120;
 export const NOTE_BODY_MAX = 15000;
@@ -35,6 +36,7 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
   const [course, setCourse] = useState(note?.course ?? '');
   const [pinned, setPinned] = useState(note?.pinned ?? false);
   const [askDiscard, setAskDiscard] = useState(false);
+  const [reading, setReading] = useState(false);
 
   const dirty =
     mode === 'edit' && (title !== (note?.title ?? '') || body !== (note?.body ?? '') || course !== (note?.course ?? '') || pinned !== (note?.pinned ?? false));
@@ -45,12 +47,26 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
     if (dirty) setAskDiscard(true);
     else onClose();
   };
-  const dialogRef = useDialog(true, requestClose);
+  // The full-screen reader has its own focus handling while it is open.
+  const dialogRef = useDialog(!reading, requestClose);
 
   const save = () => {
     if (!canSave) return;
     onSave({ title, body, course, pinned });
   };
+
+  if (reading && note) {
+    return (
+      <NoteReader
+        note={note}
+        onClose={() => setReading(false)}
+        onEdit={() => {
+          setReading(false);
+          setMode('edit');
+        }}
+      />
+    );
+  }
 
   return (
     <div
@@ -91,6 +107,14 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
             )}
             <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
               <div className="flex flex-wrap items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setReading(true)}
+                  className="min-h-[44px] px-3 inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 dark:border-zinc-600 text-sm font-medium text-zinc-800 dark:text-zinc-100 cursor-pointer"
+                >
+                  <BookOpen className="h-4 w-4" aria-hidden="true" />
+                  <span>Read full screen</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setMode('edit')}

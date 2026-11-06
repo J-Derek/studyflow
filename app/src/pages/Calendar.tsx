@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Clock, ChevronLeft, ChevronRight, Plus, X, Download, RotateCcw } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { exportTimetable } from '../lib/exportTimetable';
+import { clashingIds, findClashes, toMinutes } from '../utils/timetable';
 import type { StudySession } from '../types';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -31,7 +32,7 @@ export const CalendarPage: React.FC = () => {
       const isToday = d.toDateString() === now.toDateString();
       return {
         dayName: name,
-        dayNumber: i + 1,
+        dayNumber: (i + 1) % 7, // Mon = 1 ... Sat = 6, Sun = 0 (same as StudySession.dayOfWeek)
         dateNumber: d.getDate(),
         monthName: d.toLocaleDateString('en-US', { month: 'short' }),
         isToday
@@ -46,9 +47,16 @@ export const CalendarPage: React.FC = () => {
     return `${first.monthName} ${first.dateNumber} – ${last.monthName} ${last.dateNumber}`;
   }, [weekDays]);
 
+  const clashing = useMemo(() => clashingIds(sessions), [sessions]);
+  const timesInvalid = toMinutes(endTime) <= toMinutes(startTime);
+  const newClashes = useMemo(
+    () => (timesInvalid ? [] : findClashes(sessions, { dayOfWeek, startTime, endTime })),
+    [sessions, dayOfWeek, startTime, endTime, timesInvalid]
+  );
+
   const handleAddSession = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !course) return;
+    if (!title || !course || timesInvalid) return;
 
     addSession({
       title,
@@ -149,7 +157,9 @@ export const CalendarPage: React.FC = () => {
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark shadow-2xs overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 min-h-[500px]">
           {weekDays.map((day) => {
-            const daySessions = sessions.filter((s) => s.dayOfWeek === day.dayNumber);
+            const daySessions = sessions
+              .filter((s) => s.dayOfWeek === day.dayNumber)
+              .sort((a, b) => toMinutes(a.startTime) - toMinutes(b.startTime));
 
             return (
               <div
@@ -211,6 +221,9 @@ export const CalendarPage: React.FC = () => {
                               {session.startTime} - {session.endTime}
                             </span>
                           </div>
+                          {clashing.has(session.id) && (
+                            <p className="mt-1 text-xs font-medium text-amber-800 dark:text-amber-300">Clashes with another block</p>
+                          )}
                         </div>
                       ))
                     )}
@@ -290,7 +303,7 @@ export const CalendarPage: React.FC = () => {
                     className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
                   >
                     {DAYS.map((d, i) => (
-                      <option key={d} value={i + 1}>
+                      <option key={d} value={(i + 1) % 7}>
                         {d}
                       </option>
                     ))}
@@ -344,6 +357,17 @@ export const CalendarPage: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {timesInvalid && (
+                <p role="alert" className="text-xs font-medium text-rose-700 dark:text-rose-300">
+                  The end time must be after the start time.
+                </p>
+              )}
+              {newClashes.length > 0 && (
+                <p role="status" className="text-xs rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 px-3 py-2">
+                  This clashes with {newClashes.map((c) => `${c.title} (${c.startTime}-${c.endTime})`).join(', ')}. You can still add it.
+                </p>
+              )}
 
               <div className="pt-2 flex justify-end gap-2 border-t border-zinc-100 dark:border-zinc-800">
                 <button

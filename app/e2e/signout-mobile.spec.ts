@@ -19,7 +19,8 @@ test('on a phone, a signed-in student can open Account and sign out', async ({ b
   await popup.waitForEvent('close').catch(() => undefined);
   await page.waitForFunction(() => (window as unknown as W).__store.getState().isAnonymous === false);
 
-  // The header offers Account (the sidebar is hidden at this width).
+  // The header shows the student's picture (the sidebar is hidden at this width); it opens the account menu.
+  await page.getByRole('button', { name: 'Account menu' }).click();
   await page.getByRole('button', { name: 'Your account', exact: true }).click();
   await expect(page.getByRole('dialog')).toContainText('Saved to your account');
   await page.evaluate(() => ((window as unknown as { __reloadMarker?: boolean }).__reloadMarker = true));

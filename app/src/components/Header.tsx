@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import {
   Sun,
   Moon,
-  LogIn,
   Plus,
   Search,
   Command,
   HelpCircle
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { signInOrLinkWithGoogle } from '../lib/authActions';
+import { AccountMenu } from './AccountMenu';
 import { Avatar } from './Avatar';
 import { SignInButton } from './SignInButton';
 
@@ -29,7 +28,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenHelp 
 }) => {
   const { theme, toggleTheme, isAnonymous, isSyncing, activeTab, user, userPhotoUrl, customPhotoUrl } = useStudyFlowStore();
-  const [isLinking, setIsLinking] = useState(false);
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
   useEffect(() => {
@@ -42,17 +40,6 @@ export const Header: React.FC<HeaderProps> = ({
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
-
-  const handleLinkGoogle = async () => {
-    try {
-      setIsLinking(true);
-      await signInOrLinkWithGoogle();
-    } catch (err) {
-      console.error('Google linking error:', err);
-    } finally {
-      setIsLinking(false);
-    }
-  };
 
   const getPageTitle = () => {
     switch (activeTab) {
@@ -99,7 +86,8 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Theme Toggle Button for Mobile */}
+          {/* Theme Toggle Button for Mobile (signed-in students have it in the account menu) */}
+          {isAnonymous && (
           <button
             type="button"
             onClick={toggleTheme}
@@ -109,9 +97,10 @@ export const Header: React.FC<HeaderProps> = ({
           >
             {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </button>
+          )}
 
-          {/* Student Profile Quick Access for Mobile */}
-          {onOpenProfile && (
+          {/* Guest profile quick access for mobile (signed-in students use the account menu) */}
+          {isAnonymous && onOpenProfile && (
             <button
               type="button"
               onClick={onOpenProfile}
@@ -150,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Help & Playbook Guide */}
-          {onOpenHelp && (
+          {isAnonymous && onOpenHelp && (
             <button
               type="button"
               onClick={onOpenHelp}
@@ -166,19 +155,7 @@ export const Header: React.FC<HeaderProps> = ({
           {isAnonymous ? (
             <SignInButton variant="header" />
           ) : (
-            <button
-              onClick={() => {
-                if (onOpenBackup) onOpenBackup();
-                else handleLinkGoogle();
-              }}
-              disabled={isLinking}
-              aria-label="Your account"
-              title="Your account"
-              className="flex items-center justify-center gap-1.5 px-3 min-h-[44px] min-w-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium transition-colors disabled:opacity-60 cursor-pointer"
-            >
-              <LogIn className="h-3.5 w-3.5 text-blue-600" />
-              <span className="hidden md:inline">{isLinking ? 'Signing in…' : 'Account'}</span>
-            </button>
+            <AccountMenu placement="down" onOpenProfile={onOpenProfile} onOpenBackup={onOpenBackup} onOpenHelp={onOpenHelp} />
           )}
 
           {/* Global Add Task Quick Button */}

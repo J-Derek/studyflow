@@ -80,9 +80,19 @@ state kept as timestamps so refresh and tab switches stay exact), Grades (GPA, w
 profile (picture, semester dates, time zone), sign in with Google (guest data is merged and never lost), sidebar that
 collapses, profile photos, privacy note in Help, backups (export and restore), keyboard and screen-reader basics (axe-clean).
 
-**Built but NOT merged yet:** branch `notes-tab` (commit `c8c2ac8`): the Notes tab (typed notes by course, pinned, searchable,
-clickable links, undo, syncs, in backups). Its Firestore rules are **already deployed** (Derek deployed from the working
-folder) but the app code that uses them is not live until that branch is merged and `vercel --prod` is run.
+Notes tab (typed notes by course, pinned, searchable, clickable links, undo, syncs, in backups): merged as PR #8.
+
+**Built on branch `reminders-account-notes`, NOT merged yet** (needs Derek: merge, then `vercel --prod`; no Firestore rules change):
+- Deadline reminders: the `.ics` export now also contains open assignment deadlines (timed event or all-day) with two
+  alarms each. It is a one-time file, so students re-import after changing deadlines.
+- Account popover: signed-in students see only their picture (sidebar bottom-left and header top-right); clicking it opens
+  details, Edit profile, Your account, theme, Help and Sign out (`components/AccountMenu.tsx`). Guests keep the sign-in button.
+- Timetable: a warning (not a block) when a new block clashes with an existing one, a clash mark on cards, end must be
+  after start. Fixed a bug: Sunday blocks were saved as day 7, which the cloud rules and `.ics` export reject; Sunday is
+  now 0 and old local 7s are converted on load.
+- Notes: full-screen reader, and PDFs attached to a note that stay on the device only (`lib/localFiles.ts`, IndexedDB,
+  25 MB each, PDF header checked). They do not sync, and are deleted on sign-out or account switch and when a note's undo
+  window passes.
 
 ## 7. Where things live in the code
 
@@ -114,11 +124,11 @@ folder) but the app code that uses them is not live until that branch is merged 
 
 ## 9. Open items and ideas (see also `docs/LATER.md`)
 
-1. Merge `notes-tab` and ship it. (Needs Derek.)
+1. Merge `reminders-account-notes` and ship it. (Needs Derek.)
 2. Reminders: calendar alarms in the `.ics` export for deadlines (no backend), then optional in-app banners.
    Real push notifications need the paid Firebase plan plus a scheduled function.
-3. Notes file uploads (PDF, slides): needs Firebase Storage, which needs the paid Blaze plan; the cheaper alternative is
-   Google Drive links (already clickable in notes). Decide after students use typed notes.
+3. Notes files that sync across devices (PDF, slides): needs Firebase Storage (paid Blaze plan). PDFs on this device only
+   are built; slides (pptx) and images are not supported yet; Drive links work in notes. Decide after students use it.
 4. Delete my account: the Help note says it is not built. Focus sessions cannot be deleted under the current rules, so a
    rules change is needed first.
 5. Timer lengths and sound choices are per device (not synced). Custom grading weights sync; timer settings do not.

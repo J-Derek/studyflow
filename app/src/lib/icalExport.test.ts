@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import ICAL from 'ical.js';
 import { escapeIcsText, foldLine, generateICalendarFeed } from './icalExport';
-import type { StudySession } from '../types';
+import type { Assignment, StudySession } from '../types';
 
 const lecture = (over: Partial<StudySession> = {}): StudySession => ({
   id: 's1', title: 'Algorithms', course: 'CS 301', dayOfWeek: 0, startTime: '09:00', endTime: '10:30', type: 'lecture', ...over
@@ -109,5 +109,43 @@ describe('round trip through a real parser (ical.js)', () => {
     let count = 0;
     while (it.next() && count < 20) count++;
     expect(count).toBe(3); // Mar 1, 8, 15
+  });
+});
+
+const deadline = (over: Partial<Assignment> = {}): Assignment => ({
+  id: 'a1', title: 'Essay', course: 'ENG 101', dueDate: '2026-03-10', priority: 'high', status: 'pending',
+  progress: 0, createdAt: '2026-02-01T00:00:00.000Z', ...over
+});
+
+describe('deadline reminders', () => {
+  const opts = { timeZone: 'Africa/Nairobi', semesterStart: '2026-03-01', semesterEnd: '2026-06-30', now: NOW };
+
+  it('exports a timed deadline with a day-before and an hour-before alarm', () => {
+    const ics = generateICalendarFeed([], { ...opts, assignments: [deadline({ dueTime: '14:00' })] });
+    expect(ics).toContain('UID:a-a1@studyflow.app');
+    expect(ics).toContain('DTSTART;TZID=Africa/Nairobi:20260310T140000');
+    expect(ics).toContain('DTEND;TZID=Africa/Nairobi:20260310T143000');
+    expect(ics).toContain('TRIGGER:-P1D');
+    expect(ics).toContain('TRIGGER:-PT1H');
+    const { events } = parse(ics);
+    expect(events[0].summary).toBe('Due: Essay (ENG 101)');
+  });
+  it('exports an all-day deadline when there is no due time', () => {
+    const ics = generateICalendarFeed([], { ...opts, assignments: [deadline()] });
+    expect(ics).toContain('DTSTART;VALUE=DATE:20260310');
+    expect(ics).toContain('DTEND;VALUE=DATE:20260311');
+    expect(ics).toContain('TRIGGER:-PT15H');
+    expect(ics).toContain('TRIGGER:PT8H');
+    expect(parse(ics).events).toHaveLength(1);
+  });
+  it('skips completed and sample assignments', () => {
+    const ics = generateICalendarFeed([], { ...opts, assignments: [deadline({ status: 'completed' }), deadline({ id: 'a2', sample: true })] });
+    expect(ics).not.toContain('BEGIN:VEVENT');
+  });
+  it('covers a deadline outside the semester with a timezone and keeps lines short', () => {
+    const ics = generateICalendarFeed([], { ...opts, assignments: [deadline({ dueDate: '2026-09-01', dueTime: '09:00' })] });
+    expect(ics).toContain('BEGIN:VTIMEZONE');
+    for (const l of ics.split('\r\n')) expect(new TextEncoder().encode(l).length).toBeLessThanOrEqual(75);
+    expect(parse(ics).events).toHaveLength(1);
   });
 });
