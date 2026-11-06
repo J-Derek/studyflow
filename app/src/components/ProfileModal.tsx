@@ -1,6 +1,6 @@
 import { useDialog } from '../lib/useDialog';
 import React, { useState, useEffect } from 'react';
-import { X, User, Building2, BookOpen, Calendar, Check, Camera, Sun, Moon, HelpCircle } from 'lucide-react';
+import { X, User, Building2, BookOpen, Calendar, Check, Camera, Sun, Moon, Monitor, HelpCircle } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { Avatar } from './Avatar';
 import { resizeImageToDataUrl } from '../utils/imageResize';
@@ -12,7 +12,7 @@ interface ProfileModalProps {
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onOpenHelp }) => {
-  const { user, updateUser, isAnonymous, userPhotoUrl, customPhotoUrl, setCustomPhoto, theme, setTheme } = useStudyFlowStore();
+  const { user, updateUser, isAnonymous, userPhotoUrl, customPhotoUrl, setCustomPhoto, theme, themeMode, setTheme, setThemeMode } = useStudyFlowStore();
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [name, setName] = useState(user.name);
   const [university, setUniversity] = useState(user.university);
@@ -148,6 +148,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
             <span>{theme === 'dark' ? 'Use light theme' : 'Use dark theme'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setThemeMode('system')}
+            aria-pressed={themeMode === 'system'}
+            className="inline-flex items-center gap-2 min-h-[44px] px-3 rounded-lg border border-zinc-300 dark:border-zinc-600 text-sm font-medium text-zinc-800 dark:text-zinc-100 cursor-pointer aria-pressed:bg-zinc-100 dark:aria-pressed:bg-zinc-800"
+          >
+            <Monitor className="h-4 w-4" aria-hidden="true" />
+            <span>{themeMode === 'system' ? 'Matching my device' : 'Match my device'}</span>
           </button>
           {onOpenHelp && (
             <button

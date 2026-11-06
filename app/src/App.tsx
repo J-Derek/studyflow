@@ -19,7 +19,7 @@ const GradesPage = lazy(() => import('./pages/Grades').then((m) => ({ default: m
 const NotesPage = lazy(() => import('./pages/Notes').then((m) => ({ default: m.NotesPage })));
 
 export function App() {
-  const { activeTab, theme } = useStudyFlowStore();
+  const { activeTab, theme, themeMode, setThemeMode } = useStudyFlowStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
@@ -58,6 +58,15 @@ export function App() {
     meta.content = isDark ? '#090A0C' : '#F8F9FA';
     document.head.appendChild(meta);
   }, [theme]);
+
+  // In "match my device" mode, follow the device when it switches between light and dark.
+  useEffect(() => {
+    if (themeMode !== 'system' || typeof window.matchMedia !== 'function') return;
+    const query = window.matchMedia('(prefers-color-scheme: dark)');
+    const follow = () => setThemeMode('system');
+    query.addEventListener('change', follow);
+    return () => query.removeEventListener('change', follow);
+  }, [themeMode, setThemeMode]);
 
   // Global keyboard shortcut for Command Palette (⌘K / Ctrl+K)
   useEffect(() => {

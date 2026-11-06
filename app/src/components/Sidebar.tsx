@@ -8,6 +8,7 @@ import {
   Cloud,
   Sun,
   Moon,
+  Monitor,
   Award,
   NotebookPen,
   PanelLeftClose,
@@ -40,7 +41,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, o
     userPhotoUrl,
     customPhotoUrl,
     theme,
-    setTheme
+    themeMode,
+    setTheme,
+    setThemeMode
   } = useStudyFlowStore();
   const [isAuthLoading, setIsAuthLoading] = useState(false);
 
@@ -125,25 +128,39 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, o
               onClick={() => setTheme('light')}
               className={cn(
                 'flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium transition-colors duration-150',
-                theme === 'light'
+                themeMode === 'light'
                   ? 'bg-surface-light text-zinc-900 shadow-2xs border border-zinc-200/60'
                   : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
               )}
             >
-              <Sun className={cn('h-3 w-3', theme === 'light' ? 'text-amber-500 fill-amber-500' : 'text-zinc-600 dark:text-zinc-400')} />
+              <Sun className={cn('h-3 w-3', themeMode === 'light' ? 'text-amber-500 fill-amber-500' : 'text-zinc-600 dark:text-zinc-400')} />
               <span>Light</span>
             </button>
             <button
               onClick={() => setTheme('dark')}
               className={cn(
                 'flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium transition-colors duration-150',
-                theme === 'dark'
+                themeMode === 'dark'
                   ? 'bg-zinc-900 text-zinc-100 shadow-2xs border border-zinc-700/80'
                   : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
               )}
             >
-              <Moon className={cn('h-3 w-3', theme === 'dark' ? 'text-blue-400 fill-blue-400' : 'text-zinc-600 dark:text-zinc-400')} />
+              <Moon className={cn('h-3 w-3', themeMode === 'dark' ? 'text-blue-400 fill-blue-400' : 'text-zinc-600 dark:text-zinc-400')} />
               <span>Dark</span>
+            </button>
+            <button
+              onClick={() => setThemeMode('system')}
+              aria-pressed={themeMode === 'system'}
+              title="Match this device's light or dark setting"
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium transition-colors duration-150',
+                themeMode === 'system'
+                  ? 'bg-surface-light dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs border border-zinc-200/60 dark:border-zinc-700/80'
+                  : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+              )}
+            >
+              <Monitor className="h-3 w-3" />
+              <span>Device</span>
             </button>
           </div>
         )}

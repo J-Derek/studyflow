@@ -29,6 +29,7 @@ import {
 } from '../services/cloud';
 import { calculateSubtaskProgress } from '../utils/subtasks';
 import { syncThemeColor } from '../utils/themeColor';
+import { readSavedMode, resolveTheme, saveMode, systemPrefersDark, type ThemeMode } from '../utils/themePreference';
 import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 import { clampScore } from '../utils/academicCalculations';
@@ -87,9 +88,13 @@ interface StudyFlowState {
   setActiveTab: (tab: NavigationTab) => void;
 
   // Theme Mode
+  /** The theme being shown right now. */
   theme: 'light' | 'dark';
+  /** What the student chose: light, dark, or "system" (match the device, and follow it when it changes). */
+  themeMode: ThemeMode;
   toggleTheme: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
+  setThemeMode: (mode: ThemeMode) => void;
 
   // Assignments
   assignments: Assignment[];
@@ -355,19 +360,32 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         }
       },
 
-      theme: 'light',
+      // The choice is kept per device in its own entry, so signing out does not reset it.
+      themeMode: readSavedMode() ?? 'light',
+      theme: resolveTheme(readSavedMode() ?? 'light', systemPrefersDark()),
       toggleTheme: () => {
         set((state) => {
           const next = state.theme === 'light' ? 'dark' : 'light';
+          saveMode(next);
           if (typeof document !== 'undefined') {
             document.documentElement.classList.toggle('dark', next === 'dark');
             syncThemeColor(next === 'dark');
           }
-          return { theme: next };
+          return { theme: next, themeMode: next };
         });
       },
+      setThemeMode: (mode) => {
+        const theme = resolveTheme(mode, systemPrefersDark());
+        set({ themeMode: mode, theme });
+        saveMode(mode);
+        if (typeof document !== 'undefined') {
+          document.documentElement.classList.toggle('dark', theme === 'dark');
+          syncThemeColor(theme === 'dark');
+        }
+      },
       setTheme: (theme) => {
-        set({ theme });
+        set({ theme, themeMode: theme });
+        saveMode(theme);
         if (typeof document !== 'undefined') {
           document.documentElement.classList.toggle('dark', theme === 'dark');
           syncThemeColor(theme === 'dark');
@@ -829,6 +847,15 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (!state) return;
         // Older saves only counted blocks; estimate their minutes at the old fixed 25.
         if (typeof state.focusMinutes !== 'number') state.focusMinutes = (state.pomodorosCompleted ?? 0) * 25;
+        // Before "match my device" existed the theme lived only in the saved data. Keep that choice.
+        const savedMode = readSavedMode();
+        if (savedMode === null) {
+          state.themeMode = state.theme === 'dark' ? 'dark' : 'light';
+          saveMode(state.themeMode);
+        } else {
+          state.themeMode = savedMode;
+          state.theme = resolveTheme(savedMode, systemPrefersDark());
+        }
         // Earlier builds seeded demo rows as the student's own data. Flag them so they are labelled
         // and excluded from GPA, backups and exports.
         state.assignments = (state.assignments ?? []).map((x) => (isLegacySeedId('assignment', x.id) ? { ...x, sample: true } : x));

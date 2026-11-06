@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { Cloud, HelpCircle, LogOut, Moon, Sun, UserRound } from 'lucide-react';
+import { Cloud, HelpCircle, LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { signOutUser } from '../lib/authActions';
 import { cn } from '../utils/formatters';
@@ -23,7 +23,7 @@ const itemClass =
  * sign-in button.
  */
 export const AccountMenu: React.FC<AccountMenuProps> = ({ onOpenProfile, onOpenBackup, onOpenHelp, placement, className }) => {
-  const { user, userEmail, userPhotoUrl, customPhotoUrl, theme, setTheme } = useStudyFlowStore();
+  const { user, userEmail, userPhotoUrl, customPhotoUrl, themeMode, setThemeMode } = useStudyFlowStore();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -123,21 +123,22 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onOpenProfile, onOpenB
           </button>
 
           <div className="flex items-center gap-1 p-0.5 my-1 rounded-lg bg-zinc-100 dark:bg-zinc-800/90 border border-zinc-200/80 dark:border-zinc-700/80" role="group" aria-label="Theme">
-            {(['light', 'dark'] as const).map((t) => (
+            {(['light', 'dark', 'system'] as const).map((t) => (
               <button
                 key={t}
                 type="button"
-                aria-pressed={theme === t}
-                onClick={() => setTheme(t)}
+                aria-pressed={themeMode === t}
+                title={t === 'system' ? "Match this device's light or dark setting" : undefined}
+                onClick={() => setThemeMode(t)}
                 className={cn(
                   'flex-1 flex items-center justify-center gap-1.5 min-h-[36px] rounded-md text-xs font-medium transition-colors cursor-pointer',
-                  theme === t
+                  themeMode === t
                     ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs border border-zinc-200/60 dark:border-zinc-700/80'
                     : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
                 )}
               >
-                {t === 'light' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-                {t === 'light' ? 'Light' : 'Dark'}
+                {t === 'light' ? <Sun className="h-3.5 w-3.5" /> : t === 'dark' ? <Moon className="h-3.5 w-3.5" /> : <Monitor className="h-3.5 w-3.5" />}
+                {t === 'light' ? 'Light' : t === 'dark' ? 'Dark' : 'Device'}
               </button>
             ))}
           </div>
