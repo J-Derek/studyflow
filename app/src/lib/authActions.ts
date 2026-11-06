@@ -22,6 +22,7 @@ export function friendlyAuthMessage(err: unknown): string | null {
 }
 
 export const signInOrLinkWithGoogle = () => import('./auth').then((m) => m.signInOrLinkWithGoogle());
+export const warmUpGoogleSignIn = () => import('./auth').then((m) => m.warmUpGoogleSignIn());
 export const signOutUser = () => import('./auth').then((m) => m.signOutUser());
 export const startAuthSessionLazy = (): (() => void) => {
   let stop: (() => void) | null = null;
