@@ -1,7 +1,8 @@
 import { useDialog } from '../lib/useDialog';
 import React, { useEffect, useState } from 'react';
-import { X, Download, Upload, CheckCircle2, AlertTriangle, Database, Copy } from 'lucide-react';
+import { X, Download, Upload, AlertTriangle, Database, Copy } from 'lucide-react';
 import { GoogleIcon } from './GoogleIcon';
+import { Avatar } from './Avatar';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { friendlyAuthMessage, signInOrLinkWithGoogle, signOutUser, warmUpGoogleSignIn } from '../lib/authActions';
 import { MAX_BACKUP_BYTES, validateBackupJson } from '../utils/backupValidator';
@@ -13,7 +14,7 @@ interface BackupModalProps {
 }
 
 export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
-  const { assignments, sessions, grades, isAnonymous, userEmail } = useStudyFlowStore();
+  const { assignments, sessions, grades, isAnonymous, userEmail, userPhotoUrl, user } = useStudyFlowStore();
   const [authError, setAuthError] = useState<string | null>(null);
   const [isLinking, setIsLinking] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -179,9 +180,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
             <div className="space-y-2">
             <div className="p-3 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                <Avatar name={user.name} photoUrl={userPhotoUrl} className="h-9 w-9" />
                 <div>
-                  <p className="text-xs font-medium text-emerald-900 dark:text-emerald-100">Signed in with Google</p>
+                  <p className="text-xs font-medium text-emerald-900 dark:text-emerald-100">{user.name}</p>
                   <p className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400">{userEmail}</p>
                 </div>
               </div>

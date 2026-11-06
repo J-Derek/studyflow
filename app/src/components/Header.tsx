@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { signInOrLinkWithGoogle } from '../lib/authActions';
+import { Avatar } from './Avatar';
 
 interface HeaderProps {
   onOpenAddModal?: () => void;
@@ -26,7 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenProfile,
   onOpenHelp 
 }) => {
-  const { theme, toggleTheme, isAnonymous, isSyncing, activeTab, user } = useStudyFlowStore();
+  const { theme, toggleTheme, isAnonymous, isSyncing, activeTab, user, userPhotoUrl } = useStudyFlowStore();
   const [isLinking, setIsLinking] = useState(false);
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
@@ -113,9 +114,9 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onOpenProfile}
               title={`Profile (${user.name})`}
               aria-label="Edit profile"
-              className="flex md:hidden items-center justify-center min-h-[44px] min-w-[44px] p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 tabular-nums font-semibold text-xs"
+              className="flex md:hidden items-center justify-center min-h-[44px] min-w-[44px] p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700"
             >
-              {isAnonymous ? 'G' : user.name.split(' ').map((n) => n[0]).join('')}
+              <Avatar name={user.name} photoUrl={userPhotoUrl} isGuest={isAnonymous} className="h-8 w-8" />
             </button>
           )}
 

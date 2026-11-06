@@ -51,8 +51,9 @@ interface StudyFlowState {
   dataOwnerUid: string | null;
   isAnonymous: boolean;
   userEmail: string | null;
+  userPhotoUrl: string | null;
   isSyncing: boolean;
-  setAuthUser: (uid: string | null, isAnonymous: boolean, email?: string | null, displayName?: string | null) => void;
+  setAuthUser: (uid: string | null, isAnonymous: boolean, email?: string | null, displayName?: string | null, photoUrl?: string | null) => void;
   resetStore: () => void;
 
   // User Profile
@@ -148,13 +149,15 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       dataOwnerUid: null,
       isAnonymous: true,
       userEmail: null,
+      userPhotoUrl: null,
       isSyncing: false,
-      setAuthUser: (uid, isAnonymous, email, displayName) => {
+      setAuthUser: (uid, isAnonymous, email, displayName, photoUrl) => {
         set((state) => ({
           userId: uid,
           dataOwnerUid: uid,
           isAnonymous,
           userEmail: email || null,
+          userPhotoUrl: photoUrl || null,
           user: {
             ...state.user,
             name: displayName || state.user.name
@@ -168,6 +171,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           dataOwnerUid: null,
           isAnonymous: true,
           userEmail: null,
+          userPhotoUrl: null,
           isSyncing: false,
           assignments: [],
           sessions: [],

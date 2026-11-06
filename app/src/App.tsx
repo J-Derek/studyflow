@@ -22,6 +22,23 @@ export function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
+  // The sidebar can shrink to an icon rail; the choice is remembered on this device.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('studyflow_sidebar_collapsed') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleSidebar = () =>
+    setSidebarCollapsed((v) => {
+      try {
+        localStorage.setItem('studyflow_sidebar_collapsed', v ? '0' : '1');
+      } catch {
+        /* storage unavailable */
+      }
+      return !v;
+    });
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
@@ -79,6 +96,8 @@ export function App() {
       <Sidebar
         onOpenBackup={() => setIsBackupOpen(true)}
         onOpenProfile={() => setIsProfileOpen(true)}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={toggleSidebar}
       />
 
       {/* Main App Content Area */}
