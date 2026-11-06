@@ -8,8 +8,8 @@ test('a blocked Google pop-up shows a message and does not reload the app', asyn
     (window as unknown as { __reloadMarker?: boolean }).__reloadMarker = true;
     window.open = () => null;
   });
-  await page.getByRole('button', { name: 'Backup and sync your data' }).click();
-  await page.getByRole('button', { name: /Link Google Account/ }).click();
+  await page.getByRole('button', { name: 'Sign in to keep your data' }).click();
+  await page.getByRole('button', { name: /Continue with Google/ }).click();
 
   await expect(page.getByText(/blocked the Google sign-in window/i)).toBeVisible({ timeout: 10_000 });
   // still the same document: no reload happened

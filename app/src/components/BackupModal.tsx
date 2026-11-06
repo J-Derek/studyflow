@@ -1,6 +1,7 @@
 import { useDialog } from '../lib/useDialog';
 import React, { useState } from 'react';
-import { X, Download, Upload, Cloud, CheckCircle2, AlertTriangle, Database, Copy } from 'lucide-react';
+import { X, Download, Upload, CheckCircle2, AlertTriangle, Database, Copy } from 'lucide-react';
+import { GoogleIcon } from './GoogleIcon';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { friendlyAuthMessage, signInOrLinkWithGoogle } from '../lib/authActions';
 import { MAX_BACKUP_BYTES, validateBackupJson } from '../utils/backupValidator';
@@ -105,72 +106,35 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
             </div>
             <div>
               <h2 id="backup-modal-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                Backup and sync
+                Sign in and back up
               </h2>
-              <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">System Design: Zero lock-in, client-first portability</p>
+              <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">Keep your plan on every device</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close backup"
+            aria-label="Close"
             className="p-2 rounded-md text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Section 1: Offline Local JSON Portability */}
+        {/* First: sign in with Google */}
         <div className="space-y-3">
           <h3 className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 tabular-nums">
-            Back up to a file (JSON)
-          </h3>
-          <p className="text-xs text-zinc-600 dark:text-zinc-400">
-            Export a standalone, human-readable snapshot of all assignments, milestones, course syllabi, and GPA records.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <button
-              onClick={handleExportJSON}
-              className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-medium shadow-2xs transition active:scale-95"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span>Export JSON Data</span>
-            </button>
-
-            <label className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-medium cursor-pointer transition active:scale-95">
-              <Upload className="h-3.5 w-3.5" />
-              <span>Restore from Backup</span>
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleImportJSON}
-                className="hidden"
-              />
-            </label>
-          </div>
-
-          {importStatus && (
-            <p className="text-xs tabular-nums text-center text-blue-600 dark:text-blue-400">
-              {importStatus}
-            </p>
-          )}
-        </div>
-
-        {/* Section 2: Multi-Device Cloud Sync */}
-        <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
-          <h3 className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 tabular-nums">
-            Multi-Device Cloud Synchronization
+            Sign in to keep your plan on every device
           </h3>
 
           {isAnonymous ? (
             <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-850 border border-zinc-200/70 dark:border-zinc-800 space-y-2">
               <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 text-xs">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                <span>Currently running in local guest session.</span>
+                <span>You are using StudyFlow as a guest.</span>
               </div>
               <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                Link your Google account to mirror your study plan across phone, tablet, and laptop with zero data loss.
+                Sign in with Google to see your deadlines on your phone and laptop, and to keep them if you clear this browser.
               </p>
               {inAppBrowser() ? (
                 <div className="space-y-2 pt-1">
@@ -196,10 +160,10 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
                 <button
                   onClick={handleGoogleAuth}
                   disabled={isLinking}
-                  className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium shadow-2xs transition disabled:opacity-60"
+                  className="w-full min-h-[44px] flex items-center justify-center gap-2.5 py-2 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-surface-light dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-100 text-sm font-medium shadow-2xs transition disabled:opacity-60 cursor-pointer"
                 >
-                  <Cloud className="h-3.5 w-3.5" />
-                  <span>{isLinking ? 'Linking Google Account...' : 'Link Google Account'}</span>
+                  <GoogleIcon className="h-[18px] w-[18px]" />
+                  <span>{isLinking ? 'Opening Google…' : 'Continue with Google'}</span>
                 </button>
               )}
               {authError && (
@@ -211,7 +175,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                 <div>
-                  <p className="text-xs font-medium text-emerald-900 dark:text-emerald-100">Cloud Sync Active</p>
+                  <p className="text-xs font-medium text-emerald-900 dark:text-emerald-100">Signed in with Google</p>
                   <p className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400">{userEmail}</p>
                 </div>
               </div>
@@ -219,6 +183,43 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
                 Auto-Save
               </span>
             </div>
+          )}
+        </div>
+
+        {/* Second: save a copy to a file */}
+        <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+          <h3 className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 tabular-nums">
+            Or save a copy to a file
+          </h3>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">
+            Download everything as one file you can keep, or restore from one.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button
+              onClick={handleExportJSON}
+              className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-medium shadow-2xs transition active:scale-95"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Download my data</span>
+            </button>
+
+            <label className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-medium cursor-pointer transition active:scale-95">
+              <Upload className="h-3.5 w-3.5" />
+              <span>Restore from a file</span>
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleImportJSON}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {importStatus && (
+            <p className="text-xs tabular-nums text-center text-blue-600 dark:text-blue-400">
+              {importStatus}
+            </p>
           )}
         </div>
       </div>

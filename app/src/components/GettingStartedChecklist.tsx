@@ -60,8 +60,8 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
     },
     {
       id: 'step-backup',
-      title: 'Secure your data',
-      desc: 'Link Google or save a local recovery JSON file',
+      title: 'Sign in to keep your data',
+      desc: 'Use Google so your deadlines follow you to other devices',
       completed: !isAnonymous,
       icon: ShieldCheck,
       action: () => {

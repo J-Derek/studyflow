@@ -166,12 +166,12 @@ export const Header: React.FC<HeaderProps> = ({
                 else handleLinkGoogle();
               }}
               disabled={isLinking}
-              aria-label="Backup and sync your data"
-              title="Backup and sync your data"
+              aria-label="Sign in to keep your data"
+              title="Sign in to keep your data"
               className="flex items-center justify-center gap-1.5 px-3 min-h-[44px] min-w-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium transition-colors disabled:opacity-60 cursor-pointer"
             >
               <LogIn className="h-3.5 w-3.5 text-blue-600" />
-              <span className="hidden md:inline">{isLinking ? 'Linking...' : 'Backup'}</span>
+              <span className="hidden md:inline">{isLinking ? 'Signing in…' : 'Sign in'}</span>
             </button>
           )}
 

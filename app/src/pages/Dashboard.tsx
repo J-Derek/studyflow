@@ -78,7 +78,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <p>Your assignments are saved to a guest account. Sign in with Google so you keep them if you clear this browser or switch phones.</p>
           <div className="flex items-center gap-2 shrink-0">
             {onOpenBackup && (
-              <button type="button" onClick={onOpenBackup} className="px-3 py-1.5 min-h-[44px] rounded-md bg-amber-900 dark:bg-amber-200 text-white dark:text-amber-950 font-medium text-xs cursor-pointer">Back up now</button>
+              <button type="button" onClick={onOpenBackup} className="px-3 py-1.5 min-h-[44px] rounded-md bg-amber-900 dark:bg-amber-200 text-white dark:text-amber-950 font-medium text-xs cursor-pointer">Sign in with Google</button>
             )}
             <button type="button" onClick={dismissGuestNotice} className="px-3 py-1.5 min-h-[44px] rounded-md text-xs font-medium cursor-pointer hover:underline">Not now</button>
           </div>

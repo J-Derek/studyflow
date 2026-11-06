@@ -196,10 +196,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile })
             }}
             disabled={isAuthLoading}
             className="text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1 disabled:opacity-50"
-            title="Open Data Portability & Cloud Sync"
+            title={isAnonymous ? 'Sign in to keep your data' : 'Your account'}
           >
             <Cloud className="h-3 w-3" />
-            <span>{isAnonymous ? 'Back up' : 'Account'}</span>
+            <span>{isAnonymous ? 'Sign in' : 'Account'}</span>
           </button>
         </div>
       </div>
