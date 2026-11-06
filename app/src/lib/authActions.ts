@@ -14,6 +14,8 @@ export function friendlyAuthMessage(err: unknown): string | null {
       return 'Your browser blocked the Google sign-in window. Allow pop-ups for this site, then try again.';
     case 'auth/operation-not-supported-in-this-environment':
       return 'This browser cannot open Google sign-in. Open StudyFlow in Chrome or Safari and try again.';
+    case 'auth/merge-failed':
+      return 'You are signed in, but your guest records could not be moved yet. They are safe on this device and will be moved the next time you open StudyFlow with a connection.';
     case 'auth/network-request-failed':
       return 'No connection. Check your internet and try again.';
     default:

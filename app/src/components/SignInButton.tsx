@@ -60,8 +60,8 @@ export const SignInButton: React.FC<SignInButtonProps> = ({ variant = 'block', c
         <GoogleIcon className="h-[18px] w-[18px] shrink-0" />
         {variant === 'header' ? (
           <>
-            <span className="sm:hidden">{busy ? 'Opening…' : 'Sign in'}</span>
-            <span className="hidden sm:inline">{busy ? 'Opening Google…' : 'Sign in with Google'}</span>
+            <span className="xl:hidden">{busy ? 'Opening…' : 'Sign in'}</span>
+            <span className="hidden xl:inline">{busy ? 'Opening Google…' : 'Sign in with Google'}</span>
           </>
         ) : (
           <span>{busy ? 'Opening Google…' : 'Sign in with Google'}</span>

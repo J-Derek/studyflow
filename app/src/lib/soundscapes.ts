@@ -7,7 +7,7 @@ import type { SoundscapeType } from '../types';
 
 let audioCtx: AudioContext | null = null;
 let activeNodes: AudioNode[] = [];
-let activeTimers: number[] = [];
+let activeLoops: Array<{ id: number }> = [];
 let gainNode: GainNode | null = null;
 let activeSoundscape: SoundscapeType = 'off';
 const noiseBufferCache = new Map<'pink' | 'brown' | 'white', AudioBuffer>();
@@ -119,11 +119,14 @@ const rand = (a: number, b: number) => a + Math.random() * (b - a);
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]!;
 
 function every(fn: () => void, minMs: number, maxMs: number): void {
+  // One slot per loop, updated in place, so a long session does not collect thousands of timer ids.
+  const slot = { id: 0 };
+  activeLoops.push(slot);
   const loop = () => {
     fn();
-    activeTimers.push(window.setTimeout(loop, rand(minMs, maxMs)));
+    slot.id = window.setTimeout(loop, rand(minMs, maxMs));
   };
-  activeTimers.push(window.setTimeout(loop, rand(minMs, maxMs) * 0.3));
+  slot.id = window.setTimeout(loop, rand(minMs, maxMs) * 0.3);
 }
 
 /** A slow oscillator that gently moves an audio parameter. */
@@ -279,12 +282,21 @@ function startPad(ctx: AudioContext, out: AudioNode): void {
         lp.connect(wet);
         osc.start(t);
         osc.stop(t + hold + 0.1);
-        activeNodes.push(osc, g, lp);
+        // Each note frees itself when it ends instead of staying referenced for the whole session.
+        osc.onended = () => {
+          try {
+            osc.disconnect();
+            g.disconnect();
+            lp.disconnect();
+          } catch {
+            /* already gone */
+          }
+        };
       }
     }
   };
   play();
-  activeTimers.push(window.setInterval(play, 12000));
+  activeLoops.push({ id: window.setInterval(play, 12000) });
 }
 
 /** Soft piano-like notes from a pentatonic scale, spaced out so it never becomes a tune you must follow. */
@@ -398,15 +410,15 @@ export function setSoundscapeVolume(volume: number): void {
 
 export function stopSoundscape(): void {
   const nodesToStop = [...activeNodes];
-  const timers = [...activeTimers];
+  const loops = [...activeLoops];
   const oldGain = gainNode;
   activeNodes = [];
-  activeTimers = [];
+  activeLoops = [];
   gainNode = null;
   activeSoundscape = 'off';
-  timers.forEach((t) => {
-    window.clearTimeout(t);
-    window.clearInterval(t);
+  loops.forEach((l) => {
+    window.clearTimeout(l.id);
+    window.clearInterval(l.id);
   });
 
   const cleanup = () => {

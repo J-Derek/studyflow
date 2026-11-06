@@ -392,7 +392,7 @@ export const FocusTimerPage: React.FC = () => {
               type="button"
               aria-pressed={soundTarget === t}
               onClick={() => setPickedTarget(t)}
-              className={`px-3 min-h-[36px] rounded-md text-xs font-medium cursor-pointer transition-colors ${
+              className={`px-3 min-h-[44px] rounded-md text-xs font-medium cursor-pointer transition-colors ${
                 soundTarget === t ? 'bg-surface-light dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs' : 'text-zinc-600 dark:text-zinc-400'
               }`}
             >

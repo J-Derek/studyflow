@@ -271,7 +271,7 @@ export const AssignmentsPage: React.FC = () => {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleEdit(asg)}
-                        className="p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                        className="min-h-[44px] min-w-[44px] -my-3 inline-flex items-center justify-center rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                         title="Edit Assignment"
                         aria-label={`Edit assignment "${asg.title}"`}
                       >
@@ -282,7 +282,7 @@ export const AssignmentsPage: React.FC = () => {
                           deleteAssignment(asg.id);
                           setJustDeleted(asg);
                         }}
-                        className="p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                        className="min-h-[44px] min-w-[44px] -my-3 inline-flex items-center justify-center rounded text-zinc-600 dark:text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                         title="Delete Assignment"
                         aria-label={`Delete assignment "${asg.title}"`}
                       >
@@ -296,7 +296,7 @@ export const AssignmentsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleEdit(asg)}
-                    className="text-left text-xs cursor-pointer"
+                    className="text-left text-xs cursor-pointer min-h-[44px] flex items-center"
                   >
                     {asg.notes ? (
                       <>

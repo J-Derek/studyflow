@@ -7,10 +7,10 @@ import {
   Pencil,
   Plus,
 } from 'lucide-react';
-import type { Assignment } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { getDaysRemaining } from '../utils/formatters';
 import { calculateCumulativeGpa, getAcademicStanding } from '../utils/academicCalculations';
+import type { Assignment } from '../types';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { FirstDeadlineCard } from '../components/FirstDeadlineCard';
 import { SignInButton } from '../components/SignInButton';
@@ -25,10 +25,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenAddModal,
   onOpenBackup
 }) => {
-  const { timerSettings, isAnonymous, guestNoticeDismissed, dismissGuestNotice, assignments, sessions, grades, pomodorosCompleted, setActiveTab, toggleAssignmentComplete } = useStudyFlowStore();
+  const { focusMinutes, isAnonymous, guestNoticeDismissed, dismissGuestNotice, assignments, sessions, grades, pomodorosCompleted, setActiveTab, toggleAssignmentComplete } = useStudyFlowStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   // The assignment being edited from this screen (opens the same dialog as the Assignments page).
   const [editing, setEditing] = useState<Assignment | null>(null);
+  // If the assignment is deleted elsewhere while its dialog is open, close the dialog rather than recreate it.
+  const editingStillExists = !editing || assignments.some((a) => a.id === editing.id);
   // Right after the very first assignment is saved, say what happened and where to change it.
   const [justSaved, setJustSaved] = useState<string | null>(null);
   const previousCount = useRef(assignments.length);
@@ -52,7 +54,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Real-time Dynamic GPA & Academic Standing
   const { gpaString, gpa, hasData: hasGpa } = calculateCumulativeGpa(grades);
   const academicStanding = getAcademicStanding(gpa);
-  const focusHours = ((pomodorosCompleted * (timerSettings.focusDuration / 60)) / 60).toFixed(1);
+  const focusHours = (focusMinutes / 60).toFixed(1);
   const todayLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
   // Urgent / Upcoming assignments sorted by due date
@@ -341,7 +343,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       <AssignmentModal
-        isOpen={isModalOpen || !!editing}
+        isOpen={isModalOpen || (!!editing && editingStillExists)}
         onClose={() => {
           setIsModalOpen(false);
           setEditing(null);

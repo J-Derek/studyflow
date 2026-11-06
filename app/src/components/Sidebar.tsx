@@ -36,6 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
     isAnonymous,
     userEmail,
     userPhotoUrl,
+    customPhotoUrl,
     theme,
     setTheme
   } = useStudyFlowStore();
@@ -209,7 +210,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
             title="Edit profile"
             className="rounded-full hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <Avatar name={displayName} photoUrl={userPhotoUrl} isGuest={isAnonymous} className="h-8 w-8" />
+            <Avatar name={displayName} photoUrl={customPhotoUrl || userPhotoUrl} isGuest={isAnonymous && !customPhotoUrl} className="h-8 w-8" />
             <span className="sr-only">{displayName}, edit profile</span>
           </button>
           <button
@@ -247,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, c
               title="Edit profile"
               className="flex items-center gap-2 overflow-hidden text-left hover:opacity-80 transition-opacity cursor-pointer group flex-1 min-w-0"
             >
-              <Avatar name={displayName} photoUrl={userPhotoUrl} isGuest={isAnonymous} className="h-8 w-8" />
+              <Avatar name={displayName} photoUrl={customPhotoUrl || userPhotoUrl} isGuest={isAnonymous && !customPhotoUrl} className="h-8 w-8" />
               <div className="truncate flex-1 min-w-0">
                 <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {displayName}

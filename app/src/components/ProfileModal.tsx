@@ -1,15 +1,19 @@
 import { useDialog } from '../lib/useDialog';
 import React, { useState, useEffect } from 'react';
-import { X, User, Building2, BookOpen, Calendar, Check } from 'lucide-react';
+import { X, User, Building2, BookOpen, Calendar, Check, Camera, Sun, Moon, HelpCircle } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
+import { Avatar } from './Avatar';
+import { resizeImageToDataUrl } from '../utils/imageResize';
 
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenHelp?: () => void;
 }
 
-export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
-  const { user, updateUser } = useStudyFlowStore();
+export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onOpenHelp }) => {
+  const { user, updateUser, isAnonymous, userPhotoUrl, customPhotoUrl, setCustomPhoto, theme, setTheme } = useStudyFlowStore();
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [name, setName] = useState(user.name);
   const [university, setUniversity] = useState(user.university);
   const [program, setProgram] = useState(user.program);
@@ -28,7 +32,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
       setName(user.name);
       setUniversity(user.university);
       setProgram(user.program);
-      setSemester(user.semester);
+      setSemester(user.semester === 'Current Term' ? 'Current semester' : user.semester);
       setSemesterStart(user.semesterStart ?? '');
       setSemesterEnd(user.semesterEnd ?? '');
       setTimeZone(user.timeZone ?? deviceZone);
@@ -46,7 +50,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
       name: name.trim() || 'Student',
       university: university.trim() || 'My university',
       program: program.trim() || 'My programme',
-      semester: semester.trim() || 'Current Term',
+      semester: semester.trim() || 'Current semester',
       semesterStart: semesterStart || undefined,
       semesterEnd: semesterEnd && semesterEnd >= semesterStart ? semesterEnd : undefined,
       timeZone
@@ -64,7 +68,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-surface-light dark:bg-surface-dark border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-5 space-y-4 animate-in zoom-in-95 duration-150"
+        className="w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto bg-surface-light dark:bg-surface-dark border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-5 space-y-4 animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
         ref={dialogRef}
         role="dialog"
@@ -94,6 +98,69 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           </button>
         </div>
 
+        {/* Profile picture */}
+        <div className="flex items-center gap-4">
+          <Avatar name={name || user.name} photoUrl={customPhotoUrl || userPhotoUrl} isGuest={isAnonymous && !customPhotoUrl} className="h-16 w-16" />
+          <div className="space-y-1.5 min-w-0">
+            <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Profile picture</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-lg border border-zinc-300 dark:border-zinc-600 text-sm font-medium text-zinc-800 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-blue-700">
+                <Camera className="h-4 w-4" aria-hidden="true" />
+                <span>{customPhotoUrl ? 'Change picture' : 'Choose a picture'}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (!file) return;
+                    setPhotoError(null);
+                    try {
+                      setCustomPhoto(await resizeImageToDataUrl(file));
+                    } catch (err) {
+                      setPhotoError(err instanceof Error ? err.message : 'That picture could not be used.');
+                    }
+                  }}
+                />
+              </label>
+              {customPhotoUrl && (
+                <button
+                  type="button"
+                  onClick={() => setCustomPhoto(null)}
+                  className="min-h-[44px] px-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:underline cursor-pointer"
+                >
+                  {userPhotoUrl ? 'Use my Google photo' : 'Remove'}
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">Saved on this device only. Signed in with Google? Your Google photo shows on other devices.</p>
+            {photoError && <p role="alert" className="text-xs text-red-700 dark:text-red-400">{photoError}</p>}
+          </div>
+        </div>
+
+        {/* Phones have no sidebar, so theme and help live here */}
+        <div className="flex flex-wrap items-center gap-2 sm:hidden">
+          <button
+            type="button"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="inline-flex items-center gap-2 min-h-[44px] px-3 rounded-lg border border-zinc-300 dark:border-zinc-600 text-sm font-medium text-zinc-800 dark:text-zinc-100 cursor-pointer"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
+            <span>{theme === 'dark' ? 'Use light theme' : 'Use dark theme'}</span>
+          </button>
+          {onOpenHelp && (
+            <button
+              type="button"
+              onClick={onOpenHelp}
+              className="inline-flex items-center gap-2 min-h-[44px] px-3 rounded-lg border border-zinc-300 dark:border-zinc-600 text-sm font-medium text-zinc-800 dark:text-zinc-100 cursor-pointer"
+            >
+              <HelpCircle className="h-4 w-4" aria-hidden="true" />
+              <span>Help</span>
+            </button>
+          )}
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
@@ -104,7 +171,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Alex Rivera"
+              placeholder="e.g. Amina Wanjiru"
               required
               className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
@@ -119,7 +186,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               type="text"
               value={university}
               onChange={(e) => setUniversity(e.target.value)}
-              placeholder="e.g. Stanford University"
+              placeholder="e.g. University of Nairobi"
               required
               className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
@@ -134,7 +201,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               type="text"
               value={program}
               onChange={(e) => setProgram(e.target.value)}
-              placeholder="e.g. Computer Science & Mathematics"
+              placeholder="e.g. BSc Computer Science"
               required
               className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
@@ -143,13 +210,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" />
-              <span>Current term</span>
+              <span>Current semester</span>
             </label>
             <input
               type="text"
               value={semester}
               onChange={(e) => setSemester(e.target.value)}
-              placeholder="e.g. Fall 2026"
+              placeholder="e.g. Semester 1, 2026"
               required
               className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
@@ -160,11 +227,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
             <p className="text-xs text-zinc-600 dark:text-zinc-400">Your timetable repeats weekly between these dates when you export it to a calendar app.</p>
             <div className="grid grid-cols-2 gap-2">
               <label className="block text-xs text-zinc-600 dark:text-zinc-400">
-                Term starts
+                Semester starts
                 <input type="date" value={semesterStart} onChange={(e) => setSemesterStart(e.target.value)} className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
               </label>
               <label className="block text-xs text-zinc-600 dark:text-zinc-400">
-                Term ends
+                Semester ends
                 <input type="date" value={semesterEnd} min={semesterStart || undefined} onChange={(e) => setSemesterEnd(e.target.value)} className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
               </label>
             </div>
