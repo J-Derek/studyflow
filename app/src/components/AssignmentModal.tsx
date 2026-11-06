@@ -88,7 +88,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800">
           <div>
             <h2 id="assignment-modal-title" className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">
-              {assignmentToEdit ? 'Edit Assignment' : 'Create New Assignment'}
+              {assignmentToEdit ? 'Edit Assignment' : 'New assignment'}
             </h2>
             <p className="text-xs text-zinc-600 dark:text-zinc-400">Add the title, course and due date</p>
           </div>
@@ -120,7 +120,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
 
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
-              <BookOpen className="h-3 w-3 text-zinc-600 dark:text-zinc-400" /> Course Code & Name
+              <BookOpen className="h-3 w-3 text-zinc-600 dark:text-zinc-400" /> Course
             </label>
             <input
               type="text"
@@ -162,7 +162,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
 
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
-              <AlertCircle className="h-3 w-3 text-zinc-600 dark:text-zinc-400" /> Priority Level
+              <AlertCircle className="h-3 w-3 text-zinc-600 dark:text-zinc-400" /> Priority
             </label>
             <div className="grid grid-cols-3 gap-2">
               {(['low', 'medium', 'high'] as Priority[]).map((p) => {
@@ -211,7 +211,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
 
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Assignment Notes & Syllabus Specs
+              Notes (optional)
             </label>
             <textarea
               rows={3}
@@ -235,7 +235,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
               type="submit"
               className="px-3.5 py-1.5 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 transition shadow-2xs"
             >
-              {assignmentToEdit ? 'Save Changes' : 'Create Assignment'}
+              {assignmentToEdit ? 'Save changes' : 'Add assignment'}
             </button>
           </div>
         </form>

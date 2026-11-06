@@ -80,7 +80,10 @@ export const GradesPage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in pb-16">
-      <h1 className="sr-only">Grades</h1>
+      <div className="space-y-1">
+        <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Grades</h1>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">Your courses, and what they add up to.</p>
+      </div>
       <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-1 md:grid-cols-3 overflow-hidden">
         <div className="p-4 md:p-5 flex flex-col justify-between">
           <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Projected GPA</span>
@@ -112,7 +115,7 @@ export const GradesPage: React.FC = () => {
         </div>
 
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Where that lands</span>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Your standing</span>
           <div className="my-2.5">
             <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
               {hasGpa ? standing.standing.replace('Projected: ', '') : '—'}
@@ -251,7 +254,7 @@ export const GradesPage: React.FC = () => {
                 className="px-3.5 py-1.5 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>Add First Course</span>
+                <span>Add your first course</span>
               </button>
             </div>
           </div>

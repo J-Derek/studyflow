@@ -69,7 +69,7 @@ export const CalendarPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Timetable</h1>
+          <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Timetable</h1>
           <p className="text-xs text-zinc-600 dark:text-zinc-400 font-sans">Your weekly classes and study blocks.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -140,7 +140,7 @@ export const CalendarPage: React.FC = () => {
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium shrink-0 cursor-pointer shadow-2xs"
           >
             <Plus className="h-3.5 w-3.5" />
-            <span>Add Class Block</span>
+            <span>Add a class</span>
           </button>
         </div>
       )}
