@@ -76,3 +76,34 @@ test('on a phone the timetable controls are easy to tap and a block cannot be de
   await expect(page.getByRole('button', { name: /^Delete block/ }).first()).toBeHidden();
   await context.close();
 });
+
+test('on a phone every button, field and picker on every screen is at least 44px to tap', async ({ browser }) => {
+  // a touch device, as a real phone is (it cannot hover, so hover-only extras are not shown)
+  const context = await browser.newContext({ viewport: { width: 375, height: 800 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  await seed(page);
+  for (const path of ['/', '/assignments', '/calendar', '/timer', '/grades', '/notes']) {
+    await page.goto(path);
+    await page.waitForFunction(() => !!(window as unknown as { __store?: { getState: () => S } }).__store?.getState().userId);
+    await page.waitForTimeout(400);
+    const small = await page.evaluate(() => {
+      const rows: string[] = [];
+      const sel = 'main button, main a[href], main input, main select, main textarea, header button, header a[href]';
+      for (const el of document.querySelectorAll(sel)) {
+        const r0 = el.getBoundingClientRect();
+        const cs = getComputedStyle(el);
+        if (r0.width === 0 || r0.height === 0 || cs.visibility === 'hidden' || el.closest('.sr-only')) continue;
+        // a checkbox is tapped through its label
+        const input = el as HTMLInputElement;
+        const target = input.type === 'checkbox' && el.closest('label') ? el.closest('label')! : el;
+        const r = target.getBoundingClientRect();
+        if (r.height < 43.5 || r.width < 43.5) {
+          rows.push(`${el.tagName.toLowerCase()} "${(el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 30)}" ${Math.round(r.width)}x${Math.round(r.height)}`);
+        }
+      }
+      return rows.slice(0, 8);
+    });
+    expect(small, `${path}: controls smaller than 44px`).toEqual([]);
+  }
+  await context.close();
+});

@@ -97,7 +97,7 @@ export const AssignmentsPage: React.FC = () => {
               aria-label="Search assignments" placeholder="Search by title, course or notes"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 transition"
+              className="min-h-[44px] md:min-h-0 w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 transition"
             />
           </div>
 
@@ -107,7 +107,7 @@ export const AssignmentsPage: React.FC = () => {
               <button
                 key={s}
                 onClick={() => setSelectedStatus(s)}
-                className={`flex-1 md:flex-none px-2.5 py-1 rounded-md text-xs font-medium capitalize transition-colors ${
+                className={`min-h-[44px] md:min-h-0 flex-1 md:flex-none px-2.5 py-1 rounded-md text-xs font-medium capitalize transition-colors ${
                   selectedStatus === s 
                     ? 'bg-surface-light dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-2xs font-semibold' 
                     : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
@@ -129,7 +129,7 @@ export const AssignmentsPage: React.FC = () => {
                 aria-label="Filter by course"
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
-                className="px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
+                className="min-h-[44px] md:min-h-0 px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
               >
                 <option value="all">All Courses ({assignments.length})</option>
                 {courses.map((c) => (
@@ -147,7 +147,7 @@ export const AssignmentsPage: React.FC = () => {
                 aria-label="Filter by priority"
                 value={selectedPriority}
                 onChange={(e) => setSelectedPriority(e.target.value)}
-                className="px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
+                className="min-h-[44px] md:min-h-0 px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
               >
                 <option value="all">All Priorities</option>
                 <option value="high">High Priority</option>
@@ -206,7 +206,7 @@ export const AssignmentsPage: React.FC = () => {
                   <div className="flex items-center gap-3 overflow-hidden min-w-0">
                     <button
                       onClick={() => toggleAssignmentComplete(asg.id)}
-                      className="text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shrink-0"
+                      className="p-3.5 -m-3.5 text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shrink-0"
                       title={isCompleted ? `Mark "${asg.title}" incomplete` : `Mark "${asg.title}" complete`}
                       aria-label={isCompleted ? `Mark "${asg.title}" incomplete` : `Mark "${asg.title}" complete`}
                     >
@@ -322,7 +322,7 @@ export const AssignmentsPage: React.FC = () => {
                         <ul className="grid grid-cols-1 sm:grid-cols-3 gap-1">
                           {effectiveSubtasks.map((st) => (
                             <li key={st.id}>
-                              <label className="flex items-center gap-2 p-1 rounded hover:bg-zinc-100/70 dark:hover:bg-zinc-800/60 cursor-pointer text-sm">
+                              <label className="min-h-[44px] md:min-h-0 flex items-center gap-2 p-1 rounded hover:bg-zinc-100/70 dark:hover:bg-zinc-800/60 cursor-pointer text-sm">
                                 <input
                                   type="checkbox"
                                   checked={st.completed}
@@ -357,7 +357,7 @@ export const AssignmentsPage: React.FC = () => {
                             setNewSubtaskInputs((prev) => ({ ...prev, [asg.id]: '' }));
                           }
                         }}
-                        className="w-full max-w-sm px-2.5 py-1.5 text-sm rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="min-h-[44px] md:min-h-0 w-full max-w-sm px-2.5 py-1.5 text-sm rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                     )}
                   </div>
@@ -367,7 +367,7 @@ export const AssignmentsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setAddingFor(asg.id)}
-                      className="text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 underline-offset-2 hover:underline cursor-pointer"
+                      className="inline-flex items-center min-h-[44px] md:min-h-0 text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 underline-offset-2 hover:underline cursor-pointer"
                     >
                       Add subtasks
                     </button>
