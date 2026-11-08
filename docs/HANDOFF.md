@@ -56,6 +56,13 @@ one-time upload of a device's old values to the account that owns them. Guard th
 (`updateTimerSettings` in the store); the hint text does not mention a paused timer; tab labels change mid-block. Replace with a controlled form with **Apply** and **Cancel**; while a block runs offer
 "apply to the next block" or "restart with the new length". **Deploy order: rules first, then the app.** Tests: rules + mapper, e2e isolation (A sets 50/10 and signs out; a guest and B see defaults; A on a fresh browser sees 50/10), update `e2e/timer-lengths.spec.ts`.
 
+### PR3a (branch claude/wonderful-curie-3u12za after PR #18): real name instead of "Alex Vance"
+Derek's account showed "Alex Vance / Computer Science & Mathematics": the fictional sample profile an early build saved to his
+cloud profile, which wins on every device. Also a guest who linked Google has empty `displayName`/`photoURL` on the user; the
+values are in `providerData`. Fix: `utils/placeholderProfile.ts` (`googleProfileOf`, `cleanUpProfile`), used in `bindUser` and the
+profile listener (one clean-up write per load); the account menu hides default wording. Test: `e2e/google-name.spec.ts`.
+The rest of PR3 (sign-in speed, signed-in state on reload, new "Your account" dialog) is still to do.
+
 ### Then PR3 to PR10 (each from the latest `origin/main`, only after Derek merges the one before)
 PR3 sign-in speed + Google name/photo + refreshed "Your account" dialog (the name stays "Student" because the guest profile seeding writes `name: 'Student'` to Firestore and the profile listener
 overwrites Google's `displayName`; `providerData` is never read; signed-in state is not persisted so every reload shows the guest header for a moment). PR4 404 + error boundary + offline page + rewrite
