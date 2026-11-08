@@ -16,11 +16,13 @@ function warmUpWhenIdle(): void {
 interface SignInButtonProps {
   /** "header" is the compact top-bar button, "block" fills its container. */
   variant?: 'header' | 'block';
+  /** Where an error message opens. Use "above" for a button at the bottom of the screen, so it is not cut off. */
+  errorPlacement?: 'below' | 'above';
   className?: string;
 }
 
 /** The one obvious "Sign in with Google" button. Opens Google's window directly. */
-export const SignInButton: React.FC<SignInButtonProps> = ({ variant = 'block', className = '' }) => {
+export const SignInButton: React.FC<SignInButtonProps> = ({ variant = 'block', errorPlacement = 'below', className = '' }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,7 +72,9 @@ export const SignInButton: React.FC<SignInButtonProps> = ({ variant = 'block', c
       {error && (
         <span
           role="alert"
-          className="absolute right-0 top-full mt-2 z-40 w-72 max-w-[calc(100vw-2rem)] rounded-md border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 px-3 py-2 text-xs text-red-700 dark:text-red-300 shadow-md"
+          className={`absolute z-40 w-72 max-w-[calc(100vw-2rem)] ${
+            errorPlacement === 'above' ? 'left-0 bottom-full mb-2' : 'right-0 top-full mt-2'
+          } rounded-md border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 px-3 py-2 text-xs text-red-700 dark:text-red-300 shadow-md`}
         >
           {error}
         </span>

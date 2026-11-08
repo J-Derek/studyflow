@@ -264,7 +264,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, o
 
           {/* Guests sign in here */}
           <div className="pt-2 border-t border-zinc-200/60 dark:border-zinc-700/60">
-            <SignInButton />
+            <SignInButton errorPlacement="above" />
           </div>
         </div>
       )}
