@@ -46,6 +46,17 @@ describe('failed cloud saves', () => {
     expect(getSyncErrors()[0].reason).toMatch(/refused/);
   });
 
+  it('a message dismissed while its retry is on the way does not come back when the retry fails', async () => {
+    let fail: (e: unknown) => void = () => undefined;
+    reportSyncError('your note', {}, () => new Promise((_, reject) => (fail = reject)));
+    const id = getSyncErrors()[0].id;
+    const pending = retrySyncError(id);
+    dismissSyncError(id);
+    fail({ code: 'permission-denied' });
+    expect(await pending).toBe(false);
+    expect(getSyncErrors()).toHaveLength(0);
+  });
+
   it('can be dismissed, and is cleared for the next person on sign-out', () => {
     reportSyncError('your note', {});
     dismissSyncError(getSyncErrors()[0].id);

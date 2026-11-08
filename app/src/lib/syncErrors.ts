@@ -76,7 +76,8 @@ export async function retrySyncError(id: string): Promise<boolean> {
     dismissSyncError(id);
     return true;
   } catch (err) {
-    reportSyncError(entry.what, err, retry);
+    // The student may have dismissed the message while the retry was on its way: do not bring it back.
+    if (entries.some((e) => e.id === id)) reportSyncError(entry.what, err, retry);
     return false;
   }
 }
