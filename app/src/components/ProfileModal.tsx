@@ -4,6 +4,7 @@ import { X, User, Building2, BookOpen, Calendar, Check, Camera, Sun, Moon, Monit
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { Avatar } from './Avatar';
 import { resizeImageToDataUrl } from '../utils/imageResize';
+import { LIMITS } from '../utils/limits';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -179,6 +180,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
             <input
               type="text"
               value={name}
+              maxLength={LIMITS.profileName}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Amina Wanjiru"
               required
@@ -194,6 +196,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
             <input
               type="text"
               value={university}
+              maxLength={LIMITS.profileUniversity}
               onChange={(e) => setUniversity(e.target.value)}
               placeholder="e.g. University of Nairobi"
               required
@@ -209,6 +212,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
             <input
               type="text"
               value={program}
+              maxLength={LIMITS.profileProgram}
               onChange={(e) => setProgram(e.target.value)}
               placeholder="e.g. BSc Computer Science"
               required
@@ -224,6 +228,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
             <input
               type="text"
               value={semester}
+              maxLength={LIMITS.profileSemester}
               onChange={(e) => setSemester(e.target.value)}
               placeholder="e.g. Semester 1, 2026"
               required

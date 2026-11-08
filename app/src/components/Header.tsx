@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Sun,
   Moon,
@@ -10,6 +10,7 @@ import {
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { AccountMenu } from './AccountMenu';
 import { Avatar } from './Avatar';
+import { SaveBadge } from './SaveBadge';
 import { SignInButton } from './SignInButton';
 
 interface HeaderProps {
@@ -27,19 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenProfile,
   onOpenHelp 
 }) => {
-  const { theme, toggleTheme, isAnonymous, isSyncing, activeTab, user, userPhotoUrl, customPhotoUrl } = useStudyFlowStore();
-  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+  const { theme, toggleTheme, isAnonymous, activeTab, user, userPhotoUrl, customPhotoUrl } = useStudyFlowStore();
 
   const getPageTitle = () => {
     switch (activeTab) {
@@ -112,31 +101,8 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Real Network & Sync Status Badge */}
-          <div
-            className={`hidden sm:flex items-center gap-1.5 px-2 py-0.8 rounded-md border text-xs tabular-nums transition-colors ${
-              !isOnline
-                ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-400'
-                : isSyncing
-                ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-400'
-                : 'bg-zinc-50 dark:bg-zinc-900/60 border-zinc-200/70 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400'
-            }`}
-            title={!isOnline ? 'You are offline. Changes are kept on this device and sent when you reconnect.' : isSyncing ? 'Saving your changes' : 'All changes saved'}
-          >
-            <span className="relative flex h-1.5 w-1.5">
-              {!isOnline ? (
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
-              ) : isSyncing ? (
-                <>
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
-                </>
-              ) : (
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-              )}
-            </span>
-            <span>{!isOnline ? 'Offline' : isSyncing ? 'Saving…' : 'Saved'}</span>
-          </div>
+          {/* Is my work safe? Watches every collection and turns red when the cloud refuses a save */}
+          <SaveBadge />
 
           {/* Help & Playbook Guide */}
           {isAnonymous && onOpenHelp && (
