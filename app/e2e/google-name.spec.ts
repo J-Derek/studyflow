@@ -26,11 +26,13 @@ test('a placeholder or old sample profile gives way to the Google name, and stay
   await page.goto('/');
   await ready(page);
 
-  // An account that an early build filled with the fictional sample profile.
-  await page.evaluate(() => {
-    const st = (window as unknown as W).__store;
-    st.setState({ user: { ...st.getState().user, name: 'Alex Vance', university: 'Polytechnic Institute', program: 'Computer Science & Mathematics' } } as Partial<S>);
-  });
+  // An account that an early build filled with the fictional sample profile (saved to the cloud too).
+  await page.evaluate(() =>
+    (window as unknown as { __store: { getState: () => { updateUser: (u: Partial<S['user']>) => void } } }).__store
+      .getState()
+      .updateUser({ name: 'Alex Vance', university: 'Polytechnic Institute', program: 'Computer Science & Mathematics' })
+  );
+  await page.waitForTimeout(1500);
 
   const popupPromise = page.waitForEvent('popup');
   void page.evaluate(() => (window as unknown as W).__auth.signInOrLinkWithGoogle()).catch(() => undefined);

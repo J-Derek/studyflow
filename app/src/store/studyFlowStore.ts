@@ -32,7 +32,7 @@ import { calculateSubtaskProgress } from '../utils/subtasks';
 import { LIMITS, clampText } from '../utils/limits';
 import { syncThemeColor } from '../utils/themeColor';
 import { readSavedMode, resolveTheme, saveMode, systemPrefersDark, type ThemeMode } from '../utils/themePreference';
-import { isPlaceholderName } from '../utils/placeholderProfile';
+import { cleanUpProfile } from '../utils/placeholderProfile';
 import { DEFAULT_SOUND, DEFAULT_TIMER_SETTINGS, DEFAULT_VOLUME, sanitizeTimerPrefs, takeLegacyDevicePrefs, type TimerPrefs } from '../utils/devicePrefs';
 import { reportSyncError } from '../lib/syncErrors';
 import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
@@ -226,19 +226,22 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       isSyncing: false,
       authDisplayName: null,
       setAuthUser: (uid, isAnonymous, email, displayName, photoUrl) => {
-        set((state) => ({
+        set(() => ({
           userId: uid,
           dataOwnerUid: uid,
           isAnonymous,
           userEmail: email || null,
           userPhotoUrl: photoUrl || null,
-          authDisplayName: isAnonymous ? null : displayName || null,
-          user: {
-            ...state.user,
-            // The Google name replaces a placeholder, never a name the student typed.
-            name: displayName && !isAnonymous && isPlaceholderName(state.user.name) ? displayName : state.user.name
-          }
+          authDisplayName: isAnonymous ? null : displayName || null
         }));
+        if (isAnonymous || !uid) return;
+        // Signed in with Google: a placeholder name gives way to the Google name and the old sample profile's
+        // details to neutral wording (the profile listener does the same when the stored copy arrives).
+        const fixed = cleanUpProfile(get().user, displayName || null);
+        if (fixed) {
+          set((state) => ({ user: { ...state.user, ...fixed } }));
+          syncProfile(uid).catch(failed('syncProfile', () => syncProfile(uid)));
+        }
       },
 
       resetStore: () => {
