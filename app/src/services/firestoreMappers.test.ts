@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assignmentToDoc, docToAssignment, docToNote, docToProfile, MAX_NOTE_BODY, MAX_PHOTO_CHARS, noteToDoc, profileToDoc, sessionToDoc, validPhoto } from './firestoreMappers';
+import { assignmentToDoc, docToAssignment, docToNote, docToProfile, docToTimerPrefs, timerPrefsToDoc, MAX_NOTE_BODY, MAX_PHOTO_CHARS, noteToDoc, profileToDoc, sessionToDoc, validPhoto } from './firestoreMappers';
 import type { Assignment } from '../types';
 
 const base: Assignment = {
@@ -75,6 +75,24 @@ describe('grade mappers', () => {
   it('keeps the sample flag', () => {
     expect(gradeToDoc({ ...g, sample: true }).sample).toBe(true);
     expect(docToGrade('g1', gradeToDoc({ ...g, sample: true })).sample).toBe(true);
+  });
+});
+
+describe('timer preferences documents', () => {
+  const prefs = {
+    timerSettings: { focusDuration: 3000, shortBreakDuration: 600, longBreakDuration: 1200, autoStartBreaks: true, autoStartFocus: false },
+    soundscape: 'rain' as const,
+    breakSoundscape: 'chimes' as const,
+    soundscapeVolume: 0.5
+  };
+  it('round-trips and always emits every key the rules require', () => {
+    const doc = timerPrefsToDoc(prefs);
+    expect(Object.keys(doc).sort()).toEqual(['autoStartBreaks', 'autoStartFocus', 'breakSoundscape', 'focusDuration', 'longBreakDuration', 'shortBreakDuration', 'soundscape', 'soundscapeVolume']);
+    expect(docToTimerPrefs(doc)).toEqual(prefs);
+  });
+  it('ignores damaged stored values instead of breaking', () => {
+    expect(docToTimerPrefs(undefined)).toEqual({});
+    expect(docToTimerPrefs({ focusDuration: 'x', soundscape: 'thunder' })).toEqual({});
   });
 });
 

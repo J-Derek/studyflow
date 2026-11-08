@@ -67,8 +67,10 @@ an in-app **writing space** per assignment with Word and PDF export; **timer and
 - The sign-in code is delicate: popup first, same-page redirect fallback when `window.open` is replaced by an ad blocker
   (`lib/auth.ts`, `utils/popupSupport.ts`, `lib/firebase.ts`, `app/vercel.json` proxies `/__/auth/` to Firebase). Read
   `completeRedirectSignIn` and `redirectResultOnce` before touching it.
-- Per-device settings live in their own localStorage keys that sign-out leaves alone: `studyflow_theme` (kept per device on
-  purpose) and `studyflow_device_prefs` (**PR2 moves timer and sound settings to the account and removes them from here**).
+- The theme is per device (`studyflow_theme`, left alone by sign-out). Timer lengths, auto-start and sounds are per ACCOUNT since
+  PR2: the `timerPrefs` map on the user document (rules: `isValidTimerPrefs`), applied by `applyAccountTimerPrefs` and saved by
+  `syncTimerPrefs`. `utils/devicePrefs.ts` now only validates them and reads the old `studyflow_device_prefs` entry once (then
+  deletes it). Deploy rules BEFORE the app for PR2.
   `index.html` has a pre-paint theme script that reads `studyflow_theme`; keep it in step with `utils/themePreference.ts`.
 
 ## 1. What it is, who it is for
@@ -162,9 +164,8 @@ Added on 2026-11-06 and 2026-11-07 (PRs #9 to #12, all merged and live; no Fires
 - Notes: full-screen reader, and PDFs attached to a note that stay on the device only (`lib/localFiles.ts`, IndexedDB,
   25 MB each, PDF header checked). They do not sync, and are deleted on sign-out or account switch and when a note's undo
   window passes.
-- Per-device settings survive sign-out (`utils/themePreference.ts`, `utils/devicePrefs.ts`, own localStorage entries
-  `studyflow_theme` and `studyflow_device_prefs`): light, dark or Device (follows the phone or laptop live), timer lengths,
-  auto-start, sound choices and volume. Signing out still wipes the student's data from the browser.
+- The theme survives sign-out (`utils/themePreference.ts`, key `studyflow_theme`): light, dark or Device. Timer lengths,
+  auto-start and sounds are saved to the account (PR2) and reset to defaults on sign-out. Signing out wipes the student's data.
 - Phone pass: every button, field and picker is at least 44px on a phone; long note links, assignment titles and the
   priority filter no longer get cut off. `e2e/phone-layout.spec.ts` guards this.
 

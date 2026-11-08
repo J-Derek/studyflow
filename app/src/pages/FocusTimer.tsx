@@ -22,35 +22,92 @@ import { clampMinutes, remainingSeconds, TIMER_LIMITS_MIN } from '../lib/timerEn
 import type { SoundscapeType } from '../types';
 import confetti from 'canvas-confetti';
 
-/** One length in whole minutes. Saved when the student leaves the box or presses Enter. */
-const LengthField: React.FC<{ id: string; label: string; minutes: number; max: number; onCommit: (minutes: number) => void }> = ({ id, label, minutes, max, onCommit }) => (
+/** One length in whole minutes, typed freely (nothing changes until Apply). */
+const LengthField: React.FC<{ id: string; label: string; value: string; onChange: (value: string) => void }> = ({ id, label, value, onChange }) => (
   <div>
     <label htmlFor={id} className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
       {label}
     </label>
     <div className="flex items-center gap-1.5">
       <input
-        key={minutes}
         id={id}
         type="number"
         inputMode="numeric"
         min={1}
-        max={max}
-        defaultValue={minutes}
-        onBlur={(e) => {
-          const next = clampMinutes(Number(e.currentTarget.value), max);
-          e.currentTarget.value = String(next);
-          if (next !== minutes) onCommit(next);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur();
-        }}
+        value={value}
+        onChange={(e) => onChange(e.currentTarget.value)}
         className="w-full min-h-[44px] px-3 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-surface-light dark:bg-zinc-900 text-sm tabular-nums text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
       <span className="text-xs text-zinc-600 dark:text-zinc-400">min</span>
     </div>
   </div>
 );
+
+const LIMITS = [TIMER_LIMITS_MIN.focus, TIMER_LIMITS_MIN.shortBreak, TIMER_LIMITS_MIN.longBreak] as const;
+const toMinutes = (seconds: number) => String(Math.round(seconds / 60));
+
+/**
+ * The three lengths as a small form: type, then Apply (or Cancel). While a block is running or paused the
+ * student chooses between keeping that block as it is and restarting it at the new length.
+ */
+const LengthsForm: React.FC<{
+  settings: { focusDuration: number; shortBreakDuration: number; longBreakDuration: number };
+  timerStatus: 'idle' | 'running' | 'paused' | string;
+  onApply: (lengths: { focusDuration: number; shortBreakDuration: number; longBreakDuration: number }, restartCurrent: boolean) => void;
+}> = ({ settings, timerStatus, onApply }) => {
+  const saved = [toMinutes(settings.focusDuration), toMinutes(settings.shortBreakDuration), toMinutes(settings.longBreakDuration)];
+  const [draft, setDraft] = useState<string[]>(saved);
+  const savedKey = saved.join('/');
+
+  const clamped = draft.map((v, i) => String(clampMinutes(Number(v), LIMITS[i])));
+  const changed = clamped.join('/') !== savedKey;
+  const busy = timerStatus !== 'idle';
+
+  const apply = (restartCurrent: boolean) => {
+    const [f, sh, lg] = clamped.map(Number);
+    setDraft(clamped);
+    onApply({ focusDuration: f * 60, shortBreakDuration: sh * 60, longBreakDuration: lg * 60 }, restartCurrent);
+  };
+
+  const btn = 'min-h-[44px] px-4 rounded-lg text-sm font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+  return (
+    <form
+      noValidate
+      className="px-4 pb-4 space-y-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (changed) apply(false);
+      }}
+    >
+      <div className="grid grid-cols-3 gap-3">
+        <LengthField id="len-focus" label="Focus" value={draft[0]} onChange={(v) => setDraft([v, draft[1], draft[2]])} />
+        <LengthField id="len-short" label="Short break" value={draft[1]} onChange={(v) => setDraft([draft[0], v, draft[2]])} />
+        <LengthField id="len-long" label="Long break" value={draft[2]} onChange={(v) => setDraft([draft[0], draft[1], v])} />
+      </div>
+      <p className="text-xs text-zinc-600 dark:text-zinc-400">
+        {busy
+          ? 'A block is in progress (running or paused). Keep it as it is and use the new length from the next block, or restart it now.'
+          : 'The new length shows on the clock straight away. These settings are saved to your account.'}
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="submit" disabled={!changed} className={`${btn} bg-blue-600 text-white hover:bg-blue-700`}>
+          {busy ? 'Apply to the next block' : 'Apply'}
+        </button>
+        {busy && (
+          <button type="button" disabled={!changed} onClick={() => apply(true)} className={`${btn} border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200`}>
+            Restart with the new length
+          </button>
+        )}
+        <button type="button" disabled={!changed} onClick={() => setDraft(saved)} className={`${btn} text-zinc-700 dark:text-zinc-300`}>
+          Cancel
+        </button>
+        <button type="button" onClick={() => setDraft(['25', '5', '15'])} className="min-h-[44px] px-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
+          Back to 25 / 5 / 15
+        </button>
+      </div>
+    </form>
+  );
+};
 
 export const FocusTimerPage: React.FC = () => {
   const {
@@ -228,23 +285,7 @@ export const FocusTimerPage: React.FC = () => {
         <summary className="cursor-pointer select-none px-4 min-h-[44px] flex items-center text-sm font-medium text-zinc-800 dark:text-zinc-200">
           Change timer lengths
         </summary>
-        <div className="px-4 pb-4 space-y-3">
-          <div className="grid grid-cols-3 gap-3">
-            <LengthField id="len-focus" label="Focus" minutes={Math.round(timerSettings.focusDuration / 60)} max={TIMER_LIMITS_MIN.focus} onCommit={(m) => updateTimerSettings({ focusDuration: m * 60 })} />
-            <LengthField id="len-short" label="Short break" minutes={Math.round(timerSettings.shortBreakDuration / 60)} max={TIMER_LIMITS_MIN.shortBreak} onCommit={(m) => updateTimerSettings({ shortBreakDuration: m * 60 })} />
-            <LengthField id="len-long" label="Long break" minutes={Math.round(timerSettings.longBreakDuration / 60)} max={TIMER_LIMITS_MIN.longBreak} onCommit={(m) => updateTimerSettings({ longBreakDuration: m * 60 })} />
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Takes effect now if the timer is not running, otherwise from the next block.</p>
-            <button
-              type="button"
-              onClick={() => updateTimerSettings({ focusDuration: 25 * 60, shortBreakDuration: 5 * 60, longBreakDuration: 15 * 60 })}
-              className="min-h-[44px] px-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-            >
-              Back to 25 / 5 / 15
-            </button>
-          </div>
-        </div>
+        <LengthsForm key={`${timerSettings.focusDuration}/${timerSettings.shortBreakDuration}/${timerSettings.longBreakDuration}`} settings={timerSettings} timerStatus={timer.status} onApply={(lengths, restartCurrent) => updateTimerSettings(lengths, { restartCurrent })} />
       </details>
 
       {/* Circular Laboratory Gauge Display */}
