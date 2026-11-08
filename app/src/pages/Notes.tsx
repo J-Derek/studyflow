@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { deleteFilesForNote } from '../lib/localFiles';
 import { Pin, Plus, Search } from 'lucide-react';
+import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Note } from '../types';
 import { NoteDialog } from '../components/NoteDialog';
@@ -110,6 +111,7 @@ export const NotesPage: React.FC = () => {
 
       {notes.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 p-8 text-center space-y-3">
+          <EmptyIllustration kind="notes" className="h-28 w-36" />
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">No notes yet</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
             Write down what the lecturer said, a summary of a reading, or a link to the slides. Try “Week 3: key points” or “Exam tips”.

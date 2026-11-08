@@ -7,6 +7,7 @@ import {
   Pencil,
   Plus,
 } from 'lucide-react';
+import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { getDaysRemaining } from '../utils/formatters';
 import { calculateCumulativeGpa, getAcademicStanding } from '../utils/academicCalculations';
@@ -221,12 +222,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="p-8 text-center">
                 {assignments.length === 0 ? (
                   <>
+                    <EmptyIllustration kind="assignments" className="h-24 w-32 mb-2" />
                     <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">No deadlines scheduled yet</h3>
                     <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">Use the quick start card above or click “Add assignment” to begin.</p>
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
+                    <EmptyIllustration kind="done" className="h-28 w-36 mb-2" />
                     <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">All assignments cleared</h3>
                     <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">No urgent deadlines pending on your course.</p>
                   </>
@@ -316,6 +318,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 space-y-3.5 shadow-2xs">
             {todaysSessions.length === 0 ? (
               <div className="py-6 text-center">
+                <EmptyIllustration kind="sunrise" className="h-20 w-28 mb-1" />
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">No lecture sessions scheduled today.</p>
               </div>
             ) : (

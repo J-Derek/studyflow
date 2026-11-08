@@ -8,6 +8,7 @@ import {
   Edit3, 
   CheckSquare
 } from 'lucide-react';
+import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Assignment, Subtask } from '../types';
 import { getDaysRemaining } from '../utils/formatters';
@@ -167,7 +168,11 @@ export const AssignmentsPage: React.FC = () => {
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark overflow-hidden divide-y divide-zinc-200/70 dark:divide-zinc-800/70 shadow-2xs">
         {filteredAssignments.length === 0 ? (
           <div className="py-12 text-center p-6">
-            <CheckSquare className="h-8 w-8 text-zinc-600 dark:text-zinc-400 mx-auto mb-2" />
+            {assignments.length === 0 ? (
+              <EmptyIllustration kind="assignments" className="h-28 w-36 mb-2" />
+            ) : (
+              <CheckSquare className="h-8 w-8 text-zinc-600 dark:text-zinc-400 mx-auto mb-2" />
+            )}
             <h2 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
               {assignments.length === 0 ? 'No assignments yet' : 'No assignments match filters'}
             </h2>

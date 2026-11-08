@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Clock, ChevronLeft, ChevronRight, Plus, X, Download, RotateCcw } from 'lucide-react';
+import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useDialog } from '../lib/useDialog';
 import { exportTimetable } from '../lib/exportTimetable';
@@ -171,13 +172,16 @@ export const CalendarPage: React.FC = () => {
       {/* Empty State Onboarding Guidance */}
       {sessions.length === 0 && (
         <div className="p-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-              Your weekly class schedule is empty
-            </h3>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-              Add your lectures, labs, and study blocks to organize your week, or load demo courses from the Help menu (?).
-            </p>
+          <div className="flex items-center gap-4">
+            <EmptyIllustration kind="timetable" className="hidden sm:block h-20 w-28 mx-0 shrink-0" />
+            <div>
+              <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                Your weekly class schedule is empty
+              </h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
+                Add your lectures, labs, and study blocks to organize your week, or load demo courses from the Help menu (?).
+              </p>
+            </div>
           </div>
           <button
             onClick={() => openAdd()}
