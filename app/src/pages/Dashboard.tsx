@@ -69,6 +69,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const currentDayOfWeek = new Date().getDay();
   const todaysSessions = sessions.filter((s) => s.dayOfWeek === currentDayOfWeek);
 
+  // Shown to a guest with nothing saved yet. It folds away (rather than vanishing) when they sign in.
+  const showSignInBanner = isAnonymous && assignments.length === 0;
+
   return (
     <div className="space-y-6 animate-fade-in pb-16">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -108,14 +111,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
       )}
 
       {/* First visit: make signing in obvious for students who already use StudyFlow elsewhere */}
-      {isAnonymous && assignments.length === 0 && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark px-4 py-3">
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">Already use StudyFlow on another device? Sign in to see your plan here.</p>
-          <div className="sm:w-60 shrink-0">
-            <SignInButton />
-          </div>
+      <div
+        data-testid="signin-banner"
+        aria-hidden={!showSignInBanner}
+        inert={!showSignInBanner}
+        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark px-4 overflow-hidden transition-[max-height,opacity,margin,padding,border-width] duration-300 ease-out motion-reduce:transition-none ${
+          showSignInBanner ? 'py-3 max-h-60 opacity-100' : 'max-h-0 opacity-0 !py-0 !mt-0 !border-0'
+        }`}
+      >
+        <p className="text-sm text-zinc-700 dark:text-zinc-300">Already use StudyFlow on another device? Sign in to see your plan here.</p>
+        <div className="sm:w-60 shrink-0">
+          <SignInButton />
         </div>
-      )}
+      </div>
 
       {/* Zero State Activation Hero: Quick First Deadline Input */}
       {assignments.length === 0 && (

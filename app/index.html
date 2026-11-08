@@ -48,8 +48,13 @@
     
     <script>
       try {
-        const s = JSON.parse(localStorage.getItem('studyflow_storage_v1') || '{}');
-        const t = s?.state?.theme ?? 'system';
+        // The student's choice (light, dark or "system") is kept in its own entry, which signing out leaves alone.
+        // Older saves only have it inside the saved data. With no choice at all the app starts light.
+        let t = localStorage.getItem('studyflow_theme');
+        if (t !== 'light' && t !== 'dark' && t !== 'system') {
+          const s = JSON.parse(localStorage.getItem('studyflow_storage_v1') || '{}');
+          t = s?.state?.theme === 'dark' ? 'dark' : 'light';
+        }
         const dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.classList.toggle('dark', dark);
         const m = document.querySelector('meta[name="theme-color"]');
