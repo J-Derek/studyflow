@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { X, Calendar, Clock, BookOpen, AlertCircle } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Priority, Assignment } from '../types';
+import { DATE_MAX, DATE_MIN, LIMITS, isDateInRange, localDateISO } from '../utils/limits';
 
 interface AssignmentModalProps {
   isOpen: boolean;
@@ -15,7 +16,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
 
   const [title, setTitle] = useState('');
   const [course, setCourse] = useState('');
-  const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dueDate, setDueDate] = useState(localDateISO());
   const [dueTime, setDueTime] = useState('23:59');
   const [priority, setPriority] = useState<Priority>('medium');
   const [notes, setNotes] = useState('');
@@ -33,7 +34,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
     } else {
       setTitle('');
       setCourse('');
-      setDueDate(new Date().toISOString().split('T')[0]);
+      setDueDate(localDateISO());
       setDueTime('23:59');
       setPriority('medium');
       setNotes('');
@@ -47,12 +48,12 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !course.trim()) return;
+    if (!title.trim() || !course.trim() || !isDateInRange(dueDate)) return;
 
     if (assignmentToEdit) {
       updateAssignment(assignmentToEdit.id, {
-        title,
-        course,
+        title: title.trim(),
+        course: course.trim(),
         dueDate,
         dueTime,
         priority,
@@ -61,8 +62,8 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
       });
     } else {
       addAssignment({
-        title,
-        course,
+        title: title.trim(),
+        course: course.trim(),
         dueDate,
         dueTime,
         priority,
@@ -111,6 +112,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
             <input
               type="text"
               required
+              maxLength={LIMITS.assignmentTitle}
               placeholder="e.g. Problem Set 2"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -125,6 +127,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
             <input
               type="text"
               required
+              maxLength={LIMITS.assignmentCourse}
               placeholder="e.g. CS 101 or Physics"
               value={course}
               onChange={(e) => setCourse(e.target.value)}
@@ -141,6 +144,8 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
                 type="date"
                 aria-label="Due date"
                 required
+                min={DATE_MIN}
+                max={DATE_MAX}
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
@@ -215,7 +220,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
             </label>
             <textarea
               rows={4}
-              maxLength={2000}
+              maxLength={LIMITS.assignmentNotes}
               placeholder="What to include, page numbers, what the lecturer said…"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

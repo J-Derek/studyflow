@@ -18,6 +18,7 @@ import { useStudyFlowStore } from '../store/studyFlowStore';
 import { initFirestoreSync, mergeGuestDataIntoAccount, unsubscribeAllFirestoreSync } from '../services/firestoreSync';
 import { deleteAllFiles } from './localFiles';
 import { postAuthNotice } from './authNotice';
+import { clearSyncErrors } from './syncErrors';
 import { friendlyAuthMessage } from './authActions';
 import { markRedirectPending, takeRedirectPending, windowOpenIsReplaced } from '../utils/popupSupport';
 import { inAppBrowser } from '../utils/inAppBrowser';
@@ -44,6 +45,7 @@ if (authBroadcast) {
  */
 export async function wipeLocalUserData(opts: { clearFirestoreCache: boolean }): Promise<void> {
   unsubscribeAllFirestoreSync();
+  clearSyncErrors(); // the previous person's failed saves must not follow the next person
   useStudyFlowStore.getState().resetStore();
   try {
     localStorage.removeItem(STORAGE_KEY);

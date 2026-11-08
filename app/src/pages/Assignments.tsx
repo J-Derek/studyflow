@@ -12,6 +12,7 @@ import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Assignment, Subtask } from '../types';
 import { getDaysRemaining } from '../utils/formatters';
+import { LIMITS } from '../utils/limits';
 import { AssignmentModal } from '../components/AssignmentModal';
 
 export const AssignmentsPage: React.FC = () => {
@@ -351,6 +352,7 @@ export const AssignmentsPage: React.FC = () => {
                       <input
                         type="text"
                         aria-label={`Add a subtask to ${asg.title}`}
+                        maxLength={LIMITS.subtaskTitle}
                         placeholder="Add a subtask and press Enter"
                         autoFocus={addingFor === asg.id && effectiveSubtasks.length === 0}
                         value={newSubtaskInputs[asg.id] || ''}

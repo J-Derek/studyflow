@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Priority } from '../types';
+import { DATE_MAX, DATE_MIN, LIMITS, isDateInRange, localDateISO } from '../utils/limits';
 
 interface FirstDeadlineCardProps {
   onSuccessFocus?: (assignmentTitle: string) => void;
@@ -28,28 +29,28 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
   const getCalculatedDate = (type: 'today' | 'tomorrow' | 'friday' | 'nextWeek'): string => {
     const now = new Date();
     if (type === 'today') {
-      return now.toISOString().split('T')[0];
+      return localDateISO(now);
     }
     if (type === 'tomorrow') {
       const tomorrow = new Date(now);
       tomorrow.setDate(now.getDate() + 1);
-      return tomorrow.toISOString().split('T')[0];
+      return localDateISO(tomorrow);
     }
     if (type === 'friday') {
       const friday = new Date(now);
       const day = now.getDay();
       const diff = (5 - day + 7) % 7 || 7;
       friday.setDate(now.getDate() + diff);
-      return friday.toISOString().split('T')[0];
+      return localDateISO(friday);
     }
     if (type === 'nextWeek') {
       const nextMon = new Date(now);
       const day = now.getDay();
       const diff = (8 - day + 7) % 7 || 7;
       nextMon.setDate(now.getDate() + diff);
-      return nextMon.toISOString().split('T')[0];
+      return localDateISO(nextMon);
     }
-    return now.toISOString().split('T')[0];
+    return localDateISO(now);
   };
 
   // Initialize with tomorrow
@@ -64,7 +65,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !course.trim()) return;
+    if (!title.trim() || !course.trim() || !isDateInRange(dueDate)) return;
 
     const finalDate = dueDate || getCalculatedDate('tomorrow');
     addAssignment({
@@ -166,6 +167,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              maxLength={LIMITS.assignmentTitle}
               placeholder="e.g. Problem Set 2 or Chapter 4 Summary"
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
             />
@@ -180,6 +182,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               required
               value={course}
               onChange={(e) => setCourse(e.target.value)}
+              maxLength={LIMITS.assignmentCourse}
               placeholder="e.g. CS 101 or Physics"
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
             />
@@ -242,6 +245,8 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               <input
                 type="date"
                 aria-label="Due date"
+                min={DATE_MIN}
+                max={DATE_MAX}
                 value={dueDate}
                 onChange={(e) => {
                   setDueDate(e.target.value);

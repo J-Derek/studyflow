@@ -1,4 +1,5 @@
 import type { Assignment, StudySession, CourseGrade, Note, Priority, AssignmentStatus } from '../types';
+import { LIMITS } from './limits';
 
 export interface ValidatedBackupPayload {
   version: string;
@@ -94,7 +95,8 @@ function isValidAssignment(item: unknown): item is Assignment {
       if (!st || typeof st !== 'object') return false;
       const sub = st as Record<string, unknown>;
       if (typeof sub.id !== 'string' || sub.id.length === 0 || sub.id.length > 100) return false;
-      if (typeof sub.title !== 'string' || sub.title.length > 200) return false;
+      // An over-long checklist item is shortened when cleaned (below) instead of rejecting the whole backup.
+      if (typeof sub.title !== 'string') return false;
       if (typeof sub.completed !== 'boolean') return false;
     }
   }
@@ -164,7 +166,7 @@ function cleanAssignment(a: Assignment): Assignment {
     progress: a.progress,
     ...(a.notes !== undefined ? { notes: a.notes } : {}),
     ...(a.subtasks !== undefined
-      ? { subtasks: a.subtasks.map((t) => ({ id: t.id, title: t.title, completed: t.completed })) }
+      ? { subtasks: a.subtasks.map((t) => ({ id: t.id, title: t.title.trim().slice(0, LIMITS.subtaskTitle), completed: t.completed })) }
       : {}),
     createdAt: a.createdAt,
     ...(typeof a.completedAt === 'string' ? { completedAt: a.completedAt.slice(0, 50) } : {})
@@ -336,7 +338,9 @@ export function validateBackupJson(rawJsonString: string): ValidationResult {
       ledger: {
         assignments: cleanAssignments,
         sessions: cleanSessions,
-        grades: cleanGrades
+        grades: cleanGrades,
+        // Notes were checked above but used to be left out here, so restoring a backup silently lost them.
+        ...(notes ? { notes } : {})
       }
     }
   };

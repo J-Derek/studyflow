@@ -28,9 +28,11 @@ import {
   completeFocusSession
 } from '../services/cloud';
 import { calculateSubtaskProgress } from '../utils/subtasks';
+import { LIMITS, clampText } from '../utils/limits';
 import { syncThemeColor } from '../utils/themeColor';
 import { readSavedMode, resolveTheme, saveMode, systemPrefersDark, type ThemeMode } from '../utils/themePreference';
 import { hasSavedDevicePrefs, readDevicePrefs, saveDevicePrefs } from '../utils/devicePrefs';
+import { reportSyncError } from '../lib/syncErrors';
 import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 import { clampScore } from '../utils/academicCalculations';
@@ -162,6 +164,24 @@ interface StudyFlowState {
   setSoundscapeVolume: (volume: number) => void;
 }
 
+// Friendly names for the things that can fail to save, used in the "couldn't save" message.
+const SYNC_WHAT: Record<string, string> = {
+  syncAssignmentToFirestore: 'your assignment',
+  deleteAssignmentFromFirestore: 'an assignment you deleted',
+  syncSessionToFirestore: 'your class',
+  deleteSessionFromFirestore: 'a class you deleted',
+  syncGradeToFirestore: 'your course',
+  deleteGradeFromFirestore: 'a course you deleted',
+  syncNoteToFirestore: 'your note',
+  deleteNoteFromFirestore: 'a note you deleted',
+  syncProfile: 'your profile',
+  syncOnboardingDismissed: 'your checklist choice'
+};
+
+/** The handler for a failed cloud save: tell the student (with Retry when the save can simply be repeated). */
+const failed = (fn: string, retry?: () => Promise<unknown>) => (err: unknown) =>
+  reportSyncError(SYNC_WHAT[fn] ?? 'your changes', err, retry);
+
 const defaultSettings: TimerSettings = {
   focusDuration: 25 * 60,
   shortBreakDuration: 5 * 60,
@@ -193,7 +213,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       setCustomPhoto: (url) => {
         set({ customPhotoUrl: url });
         const uid = get().userId;
-        if (uid) syncProfile(uid).catch(console.warn);
+        if (uid) syncProfile(uid).catch(failed('syncProfile', () => syncProfile(uid)));
       },
       isSyncing: false,
       setAuthUser: (uid, isAnonymous, email, displayName, photoUrl) => {
@@ -250,7 +270,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           user: { ...state.user, ...updates }
         }));
         const uid = get().userId;
-        if (uid) syncProfile(uid).catch(console.warn);
+        if (uid) syncProfile(uid).catch(failed('syncProfile', () => syncProfile(uid)));
       },
 
       guestNoticeDismissed: false,
@@ -260,7 +280,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       dismissOnboarding: () => {
         set({ onboardingDismissed: true });
         const uid = get().userId;
-        if (uid) syncOnboardingDismissed(uid).catch(console.warn);
+        if (uid) syncOnboardingDismissed(uid).catch(failed('syncOnboardingDismissed', () => syncOnboardingDismissed(uid)));
       },
 
       icsExportCount: 0,
@@ -282,9 +302,9 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         });
         const uid = state.userId;
         if (uid) {
-          newAssignments.forEach((x) => syncAssignmentToFirestore(uid, x).catch(console.warn));
-          newSessions.forEach((x) => syncSessionToFirestore(uid, x).catch(console.warn));
-          newGrades.forEach((x) => syncGradeToFirestore(uid, x).catch(console.warn));
+          newAssignments.forEach((x) => syncAssignmentToFirestore(uid, x).catch(failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, x))));
+          newSessions.forEach((x) => syncSessionToFirestore(uid, x).catch(failed('syncSessionToFirestore', () => syncSessionToFirestore(uid, x))));
+          newGrades.forEach((x) => syncGradeToFirestore(uid, x).catch(failed('syncGradeToFirestore', () => syncGradeToFirestore(uid, x))));
         }
       },
 
@@ -303,18 +323,18 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           const removedN = state.notes.filter((x) => !keepN.has(x.id));
           set({ notes: ledger.notes });
           if (uid) {
-            ledger.notes.forEach((x) => syncNoteToFirestore(uid, x).catch(console.warn));
-            removedN.forEach((x) => deleteNoteFromFirestore(uid, x.id).catch(console.warn));
+            ledger.notes.forEach((x) => syncNoteToFirestore(uid, x).catch(failed('syncNoteToFirestore', () => syncNoteToFirestore(uid, x))));
+            removedN.forEach((x) => deleteNoteFromFirestore(uid, x.id).catch(failed('deleteNoteFromFirestore', () => deleteNoteFromFirestore(uid, x.id))));
           }
         }
         if (uid) {
           // A restore replaces the account's data in the cloud too; otherwise the next snapshot undoes it.
-          ledger.assignments.forEach((x) => syncAssignmentToFirestore(uid, x).catch(console.warn));
-          ledger.sessions.forEach((x) => syncSessionToFirestore(uid, x).catch(console.warn));
-          removedA.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(console.warn));
-          removedS.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(console.warn));
-          ledger.grades.forEach((x) => syncGradeToFirestore(uid, x).catch(console.warn));
-          removedG.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(console.warn));
+          ledger.assignments.forEach((x) => syncAssignmentToFirestore(uid, x).catch(failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, x))));
+          ledger.sessions.forEach((x) => syncSessionToFirestore(uid, x).catch(failed('syncSessionToFirestore', () => syncSessionToFirestore(uid, x))));
+          removedA.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(failed('deleteAssignmentFromFirestore', () => deleteAssignmentFromFirestore(uid, x.id))));
+          removedS.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(failed('deleteSessionFromFirestore', () => deleteSessionFromFirestore(uid, x.id))));
+          ledger.grades.forEach((x) => syncGradeToFirestore(uid, x).catch(failed('syncGradeToFirestore', () => syncGradeToFirestore(uid, x))));
+          removedG.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(failed('deleteGradeFromFirestore', () => deleteGradeFromFirestore(uid, x.id))));
         }
       },
 
@@ -330,9 +350,9 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         });
         const uid = state.userId;
         if (uid) {
-          sampleAssignments.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(console.warn));
-          sampleSessions.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(console.warn));
-          sampleGrades.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(console.warn));
+          sampleAssignments.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(failed('deleteAssignmentFromFirestore', () => deleteAssignmentFromFirestore(uid, x.id))));
+          sampleSessions.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(failed('deleteSessionFromFirestore', () => deleteSessionFromFirestore(uid, x.id))));
+          sampleGrades.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(failed('deleteGradeFromFirestore', () => deleteGradeFromFirestore(uid, x.id))));
         }
       },
 
@@ -340,10 +360,10 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const state = get();
         const uid = state.userId;
         if (uid) {
-          state.assignments.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(console.warn));
-          state.sessions.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(console.warn));
-          state.grades.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(console.warn));
-          state.notes.forEach((x) => deleteNoteFromFirestore(uid, x.id).catch(console.warn));
+          state.assignments.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(failed('deleteAssignmentFromFirestore', () => deleteAssignmentFromFirestore(uid, x.id))));
+          state.sessions.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(failed('deleteSessionFromFirestore', () => deleteSessionFromFirestore(uid, x.id))));
+          state.grades.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(failed('deleteGradeFromFirestore', () => deleteGradeFromFirestore(uid, x.id))));
+          state.notes.forEach((x) => deleteNoteFromFirestore(uid, x.id).catch(failed('deleteNoteFromFirestore', () => deleteNoteFromFirestore(uid, x.id))));
         }
         set({
           assignments: [],
@@ -402,6 +422,10 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       addAssignment: (assignment) => {
         const newAssignment: Assignment = {
           ...assignment,
+          // Whatever the screen sent, never keep text the cloud would refuse.
+          title: clampText(assignment.title, LIMITS.assignmentTitle),
+          course: clampText(assignment.course, LIMITS.assignmentCourse),
+          ...(assignment.notes !== undefined ? { notes: assignment.notes.slice(0, LIMITS.assignmentNotes) } : {}),
           id: `asg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           createdAt: new Date().toISOString()
         };
@@ -411,7 +435,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const uid = get().userId;
         if (uid) {
           syncAssignmentToFirestore(uid, newAssignment).catch((err) => {
-            console.warn('Sync error adding assignment:', err);
+            failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, newAssignment))(err);
           });
         }
       },
@@ -421,6 +445,9 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           assignments: state.assignments.map((a) => {
             if (a.id === id) {
               const updated = { ...a, ...updates };
+              if (updates.title !== undefined) updated.title = clampText(updates.title, LIMITS.assignmentTitle);
+              if (updates.course !== undefined) updated.course = clampText(updates.course, LIMITS.assignmentCourse);
+              if (updates.notes !== undefined) updated.notes = updates.notes.slice(0, LIMITS.assignmentNotes);
               if (updates.progress !== undefined) {
                 if (updates.progress === 100 && a.status !== 'completed') {
                   updated.status = 'completed';
@@ -433,7 +460,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
               const uid = get().userId;
               if (uid) {
                 syncAssignmentToFirestore(uid, updated).catch((err) => {
-                  console.warn('Sync error updating assignment:', err);
+                  failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, updated))(err);
                 });
               }
               return updated;
@@ -451,7 +478,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const uid = get().userId;
         if (uid) {
           deleteAssignmentFromFirestore(uid, id).catch((err) => {
-            console.warn('Sync error deleting assignment, putting it back:', err);
+            failed('deleteAssignmentFromFirestore')(err);
             // Put back only this assignment, so anything done since is not undone.
             if (removed) {
               set((state) => (state.assignments.some((a) => a.id === id) ? state : { assignments: [removed, ...state.assignments] }));
@@ -467,7 +494,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const uid = get().userId;
         if (uid) {
           syncAssignmentToFirestore(uid, assignment).catch((err) => {
-            console.warn('Sync error restoring assignment:', err);
+            failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, assignment))(err);
           });
         }
       },
@@ -486,7 +513,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         };
         set((state) => ({ notes: [note, ...state.notes] }));
         const uid = get().userId;
-        if (uid) syncNoteToFirestore(uid, note).catch((err) => console.warn('Sync error adding note:', err));
+        if (uid) syncNoteToFirestore(uid, note).catch(failed('syncNoteToFirestore', () => syncNoteToFirestore(uid, note)));
         return note.id;
       },
 
@@ -507,7 +534,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           })
         }));
         const uid = get().userId;
-        if (uid && updated) syncNoteToFirestore(uid, updated).catch((err) => console.warn('Sync error updating note:', err));
+        const saved = updated as Note | undefined;
+        if (uid && saved) syncNoteToFirestore(uid, saved).catch(failed('syncNoteToFirestore', () => syncNoteToFirestore(uid, saved)));
       },
 
       deleteNote: (id) => {
@@ -516,7 +544,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const uid = get().userId;
         if (uid) {
           deleteNoteFromFirestore(uid, id).catch((err) => {
-            console.warn('Sync error deleting note, putting it back:', err);
+            failed('deleteNoteFromFirestore')(err);
             if (removed) set((state) => (state.notes.some((n) => n.id === id) ? state : { notes: [removed, ...state.notes] }));
           });
         }
@@ -525,7 +553,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       restoreNote: (note) => {
         set((state) => (state.notes.some((n) => n.id === note.id) ? state : { notes: [note, ...state.notes] }));
         const uid = get().userId;
-        if (uid) syncNoteToFirestore(uid, note).catch((err) => console.warn('Sync error restoring note:', err));
+        if (uid) syncNoteToFirestore(uid, note).catch(failed('syncNoteToFirestore', () => syncNoteToFirestore(uid, note)));
       },
 
       toggleAssignmentComplete: (id) => {
@@ -542,7 +570,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
               const uid = get().userId;
               if (uid) {
                 syncAssignmentToFirestore(uid, updated).catch((err) => {
-                  console.warn('Sync error toggling assignment:', err);
+                  failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, updated))(err);
                 });
               }
               return updated;
@@ -569,7 +597,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
                 completedAt: allDone ? (a.completedAt || new Date().toISOString()) : undefined
               };
               const uid = get().userId;
-              if (uid) syncAssignmentToFirestore(uid, updated).catch(console.warn);
+              if (uid) syncAssignmentToFirestore(uid, updated).catch(failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, updated)));
               return updated;
             }
             return a;
@@ -582,9 +610,12 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           assignments: state.assignments.map((a) => {
             if (a.id === assignmentId) {
               const currentSubtasks: Subtask[] = a.subtasks ?? [];
+              const text = clampText(title, LIMITS.subtaskTitle);
+              // The cloud holds at most 100 checklist items per assignment, and an empty one is not useful.
+              if (!text || currentSubtasks.length >= LIMITS.subtasksPerAssignment) return a;
               const newSubtask: Subtask = {
                 id: `st-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-                title,
+                title: text,
                 completed: false
               };
               const updatedSubtasks = [...currentSubtasks, newSubtask];
@@ -597,7 +628,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
                 completedAt: allDone ? (a.completedAt || new Date().toISOString()) : undefined
               };
               const uid = get().userId;
-              if (uid) syncAssignmentToFirestore(uid, updated).catch(console.warn);
+              if (uid) syncAssignmentToFirestore(uid, updated).catch(failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, updated)));
               return updated;
             }
             return a;
@@ -619,7 +650,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
                 completedAt: allDone ? (a.completedAt || new Date().toISOString()) : undefined
               };
               const uid = get().userId;
-              if (uid) syncAssignmentToFirestore(uid, updated).catch(console.warn);
+              if (uid) syncAssignmentToFirestore(uid, updated).catch(failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, updated)));
               return updated;
             }
             return a;
@@ -631,6 +662,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       addSession: (session) => {
         const newSession: StudySession = {
           ...session,
+          title: clampText(session.title, LIMITS.blockTitle),
+          course: clampText(session.course, LIMITS.blockCourse),
           id: `s-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
         };
         set((state) => ({
@@ -639,7 +672,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const uid = get().userId;
         if (uid) {
           syncSessionToFirestore(uid, newSession).catch((err) => {
-            console.warn('Sync error adding session:', err);
+            failed('syncSessionToFirestore', () => syncSessionToFirestore(uid, newSession))(err);
           });
         }
       },
@@ -649,11 +682,13 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const current = previousSessions.find((s) => s.id === id);
         if (!current) return;
         const updated: StudySession = { ...current, ...updates, id };
+        if (updates.title !== undefined) updated.title = clampText(updates.title, LIMITS.blockTitle);
+        if (updates.course !== undefined) updated.course = clampText(updates.course, LIMITS.blockCourse);
         set((state) => ({ sessions: state.sessions.map((s) => (s.id === id ? updated : s)) }));
         const uid = get().userId;
         if (uid) {
           syncSessionToFirestore(uid, updated).catch((err) => {
-            console.warn('Sync error updating session, rolling back state:', err);
+            failed('syncSessionToFirestore')(err);
             set({ sessions: previousSessions });
           });
         }
@@ -667,7 +702,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const uid = get().userId;
         if (uid) {
           deleteSessionFromFirestore(uid, id).catch((err) => {
-            console.warn('Sync error deleting session, rolling back state:', err);
+            failed('deleteSessionFromFirestore')(err);
             set({ sessions: previousSessions });
           });
         }
@@ -683,7 +718,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         };
         set((state) => ({ grades: state.grades.map((c) => (c.id === courseId ? next : c)) }));
         const uid = get().userId;
-        if (uid) syncGradeToFirestore(uid, next).catch((err) => console.warn('Sync error updating grade:', err));
+        if (uid) syncGradeToFirestore(uid, next).catch(failed('syncGradeToFirestore', () => syncGradeToFirestore(uid, next)));
       },
 
       setCourseAssessments: (courseId, assessments) => {
@@ -692,23 +727,25 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const next: CourseGrade = { ...course, assessments: normalizeAssessments(assessments) };
         set((state) => ({ grades: state.grades.map((c) => (c.id === courseId ? next : c)) }));
         const uid = get().userId;
-        if (uid) syncGradeToFirestore(uid, next).catch((err) => console.warn('Sync error updating grade:', err));
+        if (uid) syncGradeToFirestore(uid, next).catch(failed('syncGradeToFirestore', () => syncGradeToFirestore(uid, next)));
       },
 
       addCourseGrade: (course) => {
         const newCourse: CourseGrade = {
           ...course,
+          courseCode: clampText(course.courseCode, LIMITS.courseCode),
+          courseName: clampText(course.courseName, LIMITS.courseName),
           id: `cg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
         };
         set((state) => ({ grades: [...state.grades, newCourse] }));
         const uid = get().userId;
-        if (uid) syncGradeToFirestore(uid, newCourse).catch((err) => console.warn('Sync error adding grade:', err));
+        if (uid) syncGradeToFirestore(uid, newCourse).catch(failed('syncGradeToFirestore', () => syncGradeToFirestore(uid, newCourse)));
       },
 
       deleteCourseGrade: (courseId) => {
         set((state) => ({ grades: state.grades.filter((c) => c.id !== courseId) }));
         const uid = get().userId;
-        if (uid) deleteGradeFromFirestore(uid, courseId).catch((err) => console.warn('Sync error deleting grade:', err));
+        if (uid) deleteGradeFromFirestore(uid, courseId).catch(failed('deleteGradeFromFirestore', () => deleteGradeFromFirestore(uid, courseId)));
       },
 
       // Focus Timer
