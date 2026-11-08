@@ -11,7 +11,7 @@ export function friendlyAuthMessage(err: unknown): string | null {
     case 'auth/in-app-browser-blocked':
       return 'Google sign-in does not work inside this app. Open StudyFlow in Chrome or Safari and try again.';
     case 'auth/popup-blocked':
-      return 'Your browser blocked the Google sign-in window. Allow pop-ups for this site, then try again.';
+      return 'Your browser blocked the Google sign-in window. Click the blocked pop-up icon at the right end of the address bar, choose "Always allow", then press Sign in again.';
     case 'auth/operation-not-supported-in-this-environment':
       return 'This browser cannot open Google sign-in. Open StudyFlow in Chrome or Safari and try again.';
     case 'auth/merge-failed':

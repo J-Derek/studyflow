@@ -7,6 +7,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { BackupModal } from './components/BackupModal';
 import { ProfileModal } from './components/ProfileModal';
 import { HelpMenuModal } from './components/HelpMenuModal';
+import { AuthNotice } from './components/AuthNotice';
 import { useStudyFlowStore, getTabFromPath } from './store/studyFlowStore';
 import { startAuthSessionLazy } from './lib/authActions';
 
@@ -194,6 +195,9 @@ export function App() {
           isOpen={isHelpOpen}
           onClose={() => setIsHelpOpen(false)}
         />
+
+        {/* Messages from sign-in, such as "Google sign-in did not finish" */}
+        <AuthNotice />
       </div>
     </div>
   );

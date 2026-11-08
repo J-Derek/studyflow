@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import {
   browserLocalPersistence,
+  browserPopupRedirectResolver,
   browserSessionPersistence,
   connectAuthEmulator,
   GoogleAuthProvider,
@@ -15,6 +16,7 @@ import {
   connectFirestoreEmulator,
   type Firestore
 } from 'firebase/firestore';
+import { peekRedirectPending } from '../utils/popupSupport';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyCXhlM88LmNpQN75EGa-jUi8dxibXwpjqs',
@@ -38,9 +40,12 @@ export const db: Firestore = initializeFirestore(app, {
 
 // Initialize Authentication & Providers
 // No popup resolver here: it would load Google's api.js on every page view. It is passed when the
-// student actually clicks sign-in (see lib/auth.ts).
+// student actually clicks sign-in (see lib/auth.ts). The one exception is the page load right after the
+// student comes back from Google's same-page sign-in: Firebase must have it from the start to pick the
+// result up (see completeRedirectSignIn in lib/auth.ts).
 export const auth: Auth = initializeAuth(app, {
-  persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+  ...(peekRedirectPending() ? { popupRedirectResolver: browserPopupRedirectResolver } : {})
 });
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
