@@ -12,11 +12,18 @@ type Store = {
 const ready = (page: Page) =>
   page.waitForFunction(() => !!(window as unknown as { __store?: { getState: () => Store } }).__store?.getState().userId);
 
-const state = (page: Page): Promise<State> =>
-  page.evaluate(() => {
-    const s = (window as unknown as { __store: { getState: () => Store } }).__store.getState();
-    return { uid: s.userId, anonymous: s.isAnonymous, email: s.userEmail, titles: s.assignments.map((a) => a.title) };
-  });
+// The app reloads itself once after signing in to an existing account, so the store can briefly not exist.
+// Report "nothing yet" for that moment instead of throwing, so polling carries on through it.
+const state = async (page: Page): Promise<State> => {
+  try {
+    return await page.evaluate(() => {
+      const s = (window as unknown as { __store: { getState: () => Store } }).__store.getState();
+      return { uid: s.userId, anonymous: s.isAnonymous, email: s.userEmail, titles: s.assignments.map((a) => a.title) };
+    });
+  } catch {
+    return { uid: null, anonymous: true, email: null, titles: [] };
+  }
+};
 
 const addAssignment = (page: Page, title: string) =>
   page.evaluate((t) => {
@@ -72,7 +79,7 @@ for (const [name, blocker] of Object.entries(BLOCKERS)) {
       await chooseGoogleAccount(page, email);
 
       await ready(page);
-      await page.waitForFunction(() => (window as unknown as { __store: { getState: () => Store } }).__store.getState().isAnonymous === false);
+      await page.waitForFunction(() => (window as unknown as { __store?: { getState: () => Store } }).__store?.getState().isAnonymous === false);
       const after = await state(page);
       expect(after.email).toBe(email);
       expect(after.uid).toBe(before.uid); // the guest became the account: nothing moved, nothing lost
@@ -95,7 +102,7 @@ test('signing in to an existing account on the same page merges the guest record
   await page.locator('aside').getByRole('button', { name: 'Sign in with Google' }).click();
   await chooseGoogleAccount(page, email);
   await ready(page);
-  await page.waitForFunction(() => (window as unknown as { __store: { getState: () => Store } }).__store.getState().isAnonymous === false);
+  await page.waitForFunction(() => (window as unknown as { __store?: { getState: () => Store } }).__store?.getState().isAnonymous === false);
   await expect.poll(async () => (await state(page)).email).toBe(email);
   // wait until the account's record has reached the database, as it would within a moment in real use
   const uid = (await state(page)).uid;
