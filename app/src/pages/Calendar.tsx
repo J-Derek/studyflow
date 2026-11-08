@@ -6,6 +6,7 @@ import { useDialog } from '../lib/useDialog';
 import { exportTimetable } from '../lib/exportTimetable';
 import { clashingIds, findClashes, toMinutes } from '../utils/timetable';
 import type { StudySession } from '../types';
+import { LIMITS } from '../utils/limits';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -94,9 +95,9 @@ export const CalendarPage: React.FC = () => {
 
   const handleSaveSession = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !course || timesInvalid) return;
+    if (!title.trim() || !course.trim() || timesInvalid) return;
 
-    const data = { title, course, dayOfWeek, startTime, endTime, type: sessionType };
+    const data = { title: title.trim(), course: course.trim(), dayOfWeek, startTime, endTime, type: sessionType };
     if (editingId) updateSession(editingId, data);
     else addSession(data);
     closeModal();
@@ -322,6 +323,7 @@ export const CalendarPage: React.FC = () => {
                 <input
                   type="text"
                   required
+                  maxLength={LIMITS.blockTitle}
                   placeholder="e.g. Distributed Systems Lab"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -336,6 +338,7 @@ export const CalendarPage: React.FC = () => {
                 <input
                   type="text"
                   required
+                  maxLength={LIMITS.blockCourse}
                   placeholder="e.g. CS 101"
                   value={course}
                   onChange={(e) => setCourse(e.target.value)}

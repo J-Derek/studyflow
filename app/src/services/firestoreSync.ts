@@ -31,9 +31,22 @@ let cloudMode: string | null = null;
 let lastLocalRev = 0;
 
 /**
+ * Which collections still have changes on their way to the cloud. The "Saved" badge must say "Saving" while ANY of
+ * them does, not just assignments.
+ */
+const pendingWrites = new Set<string>();
+function trackPending(collectionName: string, hasPending: boolean): void {
+  if (hasPending) pendingWrites.add(collectionName);
+  else pendingWrites.delete(collectionName);
+  const syncing = pendingWrites.size > 0;
+  if (useStudyFlowStore.getState().isSyncing !== syncing) useStudyFlowStore.setState({ isSyncing: syncing });
+}
+
+/**
  * Cleanly terminates all active Firestore snapshot listeners across collections.
  */
 export function unsubscribeAllFirestoreSync(): void {
+  pendingWrites.clear();
   cloudRev = 0;
   cloudStatus = 'none';
   cloudMode = null;
@@ -69,6 +82,7 @@ export function initFirestoreSync(uid: string): () => void {
     userDocRef,
     (snap) => {
       if (!isCurrentUser(uid)) return;
+      trackPending('profile', snap.metadata.hasPendingWrites);
       const data = snap.data();
       const dismissed = data?.onboarding?.dismissed === true;
       if (dismissed !== useStudyFlowStore.getState().onboardingDismissed) {
@@ -132,7 +146,7 @@ export function initFirestoreSync(uid: string): () => void {
     query(collection(db, 'users', uid, 'assignments'), limit(LIST_CAP)),
     async (snapshot) => {
       if (!isCurrentUser(uid)) return;
-      useStudyFlowStore.setState({ isSyncing: snapshot.metadata.hasPendingWrites });
+      trackPending('assignments', snapshot.metadata.hasPendingWrites);
 
       if (snapshot.metadata.fromCache && snapshot.empty) return; // wait for the server
 
@@ -170,6 +184,7 @@ export function initFirestoreSync(uid: string): () => void {
     query(collection(db, 'users', uid, 'notes'), limit(LIST_CAP)),
     async (snapshot) => {
       if (!isCurrentUser(uid)) return;
+      trackPending('notes', snapshot.metadata.hasPendingWrites);
       if (snapshot.metadata.fromCache && snapshot.empty) return;
 
       if (snapshot.empty && !notesSeeded) {
@@ -200,6 +215,7 @@ export function initFirestoreSync(uid: string): () => void {
     query(collection(db, 'users', uid, 'sessions'), limit(LIST_CAP)),
     async (snapshot) => {
       if (!isCurrentUser(uid)) return;
+      trackPending('sessions', snapshot.metadata.hasPendingWrites);
       if (snapshot.metadata.fromCache && snapshot.empty) return;
 
       if (snapshot.empty && !sessionsSeeded) {
@@ -235,6 +251,7 @@ export function initFirestoreSync(uid: string): () => void {
     query(collection(db, 'users', uid, 'grades'), limit(LIST_CAP)),
     async (snapshot) => {
       if (!isCurrentUser(uid)) return;
+      trackPending('grades', snapshot.metadata.hasPendingWrites);
       if (snapshot.metadata.fromCache && snapshot.empty) return;
 
       if (snapshot.empty && !gradesSeeded) {

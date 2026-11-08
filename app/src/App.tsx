@@ -8,6 +8,7 @@ import { BackupModal } from './components/BackupModal';
 import { ProfileModal } from './components/ProfileModal';
 import { HelpMenuModal } from './components/HelpMenuModal';
 import { AuthNotice } from './components/AuthNotice';
+import { SyncErrorToast } from './components/SyncErrorToast';
 import { useStudyFlowStore, getTabFromPath } from './store/studyFlowStore';
 import { startAuthSessionLazy } from './lib/authActions';
 
@@ -198,6 +199,9 @@ export function App() {
 
         {/* Messages from sign-in, such as "Google sign-in did not finish" */}
         <AuthNotice />
+
+        {/* Tells the student when a change reached the screen but not their account */}
+        <SyncErrorToast />
       </div>
     </div>
   );

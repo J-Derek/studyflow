@@ -10,6 +10,7 @@ import {
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Assessment } from '../types';
 import { GradingEditor } from '../components/GradingEditor';
+import { LIMITS } from '../utils/limits';
 import {
   percentageToGpa,
   percentageToLetter,
@@ -64,8 +65,8 @@ export const GradesPage: React.FC = () => {
     if (!newCode.trim() || !newName.trim()) return;
 
     addCourseGrade({
-      courseCode: newCode.trim().toUpperCase(),
-      courseName: newName.trim(),
+      courseCode: newCode.trim().toUpperCase().slice(0, LIMITS.courseCode),
+      courseName: newName.trim().slice(0, LIMITS.courseName),
       credits: Number(newCredits) || 3,
       targetLetter: newTarget,
       color: '#4F46E5',
@@ -414,6 +415,7 @@ export const GradesPage: React.FC = () => {
                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Course Code</label>
                 <input
                   type="text"
+                  maxLength={LIMITS.courseCode}
                   placeholder="e.g. CS 240"
                   value={newCode}
                   onChange={(e) => setNewCode(e.target.value)}
@@ -426,6 +428,7 @@ export const GradesPage: React.FC = () => {
                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Course Name</label>
                 <input
                   type="text"
+                  maxLength={LIMITS.courseName}
                   placeholder="e.g. Advanced Operating Systems"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
