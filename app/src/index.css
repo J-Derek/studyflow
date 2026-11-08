@@ -56,3 +56,49 @@ summary:focus-visible,
 .dark ::-webkit-scrollbar-thumb:hover {
   @apply bg-zinc-600;
 }
+
+/* Gentle, looping empty-state illustrations (components/EmptyIllustration.tsx). Pure CSS: nothing to download.
+   With "reduce motion" switched on, everything stands still in its finished pose. */
+@keyframes sf-draw {
+  0%, 12% { stroke-dashoffset: var(--len, 24); }
+  30%, 88% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: var(--len, 24); }
+}
+@keyframes sf-grow {
+  0%, 10% { transform: scaleX(0); }
+  28%, 90% { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
+}
+@keyframes sf-pop {
+  0%, 8% { opacity: 0; transform: translateY(6px) scale(0.9); }
+  24%, 88% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(6px) scale(0.9); }
+}
+@keyframes sf-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes sf-rise {
+  0%, 100% { transform: translateY(6px); }
+  50% { transform: translateY(0); }
+}
+@keyframes sf-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.08); }
+}
+@keyframes sf-float {
+  0% { transform: translateY(8px); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(-14px); opacity: 0; }
+}
+.sf-draw { stroke-dasharray: var(--len, 24); animation: sf-draw 6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.sf-grow { transform-box: fill-box; transform-origin: left center; animation: sf-grow 7s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.sf-pop { transform-box: fill-box; transform-origin: center; animation: sf-pop 7s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.sf-bob { animation: sf-bob 3.2s ease-in-out infinite; }
+.sf-rise { animation: sf-rise 6s ease-in-out infinite; }
+.sf-pulse { transform-box: fill-box; transform-origin: center; animation: sf-pulse 4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.sf-float { animation: sf-float 3.6s ease-out infinite; animation-delay: var(--d, 0s); }
+@media (prefers-reduced-motion: reduce) {
+  .sf-draw, .sf-grow, .sf-pop, .sf-bob, .sf-rise, .sf-pulse, .sf-float { animation: none !important; }
+  .sf-float { opacity: 0; }
+}
