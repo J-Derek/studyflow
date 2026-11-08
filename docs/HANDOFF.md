@@ -31,7 +31,13 @@ Read-only check that Google still accepts both addresses (no sign-in needed): ca
 `identitytoolkit.googleapis.com/v1/accounts:createAuthUri?key=<apiKey>` with `continueUri` set to each handler address, fetch
 the returned `authUri`, and look for `redirect_uri_mismatch` in the page.
 
-### Next: PR2, timer settings per account (do this first, it is a privacy leak)
+### PR2, timer settings per account: BUILT in PR #18 (deploy rules BEFORE the app)
+Done: `timerPrefs` map on the user document (rules `isValidTimerPrefs`, 4 rules tests), `syncTimerPrefs` / `applyAccountTimerPrefs`,
+defaults on sign-out, old `studyflow_device_prefs` entry moved once to the owning account then deleted (`utils/devicePrefs.ts` now only
+validates), scheduler stops writing when another tab switched account, Apply/Cancel form with "next block" or "restart".
+E2E: `e2e/timer-prefs-account.spec.ts`. Also fixed a flake: a sync-error message dismissed while its retry was running came back.
+Not done: tab labels still show new lengths mid-block; pomodoro counts still per device. The brief below is kept for reference.
+
 Derek found that after switching accounts, "the other person's focus timers come with me". Cause (verified in code):
 - `src/utils/devicePrefs.ts` keeps `timerSettings` (focus, short, long, auto-start flags), `soundscape`, `breakSoundscape`,
   `soundscapeVolume` in localStorage key `studyflow_device_prefs`, which **sign-out deliberately does not wipe**. The store reads it
@@ -186,9 +192,8 @@ Added on 2026-11-06 and 2026-11-07 (PRs #9 to #12, all merged and live; no Fires
 - Notes: full-screen reader, and PDFs attached to a note that stay on the device only (`lib/localFiles.ts`, IndexedDB,
   25 MB each, PDF header checked). They do not sync, and are deleted on sign-out or account switch and when a note's undo
   window passes.
-- Per-device settings survive sign-out (`utils/themePreference.ts`, `utils/devicePrefs.ts`, own localStorage entries
-  `studyflow_theme` and `studyflow_device_prefs`): light, dark or Device (follows the phone or laptop live), timer lengths,
-  auto-start, sound choices and volume. Signing out still wipes the student's data from the browser.
+- The theme survives sign-out (`utils/themePreference.ts`, key `studyflow_theme`): light, dark or Device. Timer lengths,
+  auto-start and sounds belong to the account since PR2 and reset to defaults on sign-out.
 - Phone pass: every button, field and picker is at least 44px on a phone; long note links, assignment titles and the
   priority filter no longer get cut off. `e2e/phone-layout.spec.ts` guards this.
 
@@ -241,7 +246,7 @@ Added on 2026-11-06 and 2026-11-07 (PRs #9 to #12, all merged and live; no Fires
    are built; slides (pptx) and images are not supported yet; Drive links work in notes. Decide after students use it.
 4. Delete my account: the Help note says it is not built. Focus sessions cannot be deleted under the current rules, so a
    rules change is needed first.
-5. Timer lengths, sound choices and the theme are per device (not synced to the account). Custom grading weights sync.
+5. The theme is per device. Timer lengths and sound choices sync to the account (PR2). Custom grading weights sync.
 6. Connect the Vercel project to Git (project settings, Git, root directory `app`) so merges deploy themselves.
 7. Add the `FIREBASE_SERVICE_ACCOUNT` GitHub secret if CI should deploy rules.
 8. A real screen reader pass (NVDA or VoiceOver), the five-student usability test, and a custom domain (add it to Firebase

@@ -1,4 +1,5 @@
 import type { Assignment, CourseGrade, Note, StudySession, Subtask, UserPreferences } from '../types';
+import { sanitizeTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 
 type Doc = Record<string, unknown>;
 
@@ -163,6 +164,43 @@ export function profileToDoc(uid: string, user: UserPreferences, photo: string |
   if (user.timeZone) out.timeZone = user.timeZone.slice(0, 64);
   if (validPhoto(photo)) out.photo = photo;
   return out;
+}
+
+/**
+ * Timer lengths, auto-start choices and sounds as stored in the user document's `timerPrefs` map.
+ * Every key is always present, which is what firestore.rules requires.
+ */
+export function timerPrefsToDoc(p: TimerPrefs): Doc {
+  const clean = sanitizeTimerPrefs(p);
+  const t = clean.timerSettings ?? p.timerSettings;
+  return {
+    focusDuration: t.focusDuration,
+    shortBreakDuration: t.shortBreakDuration,
+    longBreakDuration: t.longBreakDuration,
+    autoStartBreaks: t.autoStartBreaks === true,
+    autoStartFocus: t.autoStartFocus === true,
+    soundscape: clean.soundscape ?? 'off',
+    breakSoundscape: clean.breakSoundscape ?? 'off',
+    soundscapeVolume: clean.soundscapeVolume ?? 0.35
+  };
+}
+
+/** The reverse. Anything missing or invalid is simply left out, so the caller keeps its own value. */
+export function docToTimerPrefs(raw: unknown): Partial<TimerPrefs> {
+  if (!raw || typeof raw !== 'object') return {};
+  const r = raw as Doc;
+  return sanitizeTimerPrefs({
+    timerSettings: {
+      focusDuration: r.focusDuration,
+      shortBreakDuration: r.shortBreakDuration,
+      longBreakDuration: r.longBreakDuration,
+      autoStartBreaks: r.autoStartBreaks,
+      autoStartFocus: r.autoStartFocus
+    },
+    soundscape: r.soundscape,
+    breakSoundscape: r.breakSoundscape,
+    soundscapeVolume: r.soundscapeVolume
+  });
 }
 
 /** The reverse: what a stored profile document means for the app. Missing optional fields come back unset. */

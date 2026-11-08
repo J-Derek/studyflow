@@ -20,6 +20,7 @@ import {
   deleteSessionFromFirestore,
   syncOnboardingDismissed,
   syncProfile,
+  syncTimerPrefs,
   syncNoteToFirestore,
   deleteNoteFromFirestore,
   syncGradeToFirestore,
@@ -31,7 +32,7 @@ import { calculateSubtaskProgress } from '../utils/subtasks';
 import { LIMITS, clampText } from '../utils/limits';
 import { syncThemeColor } from '../utils/themeColor';
 import { readSavedMode, resolveTheme, saveMode, systemPrefersDark, type ThemeMode } from '../utils/themePreference';
-import { hasSavedDevicePrefs, readDevicePrefs, saveDevicePrefs } from '../utils/devicePrefs';
+import { DEFAULT_SOUND, DEFAULT_TIMER_SETTINGS, DEFAULT_VOLUME, sanitizeTimerPrefs, takeLegacyDevicePrefs, type TimerPrefs } from '../utils/devicePrefs';
 import { reportSyncError } from '../lib/syncErrors';
 import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
@@ -158,7 +159,10 @@ interface StudyFlowState {
   setNowMs: (ms: number) => void;
   adoptRemoteTimer: (t: TimerState) => void;
   incrementPomodoros: () => void;
-  updateTimerSettings: (settings: Partial<TimerSettings>) => void;
+  /** Changes the lengths. An idle timer takes them at once; with `restartCurrent` a running or paused block restarts at the new length. */
+  updateTimerSettings: (settings: Partial<TimerSettings>, opts?: { restartCurrent?: boolean }) => void;
+  /** Applies the timer choices stored on the account (from the cloud; never written back). */
+  applyAccountTimerPrefs: (prefs: Partial<TimerPrefs>) => void;
   /** Chooses the sound for focus blocks or for breaks (defaults to the current mode). */
   setSoundscape: (type: SoundscapeType, forMode?: 'focus' | 'break') => void;
   setSoundscapeVolume: (volume: number) => void;
@@ -175,6 +179,7 @@ const SYNC_WHAT: Record<string, string> = {
   syncNoteToFirestore: 'your note',
   deleteNoteFromFirestore: 'a note you deleted',
   syncProfile: 'your profile',
+  syncTimerPrefs: 'your timer settings',
   syncOnboardingDismissed: 'your checklist choice'
 };
 
@@ -182,18 +187,18 @@ const SYNC_WHAT: Record<string, string> = {
 const failed = (fn: string, retry?: () => Promise<unknown>) => (err: unknown) =>
   reportSyncError(SYNC_WHAT[fn] ?? 'your changes', err, retry);
 
-const defaultSettings: TimerSettings = {
-  focusDuration: 25 * 60,
-  shortBreakDuration: 5 * 60,
-  longBreakDuration: 15 * 60,
-  autoStartBreaks: false,
-  autoStartFocus: false
-};
+const defaultSettings: TimerSettings = DEFAULT_TIMER_SETTINGS;
 
-// Timer lengths and sound choices belong to this device, so they are kept in their own entry and
-// survive signing out (see utils/devicePrefs).
-const savedPrefs = readDevicePrefs();
-const initialTimerSettings: TimerSettings = { ...defaultSettings, ...savedPrefs.timerSettings };
+// Timer lengths and sound choices belong to the signed-in account (they sync through the user document),
+// so a new person on this device starts from the defaults and never inherits the last person's choices.
+let timerPrefsTimer: ReturnType<typeof setTimeout> | undefined;
+function saveTimerPrefsSoon(uid: string | null, delayMs = 0): void {
+  if (!uid) return;
+  clearTimeout(timerPrefsTimer);
+  const save = () => syncTimerPrefs(uid).catch(failed('syncTimerPrefs', () => syncTimerPrefs(uid)));
+  if (delayMs > 0) timerPrefsTimer = setTimeout(save, delayMs);
+  else void save();
+}
 
 function durationFor(mode: TimerMode, settings: TimerSettings): number {
   if (mode === 'shortBreak') return settings.shortBreakDuration;
@@ -247,7 +252,11 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           guestNoticeDismissed: false,
           pomodorosCompleted: 0,
           focusMinutes: 0,
-          timer: idleTimer('focus', get().timerSettings.focusDuration),
+          timerSettings: defaultSettings,
+          soundscape: DEFAULT_SOUND,
+          breakSoundscape: DEFAULT_SOUND,
+          soundscapeVolume: DEFAULT_VOLUME,
+          timer: idleTimer('focus', defaultSettings.focusDuration),
           focusCompletedAtMs: null,
           user: {
             name: 'Student',
@@ -749,15 +758,15 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       },
 
       // Focus Timer
-      timerSettings: initialTimerSettings,
-      timer: idleTimer('focus', initialTimerSettings.focusDuration),
+      timerSettings: defaultSettings,
+      timer: idleTimer('focus', defaultSettings.focusDuration),
       nowMs: Date.now(),
       focusCompletedAtMs: null,
       pomodorosCompleted: 0,
       focusMinutes: 0,
-      soundscape: savedPrefs.soundscape ?? 'off',
-      breakSoundscape: savedPrefs.breakSoundscape ?? 'off',
-      soundscapeVolume: savedPrefs.soundscapeVolume ?? 0.35,
+      soundscape: DEFAULT_SOUND,
+      breakSoundscape: DEFAULT_SOUND,
+      soundscapeVolume: DEFAULT_VOLUME,
 
       setTimerMode: (mode) => {
         stopSoundscape();
@@ -830,7 +839,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           pomodorosCompleted: state.pomodorosCompleted + 1
         })),
 
-      updateTimerSettings: (settings) => {
+      updateTimerSettings: (settings, opts) => {
         const state = get();
         const merged = { ...state.timerSettings, ...settings };
         // Keep every length within the limits (the screen only offers whole minutes; seconds stay possible for tests).
@@ -839,12 +848,30 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         merged.shortBreakDuration = within(merged.shortBreakDuration, TIMER_LIMITS_MIN.shortBreak);
         merged.longBreakDuration = within(merged.longBreakDuration, TIMER_LIMITS_MIN.longBreak);
         set({ timerSettings: merged });
-        saveDevicePrefs({ timerSettings: merged });
-        // An idle timer takes the new length straight away; a running or paused block keeps its own.
-        if (state.timer.status === 'idle') {
+        saveTimerPrefsSoon(state.userId);
+        // An idle timer takes the new length straight away; a running or paused block keeps its own
+        // unless the student asked to restart it at the new length.
+        if (state.timer.status === 'idle' || opts?.restartCurrent) {
+          if (state.timer.status === 'running') stopSoundscape();
           const next = switchMode(state.timer.mode, durationFor(state.timer.mode, merged));
           set({ timer: next, nowMs: Date.now() });
           if (state.userId) pushTimerState(state.userId, next);
+        }
+      },
+
+      applyAccountTimerPrefs: (prefs) => {
+        const st = get();
+        const next: Partial<StudyFlowState> = {};
+        if (prefs.timerSettings) next.timerSettings = prefs.timerSettings;
+        if (prefs.soundscape) next.soundscape = prefs.soundscape;
+        if (prefs.breakSoundscape) next.breakSoundscape = prefs.breakSoundscape;
+        if (prefs.soundscapeVolume !== undefined) next.soundscapeVolume = prefs.soundscapeVolume;
+        const changedLengths = prefs.timerSettings && JSON.stringify(prefs.timerSettings) !== JSON.stringify(st.timerSettings);
+        set(next);
+        if (prefs.soundscapeVolume !== undefined) setAudioVolume(prefs.soundscapeVolume);
+        // An idle timer shows the account's length; a running or paused block is never disturbed.
+        if (changedLengths && prefs.timerSettings && st.timer.status === 'idle') {
+          set({ timer: switchMode(st.timer.mode, durationFor(st.timer.mode, prefs.timerSettings)), nowMs: Date.now() });
         }
       },
 
@@ -852,7 +879,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const { timer, soundscapeVolume } = get();
         const target = forMode ?? (timer.mode === 'focus' ? 'focus' : 'break');
         set(target === 'focus' ? { soundscape: type } : { breakSoundscape: type });
-        saveDevicePrefs({ soundscape: get().soundscape, breakSoundscape: get().breakSoundscape });
+        saveTimerPrefsSoon(get().userId);
         const playing = target === (timer.mode === 'focus' ? 'focus' : 'break');
         if (!playing) return;
         if (type === 'off' || timer.status !== 'running') {
@@ -864,7 +891,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
 
       setSoundscapeVolume: (volume) => {
         set({ soundscapeVolume: volume });
-        saveDevicePrefs({ soundscapeVolume: volume });
+        saveTimerPrefsSoon(get().userId, 600); // the slider fires often; save once it settles
         setAudioVolume(volume);
       }
     }),
@@ -902,17 +929,14 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           state.themeMode = savedMode;
           state.theme = resolveTheme(savedMode, systemPrefersDark());
         }
-        // Timer and sound choices live in their own entry so signing out keeps them. Carry an older save over once.
-        if (hasSavedDevicePrefs()) {
-          Object.assign(state, readDevicePrefs());
-        } else {
-          saveDevicePrefs({
-            timerSettings: state.timerSettings,
-            soundscape: state.soundscape,
-            breakSoundscape: state.breakSoundscape,
-            soundscapeVolume: state.soundscapeVolume
-          });
-        }
+        // Timer and sound choices belong to the account. Keep only valid values from the saved copy, and
+        // carry an older per-device entry over once, to the account whose data this device holds.
+        const legacy = takeLegacyDevicePrefs();
+        const prefs = { ...sanitizeTimerPrefs(state), ...(state.dataOwnerUid ? legacy ?? {} : {}) };
+        state.timerSettings = prefs.timerSettings ?? defaultSettings;
+        state.soundscape = prefs.soundscape ?? DEFAULT_SOUND;
+        state.breakSoundscape = prefs.breakSoundscape ?? DEFAULT_SOUND;
+        state.soundscapeVolume = prefs.soundscapeVolume ?? DEFAULT_VOLUME;
         // Earlier builds seeded demo rows as the student's own data. Flag them so they are labelled
         // and excluded from GPA, backups and exports.
         state.assignments = (state.assignments ?? []).map((x) => (isLegacySeedId('assignment', x.id) ? { ...x, sample: true } : x));

@@ -5,6 +5,7 @@ import {
   deleteDoc,
   writeBatch,
   onSnapshot,
+  getDoc,
   getDocs,
   limit,
   query,
@@ -16,7 +17,8 @@ import { db } from '../lib/firebase';
 import type { Assignment, CourseGrade, Note, StudySession } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
-import { assignmentToDoc, docToAssignment, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc } from './firestoreMappers';
+import { assignmentToDoc, docToAssignment, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
+import { isDefaultTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 import { isLegacySeedId } from '../utils/sampleData';
 
 const LIST_CAP = 500;
@@ -61,6 +63,31 @@ export function unsubscribeAllFirestoreSync(): void {
   activeUnsubscribes = [];
 }
 
+let timerPrefsChecked: string | null = null;
+
+/**
+ * The account's timer choices win over whatever is on this device. If the account has none yet and this
+ * device holds non-default ones (for example carried over from an older version), they are stored once.
+ */
+function applyStoredTimerPrefs(uid: string, raw: unknown, fromCache: boolean): void {
+  const stored = docToTimerPrefs(raw);
+  if (raw && typeof raw === 'object') {
+    useStudyFlowStore.getState().applyAccountTimerPrefs(stored);
+    timerPrefsChecked = uid;
+    return;
+  }
+  if (fromCache || timerPrefsChecked === uid) return;
+  timerPrefsChecked = uid;
+  const s = useStudyFlowStore.getState();
+  const local: TimerPrefs = {
+    timerSettings: s.timerSettings,
+    soundscape: s.soundscape,
+    breakSoundscape: s.breakSoundscape,
+    soundscapeVolume: s.soundscapeVolume
+  };
+  if (!isDefaultTimerPrefs(local)) syncTimerPrefs(uid).catch((err) => console.warn('Timer settings sync warning:', err));
+}
+
 function isCurrentUser(uid: string): boolean {
   return useStudyFlowStore.getState().userId === uid;
 }
@@ -100,6 +127,8 @@ export function initFirestoreSync(uid: string): () => void {
           photoShared = true;
           syncProfile(uid).catch((err) => console.warn('Profile picture sync warning:', err));
         }
+        // Our own unsaved edit echoing back must not overwrite a newer choice.
+        if (!snap.metadata.hasPendingWrites) applyStoredTimerPrefs(uid, data.timerPrefs, snap.metadata.fromCache);
       } else if (!snap.metadata.fromCache && !profileSeeded) {
         // Nothing stored yet, and this answer came from the server: store this device's profile.
         profileSeeded = true;
@@ -315,6 +344,25 @@ export async function syncProfile(uid: string): Promise<void> {
     if (data[key] === undefined) data[key] = deleteField();
   }
   await setDoc(doc(db, 'users', uid), data, { merge: true });
+}
+
+/** Saves the timer lengths and sound choices to the account (a merge, so nothing else in the profile moves). */
+export async function syncTimerPrefs(uid: string): Promise<void> {
+  const s = useStudyFlowStore.getState();
+  const timerPrefs = timerPrefsToDoc({
+    timerSettings: s.timerSettings,
+    soundscape: s.soundscape,
+    breakSoundscape: s.breakSoundscape,
+    soundscapeVolume: s.soundscapeVolume
+  });
+  const ref = doc(db, 'users', uid);
+  // A brand-new account has no profile yet, and the rules need one to create the document: store it together.
+  if (!(await getDoc(ref)).exists()) {
+    const data: Record<string, unknown> = { ...profileToDoc(uid, s.user, s.customPhotoUrl), timerPrefs, updatedAt: serverTimestamp() };
+    await setDoc(ref, data);
+    return;
+  }
+  await setDoc(ref, { timerPrefs, updatedAt: serverTimestamp() }, { merge: true });
 }
 
 export async function syncOnboardingDismissed(uid: string): Promise<void> {

@@ -133,6 +133,46 @@ describe('user profile', () => {
     delete noName.name;
     await assertFails(setDoc(ref(), noName));
   });
+  describe('timerPrefs', () => {
+    const prefs = (over: Record<string, unknown> = {}) => ({
+      focusDuration: 3000,
+      shortBreakDuration: 600,
+      longBreakDuration: 1200,
+      autoStartBreaks: false,
+      autoStartFocus: true,
+      soundscape: 'rain',
+      breakSoundscape: 'off',
+      soundscapeVolume: 0.5,
+      ...over
+    });
+    it('accepts valid timer choices, including the extremes', async () => {
+      await assertSucceeds(setDoc(ref(), user({ timerPrefs: prefs() })));
+      await assertSucceeds(setDoc(ref(), user({ timerPrefs: prefs({ focusDuration: 10800, shortBreakDuration: 3600, longBreakDuration: 5400, soundscapeVolume: 0 }) })));
+      await assertSucceeds(setDoc(ref(), user({ timerPrefs: prefs({ focusDuration: 1, soundscapeVolume: 1 }) })));
+    });
+    it('rejects out-of-range, non-integer and wrongly typed values', async () => {
+      await assertFails(setDoc(ref(), user({ timerPrefs: prefs({ focusDuration: 10801 }) })));
+      await assertFails(setDoc(ref(), user({ timerPrefs: prefs({ focusDuration: 0 }) })));
+      await assertFails(setDoc(ref(), user({ timerPrefs: prefs({ shortBreakDuration: 3601 }) })));
+      await assertFails(setDoc(ref(), user({ timerPrefs: prefs({ longBreakDuration: 5401 }) })));
+      await assertFails(setDoc(ref(), user({ timerPrefs: prefs({ focusDuration: 1500.5 }) })));
+      await assertFails(setDoc(ref(), user({ timerPrefs: prefs({ autoStartBreaks: 'yes' }) })));
+      await assertFails(setDoc(ref(), user({ timerPrefs: prefs({ soundscapeVolume: 1.5 }) })));
+      await assertFails(setDoc(ref(), user({ timerPrefs: prefs({ soundscapeVolume: -0.1 }) })));
+    });
+    it('rejects unknown sounds, extra or missing keys, and a non-map value', async () => {
+      await assertFails(setDoc(ref(), user({ timerPrefs: prefs({ soundscape: 'thunder' }) })));
+      await assertFails(setDoc(ref(), user({ timerPrefs: prefs({ breakSoundscape: 'x' }) })));
+      await assertFails(setDoc(ref(), user({ timerPrefs: prefs({ extra: 1 }) })));
+      const missing: Record<string, unknown> = prefs();
+      delete missing.soundscapeVolume;
+      await assertFails(setDoc(ref(), user({ timerPrefs: missing })));
+      await assertFails(setDoc(ref(), user({ timerPrefs: 'fast' })));
+    });
+    it('cannot be written into another student\'s profile', async () => {
+      await assertFails(setDoc(doc(asBob(), 'users', ALICE), user({ timerPrefs: prefs() })));
+    });
+  });
   it('rejects a malformed onboarding map', async () => {
     await assertFails(setDoc(ref(), user({ onboarding: 'yes' })));
     await assertFails(setDoc(ref(), user({ onboarding: { dismissed: 'yes' } })));

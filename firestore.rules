@@ -69,7 +69,7 @@ service cloud.firestore {
 
     function isValidUser(data, userId) {
       return data.keys().hasAll(['uid', 'name', 'university', 'program', 'semester', 'updatedAt']) &&
-             data.keys().hasOnly(['uid', 'name', 'university', 'program', 'semester', 'semesterStart', 'semesterEnd', 'timeZone', 'photo', 'updatedAt', 'onboarding']) &&
+             data.keys().hasOnly(['uid', 'name', 'university', 'program', 'semester', 'semesterStart', 'semesterEnd', 'timeZone', 'photo', 'updatedAt', 'onboarding', 'timerPrefs']) &&
              data.uid is string && data.uid == userId &&
              validString(data.name, 1, 100) &&
              validString(data.university, 1, 150) &&
@@ -85,7 +85,23 @@ service cloud.firestore {
                (data.onboarding is map &&
                 data.onboarding.keys().hasOnly(['dismissed']) &&
                 data.onboarding.keys().hasAll(['dismissed']) &&
-                data.onboarding.dismissed is bool));
+                data.onboarding.dismissed is bool)) &&
+             (!('timerPrefs' in data) || isValidTimerPrefs(data.timerPrefs));
+    }
+
+    // Timer lengths (seconds) and sounds the student chose. Limits mirror TIMER_LIMITS_MIN in the app:
+    // focus up to 180 min, short break 60 min, long break 90 min.
+    function isValidTimerPrefs(p) {
+      return p is map &&
+             p.keys().hasOnly(['focusDuration', 'shortBreakDuration', 'longBreakDuration', 'autoStartBreaks', 'autoStartFocus', 'soundscape', 'breakSoundscape', 'soundscapeVolume']) &&
+             p.keys().hasAll(['focusDuration', 'shortBreakDuration', 'longBreakDuration', 'autoStartBreaks', 'autoStartFocus', 'soundscape', 'breakSoundscape', 'soundscapeVolume']) &&
+             p.focusDuration is int && p.focusDuration >= 1 && p.focusDuration <= 10800 &&
+             p.shortBreakDuration is int && p.shortBreakDuration >= 1 && p.shortBreakDuration <= 3600 &&
+             p.longBreakDuration is int && p.longBreakDuration >= 1 && p.longBreakDuration <= 5400 &&
+             p.autoStartBreaks is bool && p.autoStartFocus is bool &&
+             p.soundscape in ['off', 'rain', 'waves', 'pad', 'keys', 'brown', 'breeze', 'chimes'] &&
+             p.breakSoundscape in ['off', 'rain', 'waves', 'pad', 'keys', 'brown', 'breeze', 'chimes'] &&
+             p.soundscapeVolume is number && p.soundscapeVolume >= 0 && p.soundscapeVolume <= 1;
     }
 
     function isValidAssignment(data) {

@@ -1,6 +1,8 @@
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { isFinished } from './timerEngine';
 
+const STORAGE_KEY = 'studyflow_storage_v1'; // same key as lib/auth.ts (not imported: that file pulls in Firebase)
+
 let started = false;
 
 /**
@@ -14,7 +16,25 @@ export function startTimerScheduler(): void {
   if (started || typeof window === 'undefined') return;
   started = true;
 
+  // Another tab may sign out and sign in as someone else. The saved copy is then theirs, and this tab's
+  // once-a-second saves would overwrite it with the previous person's data. Reload to pick up the new owner.
+  let foreignOwner = false;
+  window.addEventListener('storage', (e) => {
+    if (e.key !== STORAGE_KEY || !e.newValue) return;
+    try {
+      const owner = (JSON.parse(e.newValue) as { state?: { dataOwnerUid?: string | null } }).state?.dataOwnerUid;
+      const mine = useStudyFlowStore.getState().dataOwnerUid;
+      if (owner && mine && owner !== mine) {
+        foreignOwner = true;
+        window.location.reload();
+      }
+    } catch {
+      /* unreadable entry: ignore */
+    }
+  });
+
   const tick = () => {
+    if (foreignOwner) return;
     const state = useStudyFlowStore.getState();
     if (state.timer.status !== 'running') return;
     const now = Date.now();
