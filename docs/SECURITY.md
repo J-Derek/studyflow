@@ -33,7 +33,9 @@ Commands (from `app/`): `npm test` (unit), `npm run test:rules` (rules, needs th
 | 11 | Calendar (`.ics`) file injection | Text is escaped per RFC 5545 | `src/lib/icalExport.test.ts` |
 | 12 | Impossible values arriving from the cloud (a score of 8585 written with the student's own token) | The rules cannot check every item inside a list, so grades read from the cloud are clamped to 0-100 | `firestoreMappers.test.ts`; `e2e/grades-cloud-clamp.spec.ts` |
 | 13 | A stolen or injected script phoning home | `Content-Security-Policy-Report-Only` header (see section 3) | `src/utils/csp.test.ts`; `e2e-prod/csp.spec.ts` |
-| 14 | Other browsers framing the site, content sniffing | `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` in `app/vercel.json`; Vercel adds HSTS | Header values read from `vercel.json` and the live site on 2026-11-09 (`curl -sI`); **no automated test** |
+| 14 | A student cannot remove their data | "Delete my account" asks Google to re-confirm, deletes every collection, the timer and the profile in batches, then the sign-in account, then clears the device. A unit test fails if `firestore.rules` gains a collection that the deletion list does not name | `e2e/account-deletion.spec.ts`; `src/services/accountDeletion.test.ts` |
+| 15 | A child under 13 gets an account, or a 13-17 year old without the parent tick | An age question before sign-in (self-declaration, not verification); the rules refuse to store "under 13" and refuse 13-17 without the guardian tick | `e2e/age-gate.spec.ts`; `rules.test.ts` → "ageConfirmed" |
+| 16 | Other browsers framing the site, content sniffing | `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` in `app/vercel.json`; Vercel adds HSTS | Header values read from `vercel.json` and the live site on 2026-11-09 (`curl -sI`); **no automated test** |
 
 ## 3. Content-Security-Policy
 
@@ -53,14 +55,15 @@ The one inline script (the theme, in `index.html`) is allowed by hash; `csp.test
 
 ## 5. Known limits (honest list)
 
-- **No account deletion yet.** Students can sign out and download their data, but cannot delete their account from the app. Planned (PR5).
+- **Guests cannot delete their data from the app** (an anonymous account cannot re-confirm with Google), and abandoned guest records are never cleaned up automatically. See `docs/COMPLIANCE.md`.
 - **No security.txt yet.** It needs a contact address that Derek chooses; until then there is no published way to report a problem.
 - **No automated header test against the live site**, and no automated search for dangerous HTML APIs (row 9, 14).
 - **Guest accounts are anonymous Firebase users.** Anyone can create one; the rules treat them like any other owner of their own data,
   and the limits in section 2 apply. There is no rate limiting beyond Firebase's own quotas (no paid plan, so no Cloud Functions or App Check).
 - The Firestore API key in the page is a public identifier, not a secret; the rules are what protect the data.
 - A real Google sign-in is only ever tested by hand (the automated tests use the Firebase emulator).
-- Privacy policy, terms and children's notices are not published yet (PR5, drafts for a lawyer to confirm).
+- The privacy, terms, children, storage and accessibility pages are **drafts** that no lawyer has checked, and they still need a real contact address (`docs/COMPLIANCE.md`, section 5).
+- The age question is a self-declaration. Anyone can tick any box.
 
 ## 6. Reporting a problem
 

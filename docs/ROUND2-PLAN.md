@@ -15,7 +15,7 @@ Every synced field touches the same set: `src/types/index.ts`, repo-root `firest
 - **PR3:** Google name and photo, and the "Alex Vance" sample-profile clean-up, are in **PR #19** (merged). Branch `claude/pr3-rest`:
   signed-in header right after a reload, "Signing you in…" note for the existing-account path, and the e2e pop-up close race that made #19's
   CI time out, and the refreshed "Your account" dialog. PR3 is complete.
-- Then PR4 to PR10 in order, each from the latest `main` after Derek merges the previous one. See `docs/HANDOFF.md` section 0.
+- **PR4** (branch `claude/pr4-shell`) and **PR5** (`claude/pr5-legal`) are built. Derek was away, so from PR4 on each branch is **stacked** on the one before: merge them in order (PR4, PR5, PR6...), and GitHub will shrink each diff as the earlier ones land. See `docs/HANDOFF.md` section 0.
 
 ## PR1: Fixes, input limits, visible save errors (no rules change)
 - New `src/utils/limits.ts` mirroring rule limits (title 250, course 200, note course 50, course code 50, course name 200, block title/course 200, subtask 200, due dates 2000–2100). Apply `maxLength` + trim in `AssignmentModal.tsx`, `FirstDeadlineCard.tsx`, `pages/Calendar.tsx`, `pages/Grades.tsx`, `pages/Assignments.tsx` (subtasks, cap 100), `GradingEditor.tsx`; use local dates (not `toISOString`) for defaults.

@@ -9,10 +9,13 @@ import { ProfileModal } from './components/ProfileModal';
 import { HelpMenuModal } from './components/HelpMenuModal';
 import { AuthNotice } from './components/AuthNotice';
 import { SignInProgress } from './components/SignInProgress';
+import { AgeGateDialog } from './components/AgeGateDialog';
 import { SyncErrorToast } from './components/SyncErrorToast';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { NotFoundPage } from './pages/NotFound';
+import { LegalFooter } from './components/LegalFooter';
+import { LEGAL_TABS } from './store/studyFlowStore';
 import { useStudyFlowStore, getTabFromPath } from './store/studyFlowStore';
 import { startAuthSessionLazy } from './lib/authActions';
 
@@ -23,6 +26,7 @@ const CalendarPage = lazy(() => import('./pages/Calendar').then((m) => ({ defaul
 const FocusTimerPage = lazy(() => import('./pages/FocusTimer').then((m) => ({ default: m.FocusTimerPage })));
 const GradesPage = lazy(() => import('./pages/Grades').then((m) => ({ default: m.GradesPage })));
 const NotesPage = lazy(() => import('./pages/Notes').then((m) => ({ default: m.NotesPage })));
+const LegalPage = lazy(() => import('./pages/LegalPage').then((m) => ({ default: m.LegalPage })));
 
 export function App() {
   const { activeTab, theme, themeMode, setThemeMode } = useStudyFlowStore();
@@ -165,9 +169,13 @@ export function App() {
             {activeTab === 'grades' && <GradesPage />}
             {activeTab === 'notes' && <NotesPage />}
             {activeTab === 'notfound' && <NotFoundPage />}
+            {(LEGAL_TABS as string[]).includes(activeTab) && <LegalPage doc={activeTab as (typeof LEGAL_TABS)[number]} />}
           </Suspense>
           </ErrorBoundary>
         </main>
+
+        {/* Privacy, terms and the other rules pages */}
+        <LegalFooter />
 
         {/* Mobile Navigation Bar */}
         <MobileNav />
@@ -217,6 +225,9 @@ export function App() {
 
         {/* "Signing you in…" while a sign-in into an existing account moves records and reloads */}
         <SignInProgress />
+
+        {/* The one-time age question before signing in */}
+        <AgeGateDialog />
 
         {/* Tells the student when a change reached the screen but not their account */}
         <SyncErrorToast />

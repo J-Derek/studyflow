@@ -17,7 +17,8 @@ an in-app **writing space** per assignment with **Word and PDF** export; **timer
 | Merged by Derek (#19, #20; app deploy is Derek's step, no rules change) | **PR3 complete**: Google name and photo; signed-in header on reload; "Signing you in…"; refreshed "Your account" dialog |
 | Merged by Derek (#21), app deploy is his step | from the Antigravity audit: grades read from the cloud held to 0-100; Content-Security-Policy as **report-only** (see "Audit verdicts") |
 | Branch `claude/pr4-shell` (PR4, waiting for Derek) | page-not-found screen, calm crash screen, offline banner, `/notes` in the sitemap, `docs/SECURITY.md` rewritten for Firebase. **`security.txt` skipped** until Derek picks a contact address |
-| Next to build | PR5 to PR10 |
+| Branch `claude/pr5-legal` (PR5, stacked on PR4, waiting for Derek) | draft legal pages, age question before sign-in, "Delete my account". **Rules change: deploy rules FIRST, then the app** |
+| Next to build | PR6 to PR10 (each stacked on the one before) |
 
 ### What is merged AND deployed
 | PR | What it did |
@@ -145,9 +146,28 @@ fails if that script is edited without refreshing the two hashes (LF and CRLF fo
 - Gap found, not fixed: a bad value saved in `localStorage` would crash the same page again after Reload (the error screen's Download still works).
 - To do when Derek chooses a contact: `app/public/.well-known/security.txt` (RFC 9116: Contact, Expires, Preferred-Languages) and a link in SECURITY.md section 6.
 
-### Next: PR5 to PR10 (each from the latest `origin/main`, only after Derek merges the one before)
-PR3 and PR4 are done. PR5 legal pages (privacy, terms, children, storage/cookies, accessibility), age step, delete-my-account;
-**research Kenya DPA 2019, GDPR, COPPA, UK AADC first and mark everything as a draft for a Kenyan lawyer**. PR6 item kinds (exam, test, reading, project), progress from checklists, happy completion
+### PR5 (branch `claude/pr5-legal`, stacked on `claude/pr4-shell`)
+**Deploy order: rules first** (`cd app`, `npx firebase deploy --config ../firebase.json --only firestore:rules,firestore:indexes --project studyflow-app-8f038`), **then** `npx vercel --prod`.
+Reason: the app now writes `ageConfirmed` in the profile; the old rules reject unknown keys, so a profile save would fail until the rules are live.
+- Research and honest gaps: `docs/COMPLIANCE.md` (I could not read the Kenyan Act or the ODPC notes as text: age of a "child", registration list and
+  s.33 wording are for a lawyer to confirm). Open questions there: contact address, controller name, Firestore region, guest data clean-up.
+- Pages: `src/legal/*.md` (privacy, terms, children, storage, accessibility) loaded lazily by `pages/LegalPage.tsx` through `components/MiniMarkdown.tsx` and
+  `utils/miniMarkdown.ts` (no HTML is ever produced, unsafe link addresses are dropped; PR9 reuses the parser). Routes `/privacy` etc. in
+  `store/studyFlowStore.ts` (`LegalTab`, `LEGAL_TABS`), footer `components/LegalFooter.tsx`, sitemap, Help and Your account link to them. Each shows a **Draft** notice.
+  Placeholders on purpose: "Contact address: to be added before launch", "Data location: to be confirmed".
+- Age question: `components/AgeGateDialog.tsx` + `lib/ageGate.ts` (promise bridge) + `utils/ageGate.ts`; `lib/authActions.ts` `signInOrLinkWithGoogle` asks first.
+  Under 13: no account, carry on as guest. 13-17: guardian tick. 18+: continue. Kept in `localStorage` key `studyflow_age_confirmed`, copied to the account
+  (`ageConfirmed` map on the user doc, rules `isValidAgeConfirmed`: band never "under13", 13-17 needs `guardian == true`), forgotten at sign-out
+  (`wipeLocalUserData`, except while a sign-in reloads the page). Tests that click a sign-in button call `e2e/ageHelper.ts` `continueThroughAgeGate`.
+  Tests calling `__auth.signInOrLinkWithGoogle` directly skip the question (they use `lib/auth`, not `lib/authActions`).
+- Delete my account: `lib/auth.ts` `deleteMyAccount` (Google re-sign-in, flush writes, stop listeners, `services/accountDeletion.ts` `deleteAllUserData`, `deleteUser`,
+  wipe, reload). `accountDeletion.test.ts` fails if `firestore.rules` gets a collection the list does not name. **Anyone adding a collection (PR9 drafts, PR10 semesters)
+  must add it to `ACCOUNT_COLLECTIONS`.** Guests have no delete button.
+- Safari risk (untested): the Google pop-up now opens after the age dialog's Continue click plus an async import; Safari is strict about pop-ups after waits.
+- Tests: `e2e/legal-pages.spec.ts`, `age-gate.spec.ts`, `account-deletion.spec.ts`, unit `miniMarkdown`, `ageGate`, `accountDeletion`, 4 rules tests.
+
+### Next: PR6 to PR10 (stacked: each branch starts from the one before; merge in order)
+PR3, PR4, PR5 are done. PR6 item kinds (exam, test, reading, project), progress from checklists, happy completion
 animation, legends/keys, nudges that students can add exams and readings. PR7 month calendar + deadlines on the timetable + pending items everywhere. PR8 Grades becomes Courses.
 PR9 writing space + Word/PDF export. PR10 term vs semester + "Start a new semester" archive. Every PR that changes synced data touches: `types`, `firestore.rules`, `firestoreMappers.ts`,
 `backupValidator.ts`, rules tests, mapper tests.

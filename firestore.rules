@@ -8,6 +8,7 @@ service cloud.firestore {
     // /users/{userId}
     //   uid, name, university, program, semester, updatedAt (server time)
     //   onboarding?: { dismissed: bool }
+    //   timerPrefs?: {...}, ageConfirmed?: { band: '13-17' | '18+', guardian: bool, at: string }
     //
     // /users/{userId}/assignments/{id}
     //   id, title, course, dueDate (YYYY-MM-DD), dueTime? (HH:mm), priority,
@@ -69,7 +70,7 @@ service cloud.firestore {
 
     function isValidUser(data, userId) {
       return data.keys().hasAll(['uid', 'name', 'university', 'program', 'semester', 'updatedAt']) &&
-             data.keys().hasOnly(['uid', 'name', 'university', 'program', 'semester', 'semesterStart', 'semesterEnd', 'timeZone', 'photo', 'updatedAt', 'onboarding', 'timerPrefs']) &&
+             data.keys().hasOnly(['uid', 'name', 'university', 'program', 'semester', 'semesterStart', 'semesterEnd', 'timeZone', 'photo', 'updatedAt', 'onboarding', 'timerPrefs', 'ageConfirmed']) &&
              data.uid is string && data.uid == userId &&
              validString(data.name, 1, 100) &&
              validString(data.university, 1, 150) &&
@@ -86,7 +87,20 @@ service cloud.firestore {
                 data.onboarding.keys().hasOnly(['dismissed']) &&
                 data.onboarding.keys().hasAll(['dismissed']) &&
                 data.onboarding.dismissed is bool)) &&
-             (!('timerPrefs' in data) || isValidTimerPrefs(data.timerPrefs));
+             (!('timerPrefs' in data) || isValidTimerPrefs(data.timerPrefs)) &&
+             (!('ageConfirmed' in data) || isValidAgeConfirmed(data.ageConfirmed));
+    }
+
+    // The age answer given before signing in: a band (never a birth date), whether a parent or guardian agreed, and when.
+    // Under 13 is never stored (no account), and 13 to 17 is only valid with the guardian tick.
+    function isValidAgeConfirmed(a) {
+      return a is map &&
+             a.keys().hasOnly(['band', 'guardian', 'at']) &&
+             a.keys().hasAll(['band', 'guardian', 'at']) &&
+             a.band in ['13-17', '18+'] &&
+             a.guardian is bool &&
+             (a.band == '18+' || a.guardian == true) &&
+             validString(a.at, 10, 40);
     }
 
     // Timer lengths (seconds) and sounds the student chose. Limits mirror TIMER_LIMITS_MIN in the app:

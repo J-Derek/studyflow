@@ -43,8 +43,12 @@ import { normalizeAssessments } from '../utils/assessments';
 
 export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades' | 'notes';
 
-/** The six pages, plus what the app shows for an address it does not have. */
-export type AppTab = NavigationTab | 'notfound';
+/** The pages that explain the app's rules (draft legal text). */
+export type LegalTab = 'privacy' | 'terms' | 'children' | 'storage' | 'accessibility';
+export const LEGAL_TABS: LegalTab[] = ['privacy', 'terms', 'children', 'storage', 'accessibility'];
+
+/** The six pages, the legal pages, and what the app shows for an address it does not have. */
+export type AppTab = NavigationTab | LegalTab | 'notfound';
 
 export function getTabFromPath(path: string): AppTab {
   const clean = path.replace(/\/$/, '').toLowerCase();
@@ -54,10 +58,12 @@ export function getTabFromPath(path: string): AppTab {
   if (clean === '/timer') return 'timer';
   if (clean === '/grades') return 'grades';
   if (clean === '/notes') return 'notes';
+  const legal = LEGAL_TABS.find((t) => clean === `/${t}`);
+  if (legal) return legal;
   return 'notfound';
 }
 
-export function getPathFromTab(tab: NavigationTab): string {
+export function getPathFromTab(tab: NavigationTab | LegalTab): string {
   if (tab === 'dashboard') return '/';
   return `/${tab}`;
 }
@@ -99,7 +105,7 @@ interface StudyFlowState {
 
   // Active Navigation Tab
   activeTab: AppTab;
-  setActiveTab: (tab: NavigationTab) => void;
+  setActiveTab: (tab: NavigationTab | LegalTab) => void;
 
   // Theme Mode
   /** The theme being shown right now. */

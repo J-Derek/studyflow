@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { continueThroughAgeGate } from './ageHelper';
 
 type State = { uid: string | null; anonymous: boolean; email: string | null; titles: string[] };
 type Store = {
@@ -75,6 +76,7 @@ for (const [name, blocker] of Object.entries(BLOCKERS)) {
       expect(before.anonymous).toBe(true);
 
       await page.locator('aside').getByRole('button', { name: 'Sign in with Google' }).click();
+      await continueThroughAgeGate(page);
       const email = `nopopup-${Date.now().toString(36)}@example.com`;
       await chooseGoogleAccount(page, email);
 
@@ -100,6 +102,7 @@ test('signing in to an existing account on the same page merges the guest record
   await addAssignment(page, 'Record from the account');
   const email = `merge-${Date.now().toString(36)}@example.com`;
   await page.locator('aside').getByRole('button', { name: 'Sign in with Google' }).click();
+  await continueThroughAgeGate(page);
   await chooseGoogleAccount(page, email);
   await ready(page);
   await page.waitForFunction(() => (window as unknown as { __store?: { getState: () => Store } }).__store?.getState().isAnonymous === false);
@@ -124,6 +127,7 @@ test('signing in to an existing account on the same page merges the guest record
   // 2. a new guest makes a record, then signs in to the SAME account
   await addAssignment(page, 'Record from the guest');
   await page.locator('aside').getByRole('button', { name: 'Sign in with Google' }).click();
+  await continueThroughAgeGate(page);
   await chooseGoogleAccount(page, email);
 
   // 3. the app finishes the merge and reloads into the account, holding both records

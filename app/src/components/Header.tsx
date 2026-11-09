@@ -51,6 +51,16 @@ export const Header: React.FC<HeaderProps> = ({
         return 'Notes';
       case 'notfound':
         return 'Page not found';
+      case 'privacy':
+        return 'Privacy';
+      case 'terms':
+        return 'Terms of use';
+      case 'children':
+        return 'Children and parents';
+      case 'storage':
+        return 'Storage on your device';
+      case 'accessibility':
+        return 'Accessibility';
       default:
         return 'StudyFlow';
     }

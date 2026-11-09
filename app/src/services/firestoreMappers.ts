@@ -1,5 +1,6 @@
 import type { Assignment, CourseGrade, Note, StudySession, Subtask, UserPreferences } from '../types';
 import { sanitizeTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
+import type { AgeRecord } from '../utils/ageGate';
 import { clampScore } from '../utils/academicCalculations';
 import { clampWeight } from '../utils/assessments';
 
@@ -161,7 +162,7 @@ export function validPhoto(photo: string | null | undefined): photo is string {
  * The student's profile as stored under users/{uid}. Fields that are not set are left out (the sync turns
  * them into deletions); the rules reject unknown keys, so only known ones are emitted.
  */
-export function profileToDoc(uid: string, user: UserPreferences, photo: string | null): Doc {
+export function profileToDoc(uid: string, user: UserPreferences, photo: string | null, age: AgeRecord | null = null): Doc {
   const out: Doc = {
     uid,
     name: user.name.trim().slice(0, 100) || 'Student',
@@ -173,7 +174,13 @@ export function profileToDoc(uid: string, user: UserPreferences, photo: string |
   if (user.semesterEnd && DATE_RE.test(user.semesterEnd)) out.semesterEnd = user.semesterEnd;
   if (user.timeZone) out.timeZone = user.timeZone.slice(0, 64);
   if (validPhoto(photo)) out.photo = photo;
+  if (age) out.ageConfirmed = ageToDoc(age);
   return out;
+}
+
+/** The age answer as stored in the user document (see isValidAgeConfirmed in firestore.rules). */
+export function ageToDoc(age: AgeRecord): Doc {
+  return { band: age.band, guardian: age.guardian, at: age.at };
 }
 
 /**

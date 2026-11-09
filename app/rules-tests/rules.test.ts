@@ -178,6 +178,30 @@ describe('user profile', () => {
     await assertFails(setDoc(ref(), user({ onboarding: { dismissed: 'yes' } })));
     await assertFails(setDoc(ref(), user({ onboarding: { dismissed: true, extra: 1 } })));
   });
+  describe('ageConfirmed', () => {
+    const at = '2030-05-06T07:08:09.000Z';
+    it('accepts an adult answer and a 13 to 17 answer with the guardian tick', async () => {
+      await assertSucceeds(setDoc(ref(), user({ ageConfirmed: { band: '18+', guardian: false, at } })));
+      await assertSucceeds(setDoc(ref(), user({ ageConfirmed: { band: '13-17', guardian: true, at } })));
+    });
+    it('never stores under 13, and refuses 13 to 17 without the guardian tick', async () => {
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: 'under13', guardian: true, at } })));
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: '12', guardian: true, at } })));
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: '13-17', guardian: false, at } })));
+    });
+    it('rejects a birth date, extra keys, missing keys, wrong types and an oversized time', async () => {
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: '18+', guardian: false, at, birthDate: '2001-01-01' } })));
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: '18+', guardian: false } })));
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: '18+', guardian: 'no', at } })));
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: '18+', guardian: false, at: 'x'.repeat(41) } })));
+      await assertFails(setDoc(ref(), user({ ageConfirmed: '18+' })));
+    });
+    it('can be added to an existing profile with a merge, and nobody else can add it', async () => {
+      await assertSucceeds(setDoc(ref(), user()));
+      await assertSucceeds(setDoc(ref(), { ageConfirmed: { band: '18+', guardian: false, at }, updatedAt: serverTimestamp() }, { merge: true }));
+      await assertFails(setDoc(doc(asBob(), 'users', ALICE), { ageConfirmed: { band: '18+', guardian: false, at }, updatedAt: serverTimestamp() }, { merge: true }));
+    });
+  });
   it('rejects a client-sent updatedAt', async () => {
     await assertFails(setDoc(ref(), user({ updatedAt: Timestamp.fromMillis(1) })));
   });

@@ -18,9 +18,10 @@ import { db } from '../lib/firebase';
 import type { Assignment, CourseGrade, Note, StudySession } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
-import { assignmentToDoc, docToAssignment, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
+import { ageToDoc, assignmentToDoc, docToAssignment, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
 import { isDefaultTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 import { cleanUpProfile } from '../utils/placeholderProfile';
+import { cleanAgeRecord, readDeviceAge } from '../utils/ageGate';
 import { isLegacySeedId } from '../utils/sampleData';
 import { announceAccountLoaded } from '../lib/signInProgress';
 
@@ -108,6 +109,7 @@ export function initFirestoreSync(uid: string): () => void {
   // new device; if there is none yet, this device's profile is the one that gets stored.
   let profileSeeded = false;
   let photoShared = false;
+  let ageShared = false;
   const unsubUser = onSnapshot(
     userDocRef,
     (snap) => {
@@ -129,6 +131,11 @@ export function initFirestoreSync(uid: string): () => void {
         if (remote.photo === null && useStudyFlowStore.getState().customPhotoUrl && !photoShared) {
           photoShared = true;
           syncProfile(uid).catch((err) => console.warn('Profile picture sync warning:', err));
+        }
+        // The age answer given on this device, for an account that does not have one stored yet (once).
+        if (!snap.metadata.fromCache && !snap.metadata.hasPendingWrites && !ageShared && cleanAgeRecord(data.ageConfirmed) === null && readDeviceAge()) {
+          ageShared = true;
+          syncAgeConfirmed(uid).catch((err) => console.warn('Age answer sync warning:', err));
         }
         // Our own unsaved edit echoing back must not overwrite a newer choice.
         if (!snap.metadata.hasPendingWrites) applyStoredTimerPrefs(uid, data.timerPrefs, snap.metadata.fromCache);
@@ -343,11 +350,18 @@ export async function deleteSessionFromFirestore(uid: string, sessionId: string)
 /** Saves the student's profile (and chosen picture) to their account. Unset optional fields are removed. */
 export async function syncProfile(uid: string): Promise<void> {
   const s = useStudyFlowStore.getState();
-  const data: Record<string, unknown> = { ...profileToDoc(uid, s.user, s.customPhotoUrl), updatedAt: serverTimestamp() };
+  const data: Record<string, unknown> = { ...profileToDoc(uid, s.user, s.customPhotoUrl, readDeviceAge()), updatedAt: serverTimestamp() };
   for (const key of ['semesterStart', 'semesterEnd', 'timeZone', 'photo']) {
     if (data[key] === undefined) data[key] = deleteField();
   }
   await setDoc(doc(db, 'users', uid), data, { merge: true });
+}
+
+/** Stores the age answer from this device in the account (a merge, so nothing else in the profile moves). */
+export async function syncAgeConfirmed(uid: string): Promise<void> {
+  const age = readDeviceAge();
+  if (!age) return;
+  await setDoc(doc(db, 'users', uid), { ageConfirmed: ageToDoc(age), updatedAt: serverTimestamp() }, { merge: true });
 }
 
 let profileCleanedFor: string | null = null;
@@ -382,7 +396,7 @@ export async function syncTimerPrefs(uid: string): Promise<void> {
   const ref = doc(db, 'users', uid);
   // A brand-new account has no profile yet, and the rules need one to create the document: store it together.
   if (!(await getDoc(ref)).exists()) {
-    const data: Record<string, unknown> = { ...profileToDoc(uid, s.user, s.customPhotoUrl), timerPrefs, updatedAt: serverTimestamp() };
+    const data: Record<string, unknown> = { ...profileToDoc(uid, s.user, s.customPhotoUrl, readDeviceAge()), timerPrefs, updatedAt: serverTimestamp() };
     await setDoc(ref, data);
     return;
   }

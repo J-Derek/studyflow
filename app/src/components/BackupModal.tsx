@@ -1,11 +1,11 @@
 import { useDialog } from '../lib/useDialog';
 import React, { useEffect, useState } from 'react';
-import { X, Download, Upload, AlertTriangle, Copy, LogOut, UserRound, CloudOff, Loader2, Check, CircleAlert } from 'lucide-react';
+import { X, Download, Upload, AlertTriangle, Copy, LogOut, UserRound, CloudOff, Loader2, Check, CircleAlert, Trash2 } from 'lucide-react';
 import { GoogleIcon } from './GoogleIcon';
 import { Avatar } from './Avatar';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useAccountView } from '../store/useAccountView';
-import { friendlyAuthMessage, signInOrLinkWithGoogle, signOutUser, warmUpGoogleSignIn } from '../lib/authActions';
+import { deleteMyAccount, friendlyAuthMessage, signInOrLinkWithGoogle, signOutUser, warmUpGoogleSignIn } from '../lib/authActions';
 import { useSyncErrors } from '../lib/syncErrors';
 import { MAX_BACKUP_BYTES, validateBackupJson } from '../utils/backupValidator';
 import { inAppBrowser } from '../utils/inAppBrowser';
@@ -49,6 +49,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
   const [signingOut, setSigningOut] = useState(false);
   const [importStatus, setImportStatus] = useState<{ ok: boolean; text: string } | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const dialogRef = useDialog(isOpen, onClose);
 
@@ -118,6 +121,19 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
     } catch (err) {
       console.error('Sign out error:', err);
       setSigningOut(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      await deleteMyAccount(); // reloads the page when it is done
+    } catch (err) {
+      const message = friendlyAuthMessage(err);
+      // null means they closed Google's window: they changed their mind, nothing was deleted.
+      if (message !== null) setDeleteError(message === 'Could not sign in with Google. Please try again.' ? 'Your account could not be deleted. Nothing more was removed than before; please try again.' : message);
+      setDeleting(false);
     }
   };
 
@@ -295,6 +311,87 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
             )}
           </div>
         </section>
+
+        {/* The one thing that cannot be undone */}
+        {!isAnonymous && (
+          <section aria-labelledby="account-delete-title" className="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+            <h3 id="account-delete-title" className={sectionTitle}>
+              Delete my account
+            </h3>
+            {!confirmingDelete ? (
+              <>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  Remove your plan, your profile and your sign-in account from StudyFlow, and clear this device.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(true)}
+                  className="flex items-center justify-center gap-2 min-h-[44px] px-3.5 rounded-lg border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  Delete my account…
+                </button>
+              </>
+            ) : (
+              <div data-testid="delete-confirm" className="space-y-3 rounded-lg border border-red-200 dark:border-red-900 bg-red-50/60 dark:bg-red-950/30 p-3">
+                <p className="text-sm text-red-900 dark:text-red-200">
+                  <strong>This cannot be undone.</strong> Your assignments, timetable, grades, notes, timer history and profile will be deleted for good, and so will your sign-in account.
+                  Download your data first if you want a copy.
+                </p>
+                <p className="text-xs text-red-900 dark:text-red-200">To make sure it is you, Google will ask you to sign in again.</p>
+                <div className="flex flex-col-reverse sm:flex-row gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirmingDelete(false);
+                      setDeleteError(null);
+                    }}
+                    disabled={deleting}
+                    className={`${secondaryButton} sm:flex-1`}
+                  >
+                    Keep my account
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="sm:flex-1 flex items-center justify-center gap-2 min-h-[44px] px-3.5 rounded-lg bg-red-700 hover:bg-red-800 text-white text-sm font-medium disabled:opacity-60 cursor-pointer"
+                  >
+                    {deleting ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Trash2 className="h-4 w-4" aria-hidden="true" />}
+                    {deleting ? 'Deleting…' : 'Sign in again and delete'}
+                  </button>
+                </div>
+                <div aria-live="polite">{deleteError && <p role="alert" className="text-xs text-red-800 dark:text-red-300">{deleteError}</p>}</div>
+              </div>
+            )}
+          </section>
+        )}
+
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">
+          <a
+            href="/privacy"
+            className="underline underline-offset-2"
+            onClick={(e) => {
+              e.preventDefault();
+              onClose();
+              useStudyFlowStore.getState().setActiveTab('privacy');
+            }}
+          >
+            Privacy
+          </a>
+          {' · '}
+          <a
+            href="/terms"
+            className="underline underline-offset-2"
+            onClick={(e) => {
+              e.preventDefault();
+              onClose();
+              useStudyFlowStore.getState().setActiveTab('terms');
+            }}
+          >
+            Terms
+          </a>
+        </p>
       </div>
     </div>
   );
