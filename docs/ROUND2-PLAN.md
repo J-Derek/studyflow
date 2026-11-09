@@ -10,10 +10,11 @@ Ten small PRs, each on its own branch from `main`, pushed with a compare link. I
 Every synced field touches the same set: `src/types/index.ts`, repo-root `firestore.rules` (`hasOnly` + checks), `src/services/firestoreMappers.ts`, `src/utils/backupValidator.ts`, `app/rules-tests/rules.test.ts`, mapper/backup unit tests.
 
 ## Progress (updated 2026-11-09)
-- Branch `pr1-limits-save-errors` (from `main` at 6a01a34) is checked out with **uncommitted** work, nothing pushed yet.
-- **PR1 done so far:** `utils/limits.ts` (+ unit tests) with the shared limits, `clampText`, `localDateISO`, `isDateInRange`; backup validator now returns notes and shortens over-long subtasks (`LIMITS` import added); `maxLength`, trimming and the date range applied in `AssignmentModal.tsx`, `FirstDeadlineCard.tsx` (local dates), `pages/Calendar.tsx`, `pages/Grades.tsx`, `pages/Assignments.tsx` (subtask text). `tsc` had not yet been run after the last batch.
-- **PR1 still to do:** `GradingEditor.tsx` / profile limits check; subtask cap of 100 in `addSubtask`; replace the store's `console.warn` sync catches (about 20, `studyFlowStore.ts` lines ~414-711) with a `syncErrors` slice + toast with Retry; `utils/saveStatus.ts` + Saved badge in `Header.tsx`; unit tests (notes round-trip, long subtask, saveStatus) and e2e (over-limit input, forced write failure); then `tsc`, lint, unit, build, e2e; commit; push; verify the push with `git ls-remote`; give Derek the compare link.
-- Then PR2 → PR10 in order, each on its own branch from the latest `main` (after Derek merges the previous one).
+- **PR1 done** (#16, live). **PR2 done** (#18, live; rules deployed). Left over from PR2: mode tab labels still change mid-block;
+  focus counts still per device (not read from `focusSessions`).
+- **PR3 started:** Google name and photo, and the "Alex Vance" sample-profile clean-up, are in **PR #19** (open). Still to do in PR3:
+  sign-in speed, persisted signed-in state (no guest header flash on reload), refreshed "Your account" dialog.
+- Then PR4 to PR10 in order, each from the latest `main` after Derek merges the previous one. See `docs/HANDOFF.md` section 0.
 
 ## PR1: Fixes, input limits, visible save errors (no rules change)
 - New `src/utils/limits.ts` mirroring rule limits (title 250, course 200, note course 50, course code 50, course name 200, block title/course 200, subtask 200, due dates 2000–2100). Apply `maxLength` + trim in `AssignmentModal.tsx`, `FirstDeadlineCard.tsx`, `pages/Calendar.tsx`, `pages/Grades.tsx`, `pages/Assignments.tsx` (subtasks, cap 100), `GradingEditor.tsx`; use local dates (not `toISOString`) for defaults.

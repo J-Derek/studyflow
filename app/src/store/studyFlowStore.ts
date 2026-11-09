@@ -32,6 +32,7 @@ import { calculateSubtaskProgress } from '../utils/subtasks';
 import { LIMITS, clampText } from '../utils/limits';
 import { syncThemeColor } from '../utils/themeColor';
 import { readSavedMode, resolveTheme, saveMode, systemPrefersDark, type ThemeMode } from '../utils/themePreference';
+import { isPlaceholderName } from '../utils/placeholderProfile';
 import { DEFAULT_SOUND, DEFAULT_TIMER_SETTINGS, DEFAULT_VOLUME, sanitizeTimerPrefs, takeLegacyDevicePrefs, type TimerPrefs } from '../utils/devicePrefs';
 import { reportSyncError } from '../lib/syncErrors';
 import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
@@ -68,6 +69,8 @@ interface StudyFlowState {
   customPhotoUrl: string | null;
   setCustomPhoto: (url: string | null) => void;
   isSyncing: boolean;
+  /** The name on the student's Google account (null for guests). Used to replace a placeholder profile name. */
+  authDisplayName: string | null;
   setAuthUser: (uid: string | null, isAnonymous: boolean, email?: string | null, displayName?: string | null, photoUrl?: string | null) => void;
   resetStore: () => void;
 
@@ -221,6 +224,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (uid) syncProfile(uid).catch(failed('syncProfile', () => syncProfile(uid)));
       },
       isSyncing: false,
+      authDisplayName: null,
       setAuthUser: (uid, isAnonymous, email, displayName, photoUrl) => {
         set((state) => ({
           userId: uid,
@@ -228,11 +232,13 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           isAnonymous,
           userEmail: email || null,
           userPhotoUrl: photoUrl || null,
-          user: {
-            ...state.user,
-            name: displayName || state.user.name
-          }
+          authDisplayName: isAnonymous ? null : displayName || null,
+          // On this device only (never written from here): a placeholder name shows the Google name. If the
+          // account has a stored profile, the listener replaces this with it; if not, this is what gets stored.
+          user: displayName && !isAnonymous && isPlaceholderName(state.user.name) ? { ...state.user, name: displayName } : state.user
         }));
+        // A placeholder name in the account's stored profile is replaced by firestoreSync.cleanUpStoredProfile,
+        // which reads the stored copy first, so this device's guest name can never overwrite a real one.
       },
 
       resetStore: () => {
@@ -242,6 +248,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           isAnonymous: true,
           userEmail: null,
           userPhotoUrl: null,
+          authDisplayName: null,
           customPhotoUrl: null,
           isSyncing: false,
           assignments: [],

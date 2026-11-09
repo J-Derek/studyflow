@@ -1,27 +1,80 @@
 # StudyFlow: handoff for a new chat
 
-Read this first. It is the current state of the project and how to work on it. Last updated 2026-11-09 (after PR #16).
-The older docs in this folder (PRD, ARCHITECTURE, DESIGN and so on) describe intent; this file describes what is true now.
+Read this first. It is the current state of the project and how to work on it. Last updated 2026-11-09 (after PR #18,
+with PR #19 open). The older docs in this folder (PRD, ARCHITECTURE, DESIGN and so on) describe intent; this file describes what is true now.
 
-## 0. ROUND 2: read this first (state on 2026-11-09, `main` at `a540d96`, all of it deployed and live)
+## 0. ROUND 2: read this first (state on 2026-11-09)
 
 Derek sent a long list after testing the live app. It was planned as **ten small PRs**; the full plan, with files and
 tests for each, is `docs/ROUND2-PLAN.md`. Read it. His decisions: the Grades tab becomes **Courses** (still 6 nav links);
 an in-app **writing space** per assignment with **Word and PDF** export; **timer and sound settings per account, synced**;
 **"new semester" archives everything** with a review screen to carry chosen unfinished tasks and notes.
 
-### What is merged AND deployed (nothing is waiting on Derek except the items in "Derek still has to...")
+### Status at a glance
+| Where | What |
+|---|---|
+| Live (merged, rules + app deployed) | everything up to and including **PR #18 (PR2: timer settings per account)** |
+| Open, waiting on CI then Derek | **PR #19**: Google name and photo instead of the old sample profile ("Alex Vance") |
+| Next to build | rest of **PR3** (sign-in speed, signed-in header on reload, new "Your account" dialog), then PR4 to PR10 |
+
+### What is merged AND deployed
 | PR | What it did |
 |---|---|
 | #8 | Notes tab (typed notes, pin, search, clickable links, undo, synced, in backups) |
 | #9 | Deadline reminders in the `.ics` export; account popover (just the picture, opens a panel); timetable clash warning + Sunday fix; full-screen note reader; PDFs kept on the device only |
 | #10 | Tap a timetable block to edit or delete it; phone layout fixes (long links, assignment titles) |
-| #11 | Dark mode survives sign-out; "Device" theme option follows the phone or laptop; timer lengths and sounds survive sign-out (per **device** for now, PR2 changes that) |
+| #11 | Dark mode survives sign-out; "Device" theme option follows the phone or laptop |
 | #12 | Every phone control is at least 44px; hover-only delete cross hidden on touch |
 | #13 | Sign in on the **same page** (no pop-up) when an ad blocker breaks the Google pop-up; clearer blocked-pop-up message |
 | #14 | Gentle animated illustrations on empty Assignments, Notes, Timetable and Today |
 | #15 | Stopped the screen shaking at sign-in/sign-out (right theme on first paint, fonts preloaded, banner folds away) |
-| #16 | **PR1 of round 2:** input limits everywhere, notes now restored from backups, visible "couldn't save" message with Try again, the Saved badge watches every collection and turns red ("Not saved") |
+| #16 | **PR1 of round 2:** input limits everywhere, notes restored from backups, visible "couldn't save" message with Try again, Saved badge turns red ("Not saved") |
+| #17 | Handoff docs for round 2 |
+| #18 | **PR2 of round 2:** timer lengths, auto-start and sounds belong to the **account** (fixes "the other person's timers come with me"); Apply/Cancel form for lengths; a dismissed save message no longer comes back |
+
+### PR #18 (PR2), what was built (live; Derek tested the account switch by hand and it was good)
+- `timerPrefs` map on the user document. Rules: `isValidTimerPrefs` in `firestore.rules` (seconds as ints: focus 1..10800, short 1..3600,
+  long 1..5400; two bools; sounds from a fixed list; volume 0..1); 4 rules tests.
+- Mappers `timerPrefsToDoc` / `docToTimerPrefs` (`services/firestoreMappers.ts`); writer `syncTimerPrefs` (merge write; creates the
+  profile with it when the account has none yet); the profile listener applies the account's values through `applyAccountTimerPrefs`
+  and ignores echoes of its own pending writes. The volume slider saves once it settles (600 ms).
+- `resetStore` puts the defaults back (25/5/15, sounds off, volume 0.35), so the next person on the device starts clean.
+- `utils/devicePrefs.ts` now only validates; the old `studyflow_device_prefs` entry is read once, given to the account that owns the
+  device's data, and deleted.
+- `lib/timerScheduler.ts`: if another tab switches the saved data to a different account, this tab reloads instead of overwriting it.
+- `pages/FocusTimer.tsx`: lengths form with Apply and Cancel (`noValidate`, so 0 or 500 is clamped on Apply rather than blocked by the
+  browser); while a block runs or is paused: "Apply to the next block" or "Restart with the new length".
+- Fixed `lib/syncErrors.ts`: a message dismissed while its Try again was still running came back when the retry failed (this made
+  `limits-and-saves.spec.ts` flaky on main too).
+- Tests: `e2e/timer-prefs-account.spec.ts` (A sets 50/10, signs out; guest and B see defaults; A on a fresh browser gets 50/10; old entry
+  migrated; damaged entry harmless), rewritten `e2e/timer-lengths.spec.ts`.
+- Not done (small): the mode tabs show the new lengths while an older block is still running; pomodoro counts are still per device.
+
+### PR #19 (open): the real name instead of "Alex Vance"
+Cause: a very early build had a fictional sample student ("Alex Vance", Polytechnic Institute, Computer Engineering /
+"Computer Science & Mathematics"). It was saved into Derek's cloud profile, and the stored profile wins on every device. Separately, a
+guest who links Google keeps the guest account, whose own `displayName` and `photoURL` are empty; Google's are in `providerData`,
+which was never read (so the avatar showed initials).
+- `utils/placeholderProfile.ts`: `googleProfileOf` (name and photo with a `providerData` fallback, used in `bindUser`), `isPlaceholderName`
+  ("Student", "Alex Vance", "Guest"), `isPlaceholderDetail`, `cleanUpProfile`.
+- `services/firestoreSync.ts` `cleanUpStoredProfile(uid, googleName)`: once per account per page load, reads the stored profile **from the
+  server** and changes only placeholder fields (name to the Google name; the sample university and programme to "My university" /
+  "My programme"). Called from `bindUser` for signed-in users.
+- `setAuthUser` shows the Google name in place of a placeholder **on this device only** and never writes. Lesson from CI: the first version
+  wrote this device's profile at sign-in, so a second device's guest name "Student" got replaced by the Google name and overwrote the
+  real stored name (`e2e/profile-sync.spec.ts` caught it). Never write a local profile to the cloud before the stored one has arrived.
+- Account menu hides default wording ("My programme", "Academic Workspace", ...).
+- Tests: `utils/placeholderProfile.test.ts`, `e2e/google-name.spec.ts`. Also `e2e/undo-and-scores.spec.ts` now matches the Undo button
+  exactly (it sometimes matched a button labelled "... undo me").
+
+### What Derek tests by hand
+After PR #19 is merged and the app is deployed (no rules change in #19, so app only), Ctrl+Shift+R on the live site:
+1. Account menu shows his Google name and photo; no "Alex Vance", no "Computer Science & Mathematics".
+2. Edit profile, type a programme, save: it shows in the account menu and survives a reload.
+3. On a second device (or a private window), sign in to the same account: the name he typed is still there (not replaced).
+4. A brand-new Google account shows its Google name, not "Student".
+Still worth repeating after any sign-in change: timers (A sets 50/10, sign out, guest and B show 25/5/15, A gets 50/10 back) and
+**real Google sign-in with his ad blocker on** (same-page sign-in, never confirmed by him yet).
 
 Google/Vercel setup for same-page sign-in is **done**: the OAuth client "Web client (auto created by Google Service)" in
 project `studyflow-app-8f038` has both redirect URIs (`.../__/auth/handler` on the firebaseapp.com AND the vercel.app
@@ -31,44 +84,19 @@ Read-only check that Google still accepts both addresses (no sign-in needed): ca
 `identitytoolkit.googleapis.com/v1/accounts:createAuthUri?key=<apiKey>` with `continueUri` set to each handler address, fetch
 the returned `authUri`, and look for `redirect_uri_mismatch` in the page.
 
-### PR2, timer settings per account: BUILT in PR #18 (deploy rules BEFORE the app)
-Done: `timerPrefs` map on the user document (rules `isValidTimerPrefs`, 4 rules tests), `syncTimerPrefs` / `applyAccountTimerPrefs`,
-defaults on sign-out, old `studyflow_device_prefs` entry moved once to the owning account then deleted (`utils/devicePrefs.ts` now only
-validates), scheduler stops writing when another tab switched account, Apply/Cancel form with "next block" or "restart".
-E2E: `e2e/timer-prefs-account.spec.ts`. Also fixed a flake: a sync-error message dismissed while its retry was running came back.
-Not done: tab labels still show new lengths mid-block; pomodoro counts still per device. The brief below is kept for reference.
-
-Derek found that after switching accounts, "the other person's focus timers come with me". Cause (verified in code):
-- `src/utils/devicePrefs.ts` keeps `timerSettings` (focus, short, long, auto-start flags), `soundscape`, `breakSoundscape`,
-  `soundscapeVolume` in localStorage key `studyflow_device_prefs`, which **sign-out deliberately does not wipe**. The store reads it
-  at module load (`savedPrefs`, `initialTimerSettings` in `src/store/studyFlowStore.ts`) and again in `onRehydrateStorage`.
-  `resetStore` keeps `timerSettings` and builds the idle timer from it. So the next person inherits lengths and sounds.
-- `pomodorosCompleted` and `focusMinutes` are local only; `focusSessions` is written to Firestore but never read, so counts do not follow
-  an account either. `src/lib/timerScheduler.ts` is started in `main.tsx` before auth binds and rewrites the persisted state every second, so a stale background tab
-  can write its user's data into shared localStorage (`bindUser` in `src/lib/auth.ts` catches it on the next load through `dataOwnerUid`).
-- `e2e/account-isolation.spec.ts` only checks assignment text; nothing covers the timer.
-Build plan (from `docs/ROUND2-PLAN.md`): additive rule for a `timerPrefs` map on the user document (`firestore.rules`, user block around
-lines 74 to 88; ints in range, bools, sound from a fixed list), mapper changes in `src/services/firestoreMappers.ts` (`profileToDoc` / `docToProfile`
-around lines 153 to 188) and the profile listener in `src/services/firestoreSync.ts` (around lines 78 to 92), `types`, `backupValidator` if backed up, rules tests in
-`app/rules-tests/rules.test.ts`. Remove the timer parts of `devicePrefs.ts` (the theme stays per device in `utils/themePreference.ts`); `resetStore` restores defaults;
-one-time upload of a device's old values to the account that owns them. Guard the scheduler so it never writes when the persisted owner is not the current uid.
-**Timer lengths UX (`src/pages/FocusTimer.tsx`):** `LengthField` (lines about 26 to 53) is uncontrolled and commits on blur only, with no Apply button, and applies at once only if the timer is idle
-(`updateTimerSettings` in the store); the hint text does not mention a paused timer; tab labels change mid-block. Replace with a controlled form with **Apply** and **Cancel**; while a block runs offer
-"apply to the next block" or "restart with the new length". **Deploy order: rules first, then the app.** Tests: rules + mapper, e2e isolation (A sets 50/10 and signs out; a guest and B see defaults; A on a fresh browser sees 50/10), update `e2e/timer-lengths.spec.ts`.
-
-### Then PR3 to PR10 (each from the latest `origin/main`, only after Derek merges the one before)
-PR3 sign-in speed + Google name/photo + refreshed "Your account" dialog (the name stays "Student" because the guest profile seeding writes `name: 'Student'` to Firestore and the profile listener
-overwrites Google's `displayName`; `providerData` is never read; signed-in state is not persisted so every reload shows the guest header for a moment). PR4 404 + error boundary + offline page + rewrite
+### Next: rest of PR3, then PR4 to PR10 (each from the latest `origin/main`, only after Derek merges the one before)
+PR3 remainder: sign-in feels slow; signed-in state is not persisted, so every reload shows the guest header for a moment; refreshed "Your account" dialog
+(name and photo part is PR #19). PR4 404 + error boundary + offline page + rewrite
 `docs/SECURITY.md` (still describes Supabase) + `security.txt` + `/notes` in the sitemap. PR5 legal pages (privacy, terms, children, storage/cookies, accessibility), age step, delete-my-account;
 **research Kenya DPA 2019, GDPR, COPPA, UK AADC first and mark everything as a draft for a Kenyan lawyer**. PR6 item kinds (exam, test, reading, project), progress from checklists, happy completion
 animation, legends/keys, nudges that students can add exams and readings. PR7 month calendar + deadlines on the timetable + pending items everywhere. PR8 Grades becomes Courses.
 PR9 writing space + Word/PDF export. PR10 term vs semester + "Start a new semester" archive. Every PR that changes synced data touches: `types`, `firestore.rules`, `firestoreMappers.ts`,
 `backupValidator.ts`, rules tests, mapper tests.
 
-Derek's original wishes, mapped (so nothing is lost): sign-in feels slow (PR3); import Google name and photo (PR3); what the "Saved" badge is (PR1, done); typed assignments exported as Word/PDF, shown near "Next up" on Today (PR9);
+Derek's original wishes, mapped (so nothing is lost): sign-in feels slow (PR3); import Google name and photo (PR #19); what the "Saved" badge is (PR1, done); typed assignments exported as Word/PDF, shown near "Next up" on Today (PR9);
 auto progress vs manual slider (PR6); input limits and validation (PR1, done, plus a check in each later PR); month calendar with tap-a-day (PR7); remind students to add reading and exams (PR6, PR7); whole app synced so
 pending items show on Today, Timetable, Notes, Courses (PR7); a key/legend for anything not obvious (PR6); happy completion animation (PR6); clean-out / new semester without losing old data (PR10); term vs semester for non-university
-users (PR10); child-safety and legal pages (PR5); a Classes/Courses tab (PR8); timer Apply button (PR2); account switch leak (PR2); refreshed "Your account" dialog (PR3); 404 and other pages (PR4). He said more will be found: keep a list.
+users (PR10); child-safety and legal pages (PR5); a Classes/Courses tab (PR8); timer Apply button (PR2, done #18); account switch leak (PR2, done #18); refreshed "Your account" dialog (PR3); 404 and other pages (PR4). He said more will be found: keep a list.
 
 ### Derek still has to do or confirm
 - **Try real Google sign-in on the live site with his ad blocker on** (the same-page sign-in is deployed, but only he can test real Google). Ask him what happened.

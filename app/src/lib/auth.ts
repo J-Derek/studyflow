@@ -15,7 +15,8 @@ import {
 import { clearIndexedDbPersistence, terminate, waitForPendingWrites } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { initFirestoreSync, mergeGuestDataIntoAccount, unsubscribeAllFirestoreSync } from '../services/firestoreSync';
+import { googleProfileOf } from '../utils/placeholderProfile';
+import { cleanUpStoredProfile, initFirestoreSync, mergeGuestDataIntoAccount, unsubscribeAllFirestoreSync } from '../services/firestoreSync';
 import { deleteAllFiles } from './localFiles';
 import { postAuthNotice } from './authNotice';
 import { clearSyncErrors } from './syncErrors';
@@ -152,11 +153,16 @@ function bindUser(user: User | null): void {
       return;
     }
   }
-  useStudyFlowStore.getState().setAuthUser(user.uid, user.isAnonymous, user.email, user.displayName, user.photoURL);
+  // A guest who linked Google keeps the guest account, whose own name and photo are empty: read Google's.
+  const google = googleProfileOf(user);
+  useStudyFlowStore.getState().setAuthUser(user.uid, user.isAnonymous, user.email, google.name, google.photo);
   if (syncedUid !== user.uid) {
     syncedUid = user.uid;
     initFirestoreSync(user.uid);
     if (!user.isAnonymous && !mergeInProgress) void retryPendingMerge(user.uid);
+  }
+  if (!user.isAnonymous && !mergeInProgress) {
+    cleanUpStoredProfile(user.uid, google.name).catch((err) => console.warn('Profile clean-up warning:', err));
   }
 }
 

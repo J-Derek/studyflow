@@ -6,6 +6,7 @@ import {
   writeBatch,
   onSnapshot,
   getDoc,
+  getDocFromServer,
   getDocs,
   limit,
   query,
@@ -19,6 +20,7 @@ import { useStudyFlowStore } from '../store/studyFlowStore';
 import { fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
 import { assignmentToDoc, docToAssignment, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
 import { isDefaultTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
+import { cleanUpProfile } from '../utils/placeholderProfile';
 import { isLegacySeedId } from '../utils/sampleData';
 
 const LIST_CAP = 500;
@@ -344,6 +346,26 @@ export async function syncProfile(uid: string): Promise<void> {
     if (data[key] === undefined) data[key] = deleteField();
   }
   await setDoc(doc(db, 'users', uid), data, { merge: true });
+}
+
+let profileCleanedFor: string | null = null;
+
+/**
+ * A placeholder name in the account's STORED profile ("Student", or the old sample "Alex Vance") gives way to
+ * the Google name, and the old sample's university and programme to neutral wording. It reads the stored copy
+ * from the server and changes only those fields, so a real name stored by another device is never touched.
+ * Runs once per account per page load; the profile listener then shows the result.
+ */
+export async function cleanUpStoredProfile(uid: string, googleName: string | null): Promise<void> {
+  if (profileCleanedFor === uid) return;
+  profileCleanedFor = uid;
+  const ref = doc(db, 'users', uid);
+  const snap = await getDocFromServer(ref);
+  if (!snap.exists() || !isCurrentUser(uid)) return;
+  const stored = docToProfile(snap.data()).user;
+  const fixed = cleanUpProfile({ name: stored.name ?? '', university: stored.university ?? '', program: stored.program ?? '' }, googleName);
+  if (!fixed) return;
+  await setDoc(ref, { ...fixed, updatedAt: serverTimestamp() }, { merge: true });
 }
 
 /** Saves the timer lengths and sound choices to the account (a merge, so nothing else in the profile moves). */

@@ -4,6 +4,7 @@ import { useStudyFlowStore } from '../store/studyFlowStore';
 import { signOutUser } from '../lib/authActions';
 import { cn } from '../utils/formatters';
 import { Avatar } from './Avatar';
+import { isPlaceholderDetail } from '../utils/placeholderProfile';
 
 interface AccountMenuProps {
   onOpenProfile?: () => void;
@@ -74,6 +75,8 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onOpenProfile, onOpenB
   };
 
   const name = user.name || 'Student';
+  // Only what the student actually typed; default wording is left out.
+  const details = [user.program, user.university].filter((t) => !isPlaceholderDetail(t)).join(', ');
 
   return (
     <div ref={rootRef} className={cn('relative', className)}>
@@ -107,8 +110,8 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onOpenProfile, onOpenB
             <div className="min-w-0">
               <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">{name}</p>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 truncate">{userEmail || 'Signed in'}</p>
-              {(user.university || user.program) && (
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 truncate">{[user.program, user.university].filter(Boolean).join(', ')}</p>
+              {details && (
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 truncate">{details}</p>
               )}
             </div>
           </div>
