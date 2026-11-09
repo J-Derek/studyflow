@@ -72,6 +72,19 @@ describe('grade mappers', () => {
     expect(hostile.assessments).toEqual([]);
     expect(hostile.credits).toBe(0);
   });
+  it('holds scores and weights from the cloud to their limits (a record written outside the app cannot show 8837%)', () => {
+    const back = docToGrade('g1', {
+      assessments: [
+        { id: 'a', name: 'Midterm', weight: 40, score: 8585 },
+        { id: 'b', name: 'Quiz', weight: 999, score: -20 },
+        { id: 'c', name: 'Final', weight: -5, score: 'high' },
+        { id: 'd', name: 'Project', weight: 'x', score: Number.NaN }
+      ]
+    });
+    expect(back.assessments.map((a) => a.score)).toEqual([100, 0, undefined, undefined]);
+    expect(back.assessments.map((a) => a.weight)).toEqual([40, 100, 0, 0]);
+    expect(back.assessments[2]).not.toHaveProperty('score');
+  });
   it('keeps the sample flag', () => {
     expect(gradeToDoc({ ...g, sample: true }).sample).toBe(true);
     expect(docToGrade('g1', gradeToDoc({ ...g, sample: true })).sample).toBe(true);

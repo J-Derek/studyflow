@@ -1,5 +1,7 @@
 import type { Assignment, CourseGrade, Note, StudySession, Subtask, UserPreferences } from '../types';
 import { sanitizeTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
+import { clampScore } from '../utils/academicCalculations';
+import { clampWeight } from '../utils/assessments';
 
 type Doc = Record<string, unknown>;
 
@@ -117,6 +119,12 @@ export function gradeToDoc(g: CourseGrade): Doc {
   return out;
 }
 
+/** An assessment's score as stored: a number held between 0 and 100, or no key at all. */
+function scoreField(score: unknown): { score?: number } {
+  const clamped = typeof score === 'number' ? clampScore(score) : undefined;
+  return clamped === undefined ? {} : { score: clamped };
+}
+
 export function docToGrade(id: string, data: Doc): CourseGrade {
   const raw = Array.isArray(data.assessments) ? data.assessments : [];
   return {
@@ -131,8 +139,10 @@ export function docToGrade(id: string, data: Doc): CourseGrade {
       .map((a) => ({
         id: String(a.id ?? ''),
         name: String(a.name ?? ''),
-        weight: typeof a.weight === 'number' ? a.weight : 0,
-        ...(typeof a.score === 'number' ? { score: a.score } : {})
+        // The cloud rules cannot check each assessment, so a record written outside the app could hold a
+        // score of 8585. Whatever arrives is held to the same limits the editor enforces.
+        weight: typeof a.weight === 'number' ? clampWeight(a.weight) : 0,
+        ...scoreField(a.score)
       })),
     sample: data.sample === true ? true : undefined
   };
