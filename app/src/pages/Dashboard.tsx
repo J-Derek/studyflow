@@ -18,6 +18,7 @@ import { FirstDeadlineCard } from '../components/FirstDeadlineCard';
 import { KindBadge } from '../components/KindBadge';
 import { celebrate } from '../components/CelebrateBurst';
 import { kindOf } from '../utils/kinds';
+import { selectPendingDeadlines } from '../utils/calendarMonth';
 import { SignInButton } from '../components/SignInButton';
 import { GettingStartedChecklist } from '../components/GettingStartedChecklist';
 
@@ -64,9 +65,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const todayLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
   // Urgent / Upcoming assignments sorted by due date
-  const urgentAssignments = [...pendingAssignments]
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-    .slice(0, 4);
+  const urgentAssignments = selectPendingDeadlines(pendingAssignments).slice(0, 4);
   const nextUp = urgentAssignments[0];
   const nextUpDue = nextUp ? getDaysRemaining(nextUp.dueDate) : { label: '', isUrgent: false };
 

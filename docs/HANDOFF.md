@@ -19,7 +19,8 @@ an in-app **writing space** per assignment with **Word and PDF** export; **timer
 | Branch `claude/pr4-shell` (PR4, waiting for Derek) | page-not-found screen, calm crash screen, offline banner, `/notes` in the sitemap, `docs/SECURITY.md` rewritten for Firebase. **`security.txt` skipped** until Derek picks a contact address |
 | Branch `claude/pr5-legal` (PR5, stacked on PR4, waiting for Derek) | draft legal pages, age question before sign-in, "Delete my account". **Rules change: deploy rules FIRST, then the app** |
 | Branch `claude/pr6-kinds` (PR6, stacked on PR5) | kinds of deadline (exam, test, reading, project), progress from the checklist, celebration, keys, class colours. **Rules change (additive `kind`): deploy rules FIRST** |
-| Next to build | PR7 to PR10 (each stacked on the one before) |
+| Branch `claude/pr7-calendar` (PR7, stacked on PR6; **no rules change**) | Week/Month toggle, tap a day, deadlines on the timetable, "Due soon" strip |
+| Next to build | PR8 to PR10 (each stacked on the one before) |
 
 ### What is merged AND deployed
 | PR | What it did |
@@ -188,8 +189,18 @@ Reason: the app now writes `ageConfirmed` in the profile; the old rules reject u
 - Not done: priority is still only a word and a filter (the key says so); reading/exam nudges on the timetable come with PR7 (deadlines on the timetable).
 - Tests: `e2e/kinds-progress.spec.ts` (6), unit `progress.test.ts`, mapper, backup, 3 rules tests.
 
-### Next: PR7 to PR10 (stacked: each branch starts from the one before; merge in order)
-PR3 to PR6 are done. PR7 month calendar + deadlines on the timetable + pending items everywhere. PR8 Grades becomes Courses.
+### PR7 (branch `claude/pr7-calendar`, stacked on `claude/pr6-kinds`; no rules change, deploy is the app only)
+- `utils/calendarMonth.ts`: `monthGrid` (Monday-first full rows), `classesOn`/`occurrencesInRange` (classes repeat weekly by weekday), `deadlinesByDate`, `selectPendingDeadlines`
+  (the one shared "still to do, soonest first" rule; Today and the Timetable use it, Courses will in PR8), date helpers. Plain "YYYY-MM-DD" text, no time zones.
+- `pages/Calendar.tsx`: Week/Month toggle (`aria-pressed`), month stepper, deadlines listed inside each week column (tap to edit), a "Due soon" strip, key with a month section.
+  `components/MonthGrid.tsx` (each day is one button, 56px on phones, accessible name like "Tuesday 17 November, 1 class, 2 deadlines" in an sr-only span so the visible
+  numbers cannot mismatch), `components/DaySheet.tsx` (tap a day: its deadlines and classes, "Add a deadline for this day", "Add a class on this weekday").
+  `AssignmentModal` got an optional `initialDueDate`.
+- Tests: `e2e/calendar-month.spec.ts` (4: week deadlines and strip, month counts/stepping/toggle back, tap-a-day and quick add, phone 44px + axe light/dark + sheet fits), unit `calendarMonth.test.ts`.
+- Not done: notes are not on the calendar; deadlines are not drawn on the timetable as time blocks (they are listed per day).
+
+### Next: PR8 to PR10 (stacked: each branch starts from the one before; merge in order)
+PR3 to PR7 are done. PR8 Grades becomes Courses.
 PR9 writing space + Word/PDF export. PR10 term vs semester + "Start a new semester" archive. Every PR that changes synced data touches: `types`, `firestore.rules`, `firestoreMappers.ts`,
 `backupValidator.ts`, rules tests, mapper tests.
 

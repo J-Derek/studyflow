@@ -13,9 +13,11 @@ interface AssignmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   assignmentToEdit?: Assignment | null;
+  /** For a new item: the due date to start with (for example the day tapped on the calendar). */
+  initialDueDate?: string;
 }
 
-export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, assignmentToEdit }) => {
+export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, assignmentToEdit, initialDueDate }) => {
   const { addAssignment, updateAssignment } = useStudyFlowStore();
 
   const [title, setTitle] = useState('');
@@ -40,14 +42,14 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
     } else {
       setTitle('');
       setCourse('');
-      setDueDate(localDateISO());
+      setDueDate(initialDueDate && isDateInRange(initialDueDate) ? initialDueDate : localDateISO());
       setDueTime('23:59');
       setPriority('medium');
       setNotes('');
       setProgress(0);
       setKind('assignment');
     }
-  }, [assignmentToEdit, isOpen]);
+  }, [assignmentToEdit, isOpen, initialDueDate]);
 
   const dialogRef = useDialog(isOpen, onClose);
 
