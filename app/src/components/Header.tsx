@@ -49,6 +49,8 @@ export const Header: React.FC<HeaderProps> = ({
         return 'Grades';
       case 'notes':
         return 'Notes';
+      case 'notfound':
+        return 'Page not found';
       default:
         return 'StudyFlow';
     }

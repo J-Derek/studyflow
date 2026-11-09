@@ -15,8 +15,9 @@ an in-app **writing space** per assignment with **Word and PDF** export; **timer
 |---|---|
 | Live (merged, rules + app deployed) | everything up to and including **PR #18 (PR2: timer settings per account)** |
 | Merged by Derek (#19, #20; app deploy is Derek's step, no rules change) | **PR3 complete**: Google name and photo; signed-in header on reload; "Signing you in…"; refreshed "Your account" dialog |
-| Branch `claude/audit-fixes` (waiting for Derek) | from the Antigravity audit: grades read from the cloud held to 0-100; Content-Security-Policy as **report-only** (see "Audit verdicts") |
-| Next to build | PR4 to PR10 |
+| Merged by Derek (#21), app deploy is his step | from the Antigravity audit: grades read from the cloud held to 0-100; Content-Security-Policy as **report-only** (see "Audit verdicts") |
+| Branch `claude/pr4-shell` (PR4, waiting for Derek) | page-not-found screen, calm crash screen, offline banner, `/notes` in the sitemap, `docs/SECURITY.md` rewritten for Firebase. **`security.txt` skipped** until Derek picks a contact address |
+| Next to build | PR5 to PR10 |
 
 ### What is merged AND deployed
 | PR | What it did |
@@ -128,9 +129,24 @@ in with real Google (ad blocker on and off) on the live site with the browser co
 up, add the address to the matching directive in `vercel.json`. The theme script in `index.html` is allowed by its hash: `src/utils/csp.test.ts`
 fails if that script is edited without refreshing the two hashes (LF and CRLF forms).
 
-### Next: PR4 to PR10 (each from the latest `origin/main`, only after Derek merges the one before)
-PR3 is merged. PR4 404 + error boundary + offline page + rewrite
-`docs/SECURITY.md` (still describes Supabase) + `security.txt` + `/notes` in the sitemap. PR5 legal pages (privacy, terms, children, storage/cookies, accessibility), age step, delete-my-account;
+### PR4 (branch `claude/pr4-shell`)
+- `getTabFromPath` (`store/studyFlowStore.ts`) now answers `'notfound'` for an address the app does not have (it used to quietly show Today);
+  `pages/NotFound.tsx` ("We can't find that page", Go to Today, links to the six pages, `noindex` while shown). Vercel answers every address
+  without a dot with the app, so this screen is how unknown addresses are handled.
+- `components/ErrorBoundary.tsx`: around the page area (menus keep working; the `key` retries when another page is opened) and around the whole
+  app in `main.tsx`. "Reload" and "Download my data", which reads the saved copy on this device through `utils/exportBackup.ts`
+  (`backupFromSavedCopy`) and so works even when the store is the broken part. The Your account dialog uses the same `buildBackup`/`downloadBackup`.
+- `components/OfflineBanner.tsx` (shared `lib/useOnline.ts`, also used by the Saved badge and the account dialog). There is **no offline page**: the app
+  has no service worker, so a first visit with no connection cannot load anything. A service worker is a bigger decision, not done.
+- Sitemap has `/notes`. `docs/SECURITY.md` is rewritten: every row names its test, and the "known limits" list is honest (no account deletion, no
+  security.txt, headers not auto-tested).
+- Tests: `e2e/app-shell.spec.ts` (404 light/dark with axe and 44px, Back from 404, a forced crash on Notes with the menus still working and the
+  download containing the record, offline banner), unit `tabFromPath.test.ts`, `exportBackup.test.ts`.
+- Gap found, not fixed: a bad value saved in `localStorage` would crash the same page again after Reload (the error screen's Download still works).
+- To do when Derek chooses a contact: `app/public/.well-known/security.txt` (RFC 9116: Contact, Expires, Preferred-Languages) and a link in SECURITY.md section 6.
+
+### Next: PR5 to PR10 (each from the latest `origin/main`, only after Derek merges the one before)
+PR3 and PR4 are done. PR5 legal pages (privacy, terms, children, storage/cookies, accessibility), age step, delete-my-account;
 **research Kenya DPA 2019, GDPR, COPPA, UK AADC first and mark everything as a draft for a Kenyan lawyer**. PR6 item kinds (exam, test, reading, project), progress from checklists, happy completion
 animation, legends/keys, nudges that students can add exams and readings. PR7 month calendar + deadlines on the timetable + pending items everywhere. PR8 Grades becomes Courses.
 PR9 writing space + Word/PDF export. PR10 term vs semester + "Start a new semester" archive. Every PR that changes synced data touches: `types`, `firestore.rules`, `firestoreMappers.ts`,

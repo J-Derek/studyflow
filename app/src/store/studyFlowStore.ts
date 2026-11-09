@@ -43,14 +43,18 @@ import { normalizeAssessments } from '../utils/assessments';
 
 export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades' | 'notes';
 
-export function getTabFromPath(path: string): NavigationTab {
+/** The six pages, plus what the app shows for an address it does not have. */
+export type AppTab = NavigationTab | 'notfound';
+
+export function getTabFromPath(path: string): AppTab {
   const clean = path.replace(/\/$/, '').toLowerCase();
+  if (clean === '' || clean === '/') return 'dashboard';
   if (clean === '/assignments') return 'assignments';
   if (clean === '/calendar') return 'calendar';
   if (clean === '/timer') return 'timer';
   if (clean === '/grades') return 'grades';
   if (clean === '/notes') return 'notes';
-  return 'dashboard';
+  return 'notfound';
 }
 
 export function getPathFromTab(tab: NavigationTab): string {
@@ -94,7 +98,7 @@ interface StudyFlowState {
   clearAllData: () => void;
 
   // Active Navigation Tab
-  activeTab: NavigationTab;
+  activeTab: AppTab;
   setActiveTab: (tab: NavigationTab) => void;
 
   // Theme Mode

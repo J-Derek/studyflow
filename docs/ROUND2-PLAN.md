@@ -40,7 +40,7 @@ Every synced field touches the same set: `src/types/index.ts`, repo-root `firest
 
 ## PR4: App shell: 404, error page, offline (no rules change)
 - `pages/NotFound.tsx` (`getTabFromPath` returns `notfound` for unknown paths), `components/ErrorBoundary.tsx` (friendly page, Reload, "Download my data"), `components/OfflineBanner.tsx`.
-- `public/.well-known/security.txt`, `/notes` in `sitemap.xml`; rewrite outdated `docs/SECURITY.md` (still says Supabase).
+- `public/.well-known/security.txt` (skipped for now: needs a contact address from Derek), `/notes` in `sitemap.xml` (done), `docs/SECURITY.md` rewritten (done).
 - Tests: e2e unknown route (+axe), `context.setOffline`, a forced render error.
 
 ## PR5: Legal pages, age notice, account deletion

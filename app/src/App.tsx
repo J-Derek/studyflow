@@ -10,6 +10,9 @@ import { HelpMenuModal } from './components/HelpMenuModal';
 import { AuthNotice } from './components/AuthNotice';
 import { SignInProgress } from './components/SignInProgress';
 import { SyncErrorToast } from './components/SyncErrorToast';
+import { OfflineBanner } from './components/OfflineBanner';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { NotFoundPage } from './pages/NotFound';
 import { useStudyFlowStore, getTabFromPath } from './store/studyFlowStore';
 import { startAuthSessionLazy } from './lib/authActions';
 
@@ -125,8 +128,13 @@ export function App() {
           onOpenHelp={() => setIsHelpOpen(true)}
         />
 
-        {/* Page Content Viewport with Accessible Suspense Fallback */}
+        {/* Shown only while the device has no connection */}
+        <OfflineBanner />
+
+        {/* Page Content Viewport with Accessible Suspense Fallback. A page that crashes shows a calm screen here and
+            the menus around it keep working; going to another page tries again (the key). */}
         <main id="main" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 focus:outline-none">
+          <ErrorBoundary key={activeTab} scope="page">
           <Suspense
             fallback={
               <div
@@ -156,7 +164,9 @@ export function App() {
             {activeTab === 'timer' && <FocusTimerPage />}
             {activeTab === 'grades' && <GradesPage />}
             {activeTab === 'notes' && <NotesPage />}
+            {activeTab === 'notfound' && <NotFoundPage />}
           </Suspense>
+          </ErrorBoundary>
         </main>
 
         {/* Mobile Navigation Bar */}

@@ -9,6 +9,8 @@ import { friendlyAuthMessage, signInOrLinkWithGoogle, signOutUser, warmUpGoogleS
 import { useSyncErrors } from '../lib/syncErrors';
 import { MAX_BACKUP_BYTES, validateBackupJson } from '../utils/backupValidator';
 import { inAppBrowser } from '../utils/inAppBrowser';
+import { buildBackup, downloadBackup } from '../utils/exportBackup';
+import { useOnline } from '../lib/useOnline';
 import { isPlaceholderDetail } from '../utils/placeholderProfile';
 import { getSaveState } from '../utils/saveStatus';
 import { accountSyncLine, planSummary } from '../utils/accountSummary';
@@ -30,21 +32,6 @@ const TONE = {
 const sectionTitle = 'text-xs font-semibold text-zinc-600 dark:text-zinc-400';
 const secondaryButton =
   'flex items-center justify-center gap-2 min-h-[44px] px-3.5 rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-100 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition cursor-pointer disabled:opacity-60';
-
-function useOnline(): boolean {
-  const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
-  useEffect(() => {
-    const on = () => setOnline(true);
-    const off = () => setOnline(false);
-    window.addEventListener('online', on);
-    window.addEventListener('offline', off);
-    return () => {
-      window.removeEventListener('online', on);
-      window.removeEventListener('offline', off);
-    };
-  }, []);
-  return online;
-}
 
 /**
  * "Your account": who is signed in, whether their work is saved, what their plan holds, and their data
@@ -79,21 +66,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
     notes
   };
 
-  const handleExportJSON = () => {
-    const backupData = {
-      version: 'StudyFlow-v1.2',
-      exportedAt: new Date().toISOString(),
-      ledger: own
-    };
-
-    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `studyflow-data-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
+  const handleExportJSON = () => downloadBackup(buildBackup({ assignments, sessions, grades, notes }));
 
   const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
