@@ -15,8 +15,8 @@ an in-app **writing space** per assignment with **Word and PDF** export; **timer
 |---|---|
 | Live (merged, rules + app deployed) | everything up to and including **PR #18 (PR2: timer settings per account)** |
 | Merged by Derek, app deploy pending (no rules change) | **PR #19**: Google name and photo instead of the old sample profile ("Alex Vance") |
-| Branch `claude/pr3-rest` (PR3, part 2) | e2e pop-up close race fixed (the CI timeout on #19); signed-in header right after a reload; "Signing you in…" note |
-| Next to build | rest of **PR3**: refreshed "Your account" dialog; then PR4 to PR10 |
+| Branch `claude/pr3-rest` (PR3, part 2, waiting for Derek) | e2e pop-up close race fixed (the CI timeout on #19); signed-in header right after a reload; "Signing you in…" note; refreshed "Your account" dialog |
+| Next to build | PR4 to PR10 (PR3 is complete on `claude/pr3-rest`) |
 
 ### What is merged AND deployed
 | PR | What it did |
@@ -101,11 +101,15 @@ the returned `authUri`, and look for `redirect_uri_mismatch` in the page.
   records, clears the device and reloads, which took seconds with nothing on screen. Now a small note says "moving your guest work", and after
   the reload "loading your plan" until the account's assignments arrive from the cloud (`announceAccountLoaded` in the assignments listener;
   20 s cap). A sessionStorage flag set after the wipe carries it across the reload. Polite live region, not `role="status"`.
-- Not done in PR3: the refreshed "Your account" dialog (`BackupModal.tsx`). Sign-in speed itself was not measured with real Google
-  (only Derek can do that); the slow part found in code is the existing-account path above.
+- **Refreshed "Your account" dialog** (`components/BackupModal.tsx`, words in `utils/accountSummary.ts`): picture, name, email, typed
+  programme/university, "Signed in with Google", a saved/saving/offline/not-saved line (same state as the top-bar badge), Edit profile
+  (new `onOpenProfile` prop from `App.tsx`), Sign out, what the plan holds, Download / Restore (file input now keyboard-reachable). PR5 adds
+  "Delete my account" at the bottom. Test: `e2e/account-dialog.spec.ts`.
+- Sign-in speed itself was not measured with real Google (only Derek can do that); the slow part found in code is the existing-account path above.
+- Full e2e on the branch: 209 of 210 passed; `timer-lengths.spec.ts` failed once under the full run and passed 15 of 15 alone (timing flake, untouched code).
 
 ### Next: rest of PR3, then PR4 to PR10 (each from the latest `origin/main`, only after Derek merges the one before)
-PR3 remainder: refreshed "Your account" dialog (name and photo part is PR #19). PR4 404 + error boundary + offline page + rewrite
+PR3 is complete on `claude/pr3-rest` (waiting for Derek). PR4 404 + error boundary + offline page + rewrite
 `docs/SECURITY.md` (still describes Supabase) + `security.txt` + `/notes` in the sitemap. PR5 legal pages (privacy, terms, children, storage/cookies, accessibility), age step, delete-my-account;
 **research Kenya DPA 2019, GDPR, COPPA, UK AADC first and mark everything as a draft for a Kenyan lawyer**. PR6 item kinds (exam, test, reading, project), progress from checklists, happy completion
 animation, legends/keys, nudges that students can add exams and readings. PR7 month calendar + deadlines on the timetable + pending items everywhere. PR8 Grades becomes Courses.

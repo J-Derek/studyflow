@@ -14,7 +14,7 @@ Every synced field touches the same set: `src/types/index.ts`, repo-root `firest
   focus counts still per device (not read from `focusSessions`).
 - **PR3:** Google name and photo, and the "Alex Vance" sample-profile clean-up, are in **PR #19** (merged). Branch `claude/pr3-rest`:
   signed-in header right after a reload, "Signing you in…" note for the existing-account path, and the e2e pop-up close race that made #19's
-  CI time out. Still to do in PR3: refreshed "Your account" dialog.
+  CI time out, and the refreshed "Your account" dialog. PR3 is complete.
 - Then PR4 to PR10 in order, each from the latest `main` after Derek merges the previous one. See `docs/HANDOFF.md` section 0.
 
 ## PR1: Fixes, input limits, visible save errors (no rules change)
