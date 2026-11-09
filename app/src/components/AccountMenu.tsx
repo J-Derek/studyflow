@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { Cloud, HelpCircle, LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
+import { useAccountView } from '../store/useAccountView';
 import { signOutUser } from '../lib/authActions';
 import { cn } from '../utils/formatters';
 import { Avatar } from './Avatar';
@@ -24,7 +25,8 @@ const itemClass =
  * sign-in button.
  */
 export const AccountMenu: React.FC<AccountMenuProps> = ({ onOpenProfile, onOpenBackup, onOpenHelp, placement, className }) => {
-  const { user, userEmail, userPhotoUrl, customPhotoUrl, themeMode, setThemeMode } = useStudyFlowStore();
+  const { user, customPhotoUrl, themeMode, setThemeMode } = useStudyFlowStore();
+  const { email: userEmail, photoUrl: userPhotoUrl } = useAccountView();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);

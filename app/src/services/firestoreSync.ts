@@ -22,6 +22,7 @@ import { assignmentToDoc, docToAssignment, docToGrade, docToNote, docToProfile, 
 import { isDefaultTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 import { cleanUpProfile } from '../utils/placeholderProfile';
 import { isLegacySeedId } from '../utils/sampleData';
+import { announceAccountLoaded } from '../lib/signInProgress';
 
 const LIST_CAP = 500;
 
@@ -180,6 +181,7 @@ export function initFirestoreSync(uid: string): () => void {
       trackPending('assignments', snapshot.metadata.hasPendingWrites);
 
       if (snapshot.metadata.fromCache && snapshot.empty) return; // wait for the server
+      if (!snapshot.metadata.fromCache) announceAccountLoaded(); // ends "Signing you in…" after a reload
 
       if (snapshot.empty && !assignmentsSeeded) {
         assignmentsSeeded = true;

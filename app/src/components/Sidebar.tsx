@@ -15,6 +15,7 @@ import {
   PanelLeftOpen
 } from 'lucide-react';
 import { useStudyFlowStore, getPathFromTab } from '../store/studyFlowStore';
+import { useAccountView } from '../store/useAccountView';
 import { friendlyAuthMessage, signInOrLinkWithGoogle } from '../lib/authActions';
 import { cn } from '../utils/formatters';
 import { AccountMenu } from './AccountMenu';
@@ -36,15 +37,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, o
     setActiveTab,
     user,
     assignments,
-    isAnonymous,
-    userEmail,
-    userPhotoUrl,
     customPhotoUrl,
     theme,
     themeMode,
     setTheme,
     setThemeMode
   } = useStudyFlowStore();
+  const account = useAccountView();
+  const isAnonymous = !account.signedIn;
+  const userEmail = account.email;
+  const userPhotoUrl = account.photoUrl;
   const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   const handleGoogleAuth = async () => {
