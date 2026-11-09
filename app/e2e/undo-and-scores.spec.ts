@@ -36,7 +36,7 @@ test('deleting an assignment can be undone, and the assignment comes back', asyn
   await expect(page.getByRole('status')).toContainText('Deleted');
   await expect(page.getByText('TEST - undo me')).toHaveCount(1); // only inside the notice
 
-  await page.getByRole('button', { name: 'Undo' }).click();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(page.getByRole('status')).toHaveCount(0);
   await expect(page.getByText('TEST - undo me').first()).toBeVisible();
   const titles = await page.evaluate(() => (window as unknown as W).__store.getState().assignments.map((a) => a.title));

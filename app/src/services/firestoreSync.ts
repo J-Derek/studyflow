@@ -6,6 +6,7 @@ import {
   writeBatch,
   onSnapshot,
   getDoc,
+  getDocFromServer,
   getDocs,
   limit,
   query,
@@ -106,7 +107,6 @@ export function initFirestoreSync(uid: string): () => void {
   // new device; if there is none yet, this device's profile is the one that gets stored.
   let profileSeeded = false;
   let photoShared = false;
-  let profileCleaned = false;
   const unsubUser = onSnapshot(
     userDocRef,
     (snap) => {
@@ -124,17 +124,6 @@ export function initFirestoreSync(uid: string): () => void {
           user: { ...st.user, ...remote.user },
           customPhotoUrl: remote.photo ?? st.customPhotoUrl
         }));
-        // A placeholder name ("Student", or the old sample "Alex Vance") gives way to the Google name; the old
-        // sample's university and programme give way to neutral wording. Stored once, from the server's answer.
-        const st = useStudyFlowStore.getState();
-        if (!snap.metadata.fromCache && !snap.metadata.hasPendingWrites && !st.isAnonymous && !profileCleaned) {
-          profileCleaned = true;
-          const fixed = cleanUpProfile(st.user, st.authDisplayName);
-          if (fixed) {
-            useStudyFlowStore.setState({ user: { ...st.user, ...fixed } });
-            syncProfile(uid).catch((err) => console.warn('Profile clean-up sync warning:', err));
-          }
-        }
         // This device has a picture the stored profile lacks: share it (once).
         if (remote.photo === null && useStudyFlowStore.getState().customPhotoUrl && !photoShared) {
           photoShared = true;
@@ -357,6 +346,26 @@ export async function syncProfile(uid: string): Promise<void> {
     if (data[key] === undefined) data[key] = deleteField();
   }
   await setDoc(doc(db, 'users', uid), data, { merge: true });
+}
+
+let profileCleanedFor: string | null = null;
+
+/**
+ * A placeholder name in the account's STORED profile ("Student", or the old sample "Alex Vance") gives way to
+ * the Google name, and the old sample's university and programme to neutral wording. It reads the stored copy
+ * from the server and changes only those fields, so a real name stored by another device is never touched.
+ * Runs once per account per page load; the profile listener then shows the result.
+ */
+export async function cleanUpStoredProfile(uid: string, googleName: string | null): Promise<void> {
+  if (profileCleanedFor === uid) return;
+  profileCleanedFor = uid;
+  const ref = doc(db, 'users', uid);
+  const snap = await getDocFromServer(ref);
+  if (!snap.exists() || !isCurrentUser(uid)) return;
+  const stored = docToProfile(snap.data()).user;
+  const fixed = cleanUpProfile({ name: stored.name ?? '', university: stored.university ?? '', program: stored.program ?? '' }, googleName);
+  if (!fixed) return;
+  await setDoc(ref, { ...fixed, updatedAt: serverTimestamp() }, { merge: true });
 }
 
 /** Saves the timer lengths and sound choices to the account (a merge, so nothing else in the profile moves). */

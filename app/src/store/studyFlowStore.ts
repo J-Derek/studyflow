@@ -32,7 +32,7 @@ import { calculateSubtaskProgress } from '../utils/subtasks';
 import { LIMITS, clampText } from '../utils/limits';
 import { syncThemeColor } from '../utils/themeColor';
 import { readSavedMode, resolveTheme, saveMode, systemPrefersDark, type ThemeMode } from '../utils/themePreference';
-import { cleanUpProfile } from '../utils/placeholderProfile';
+import { isPlaceholderName } from '../utils/placeholderProfile';
 import { DEFAULT_SOUND, DEFAULT_TIMER_SETTINGS, DEFAULT_VOLUME, sanitizeTimerPrefs, takeLegacyDevicePrefs, type TimerPrefs } from '../utils/devicePrefs';
 import { reportSyncError } from '../lib/syncErrors';
 import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
@@ -226,22 +226,19 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       isSyncing: false,
       authDisplayName: null,
       setAuthUser: (uid, isAnonymous, email, displayName, photoUrl) => {
-        set(() => ({
+        set((state) => ({
           userId: uid,
           dataOwnerUid: uid,
           isAnonymous,
           userEmail: email || null,
           userPhotoUrl: photoUrl || null,
-          authDisplayName: isAnonymous ? null : displayName || null
+          authDisplayName: isAnonymous ? null : displayName || null,
+          // On this device only (never written from here): a placeholder name shows the Google name. If the
+          // account has a stored profile, the listener replaces this with it; if not, this is what gets stored.
+          user: displayName && !isAnonymous && isPlaceholderName(state.user.name) ? { ...state.user, name: displayName } : state.user
         }));
-        if (isAnonymous || !uid) return;
-        // Signed in with Google: a placeholder name gives way to the Google name and the old sample profile's
-        // details to neutral wording (the profile listener does the same when the stored copy arrives).
-        const fixed = cleanUpProfile(get().user, displayName || null);
-        if (fixed) {
-          set((state) => ({ user: { ...state.user, ...fixed } }));
-          syncProfile(uid).catch(failed('syncProfile', () => syncProfile(uid)));
-        }
+        // A placeholder name in the account's stored profile is replaced by firestoreSync.cleanUpStoredProfile,
+        // which reads the stored copy first, so this device's guest name can never overwrite a real one.
       },
 
       resetStore: () => {

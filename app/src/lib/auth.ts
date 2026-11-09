@@ -16,7 +16,7 @@ import { clearIndexedDbPersistence, terminate, waitForPendingWrites } from 'fire
 import { auth, db, googleProvider } from './firebase';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { googleProfileOf } from '../utils/placeholderProfile';
-import { initFirestoreSync, mergeGuestDataIntoAccount, unsubscribeAllFirestoreSync } from '../services/firestoreSync';
+import { cleanUpStoredProfile, initFirestoreSync, mergeGuestDataIntoAccount, unsubscribeAllFirestoreSync } from '../services/firestoreSync';
 import { deleteAllFiles } from './localFiles';
 import { postAuthNotice } from './authNotice';
 import { clearSyncErrors } from './syncErrors';
@@ -160,6 +160,9 @@ function bindUser(user: User | null): void {
     syncedUid = user.uid;
     initFirestoreSync(user.uid);
     if (!user.isAnonymous && !mergeInProgress) void retryPendingMerge(user.uid);
+  }
+  if (!user.isAnonymous && !mergeInProgress) {
+    cleanUpStoredProfile(user.uid, google.name).catch((err) => console.warn('Profile clean-up warning:', err));
   }
 }
 
