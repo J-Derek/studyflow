@@ -16,6 +16,7 @@ import {
   percentageToLetter,
   calculateCoursePercentage,
   calculateCumulativeGpa,
+  clampScore,
   getAcademicStanding
 } from '../utils/academicCalculations';
 
@@ -47,8 +48,9 @@ export const GradesPage: React.FC = () => {
     let gradedWeight = 0;
 
     selectedCourse.assessments.forEach((a) => {
-      if (a.score !== undefined && a.score !== null) {
-        earnedSoFar += (a.score * a.weight) / 100;
+      const score = clampScore(a.score ?? undefined);
+      if (score !== undefined) {
+        earnedSoFar += (score * a.weight) / 100;
         gradedWeight += a.weight;
       } else if (!upcomingAssessment) {
         upcomingAssessment = a;

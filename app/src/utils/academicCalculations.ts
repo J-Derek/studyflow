@@ -60,8 +60,9 @@ export function calculateCoursePercentage(course: CourseGrade): {
 
   course.assessments.forEach((a) => {
     totalWeight += a.weight;
-    if (a.score !== undefined && a.score !== null) {
-      earnedWeightScore += (a.score * a.weight) / 100;
+    const score = clampScore(a.score ?? undefined);
+    if (score !== undefined) {
+      earnedWeightScore += (score * a.weight) / 100;
       gradedWeight += a.weight;
     }
   });
