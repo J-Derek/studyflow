@@ -14,8 +14,9 @@ an in-app **writing space** per assignment with **Word and PDF** export; **timer
 | Where | What |
 |---|---|
 | Live (merged, rules + app deployed) | everything up to and including **PR #18 (PR2: timer settings per account)** |
-| Open, waiting on CI then Derek | **PR #19**: Google name and photo instead of the old sample profile ("Alex Vance") |
-| Next to build | rest of **PR3** (sign-in speed, signed-in header on reload, new "Your account" dialog), then PR4 to PR10 |
+| Merged by Derek, app deploy pending (no rules change) | **PR #19**: Google name and photo instead of the old sample profile ("Alex Vance") |
+| Branch `claude/pr3-rest` (PR3, part 2, waiting for Derek) | e2e pop-up close race fixed (the CI timeout on #19); signed-in header right after a reload; "Signing you in…" note; refreshed "Your account" dialog |
+| Next to build | PR4 to PR10 (PR3 is complete on `claude/pr3-rest`) |
 
 ### What is merged AND deployed
 | PR | What it did |
@@ -50,7 +51,7 @@ an in-app **writing space** per assignment with **Word and PDF** export; **timer
   migrated; damaged entry harmless), rewritten `e2e/timer-lengths.spec.ts`.
 - Not done (small): the mode tabs show the new lengths while an older block is still running; pomodoro counts are still per device.
 
-### PR #19 (open): the real name instead of "Alex Vance"
+### PR #19 (merged): the real name instead of "Alex Vance"
 Cause: a very early build had a fictional sample student ("Alex Vance", Polytechnic Institute, Computer Engineering /
 "Computer Science & Mathematics"). It was saved into Derek's cloud profile, and the stored profile wins on every device. Separately, a
 guest who links Google keeps the guest account, whose own `displayName` and `photoURL` are empty; Google's are in `providerData`,
@@ -84,9 +85,31 @@ Read-only check that Google still accepts both addresses (no sign-in needed): ca
 `identitytoolkit.googleapis.com/v1/accounts:createAuthUri?key=<apiKey>` with `continueUri` set to each handler address, fetch
 the returned `authUri`, and look for `redirect_uri_mismatch` in the page.
 
+### PR3 part 2 (branch `claude/pr3-rest`)
+- **CI flake on #19 explained and fixed (tests only).** "credential-already-in-use: the guest records are merged..." timed out because every
+  Google sign-in helper in `e2e/` clicked the emulator account and only *then* waited for the pop-up's `close` event; when the pop-up closed
+  first, the wait never ended. Reproduced locally with 24 runs, 4 at a time, a fresh account per run: 8 of 24 hung right after the click while
+  the page had already reloaded from the finished merge. Fixed in all ten specs (listen before clicking). `cleanUpStoredProfile` was ruled
+  out: it is skipped while the merge runs, never blocks it, and switching it off did not lower the failure rate. Remaining local failures under
+  heavy parallel load were slowness on this laptop (a context close stuck writing its trace), not a hang.
+- **Signed-in header right after a reload.** Firebase takes a moment to say who is signed in, and the header showed the guest Sign in button
+  meanwhile. The store keeps `signedInHint` (uid, email, photo) with the device's saved data, wiped with it at sign-out. `utils/accountView.ts`
+  uses it only while `userId` is still null and only if its uid equals `dataOwnerUid`; `store/useAccountView.ts` is the hook (Header, Sidebar,
+  AccountMenu, Today banner). Display only: `userId`/`isAnonymous` stay what Firebase said, so sync and tests are unchanged.
+  Test: `e2e/signed-in-reload.spec.ts` (fails on the old code: "the guest Sign in button flashed before auth answered").
+- **"Signing you in…"** (`lib/signInProgress.ts`, `components/SignInProgress.tsx`): signing in to an existing account moves the guest's
+  records, clears the device and reloads, which took seconds with nothing on screen. Now a small note says "moving your guest work", and after
+  the reload "loading your plan" until the account's assignments arrive from the cloud (`announceAccountLoaded` in the assignments listener;
+  20 s cap). A sessionStorage flag set after the wipe carries it across the reload. Polite live region, not `role="status"`.
+- **Refreshed "Your account" dialog** (`components/BackupModal.tsx`, words in `utils/accountSummary.ts`): picture, name, email, typed
+  programme/university, "Signed in with Google", a saved/saving/offline/not-saved line (same state as the top-bar badge), Edit profile
+  (new `onOpenProfile` prop from `App.tsx`), Sign out, what the plan holds, Download / Restore (file input now keyboard-reachable). PR5 adds
+  "Delete my account" at the bottom. Test: `e2e/account-dialog.spec.ts`.
+- Sign-in speed itself was not measured with real Google (only Derek can do that); the slow part found in code is the existing-account path above.
+- Full e2e on the branch: 209 of 210 passed; `timer-lengths.spec.ts` failed once under the full run and passed 15 of 15 alone (timing flake, untouched code).
+
 ### Next: rest of PR3, then PR4 to PR10 (each from the latest `origin/main`, only after Derek merges the one before)
-PR3 remainder: sign-in feels slow; signed-in state is not persisted, so every reload shows the guest header for a moment; refreshed "Your account" dialog
-(name and photo part is PR #19). PR4 404 + error boundary + offline page + rewrite
+PR3 is complete on `claude/pr3-rest` (waiting for Derek). PR4 404 + error boundary + offline page + rewrite
 `docs/SECURITY.md` (still describes Supabase) + `security.txt` + `/notes` in the sitemap. PR5 legal pages (privacy, terms, children, storage/cookies, accessibility), age step, delete-my-account;
 **research Kenya DPA 2019, GDPR, COPPA, UK AADC first and mark everything as a draft for a Kenyan lawyer**. PR6 item kinds (exam, test, reading, project), progress from checklists, happy completion
 animation, legends/keys, nudges that students can add exams and readings. PR7 month calendar + deadlines on the timetable + pending items everywhere. PR8 Grades becomes Courses.
@@ -118,7 +141,7 @@ users (PR10); child-safety and legal pages (PR5); a Classes/Courses tab (PR8); t
 - **Stale emulator or Vite processes** from earlier manual runs can hold ports 9099, 8080 and 5198, and the permission system blocks killing processes. If `emulators:exec` says "port taken", run specs directly against the running emulators with
   `npx playwright test <specs>` from `app/` (its config starts Vite on 5199 itself), or ask Derek to close the old terminals. Production-build specs (`e2e-prod`) use port 5198 and may need a temporary config on another port.
 - Full e2e: `npx firebase emulators:exec --config ../firebase.json --only auth,firestore --project studyflow-e2e "playwright test"` from `app/`, about 10 minutes: start it in the background and wait on a flag file.
-- Some e2e tests are timing-sensitive. Known flakes: a test that reads `window.__store` while the app reloads after signing in; tests that reload before a write reaches the emulator (wait for it with the emulator REST API, see `e2e/timetable-clash.spec.ts`).
+- Some e2e tests are timing-sensitive. Known flakes: a test that reads `window.__store` while the app reloads after signing in; a pop-up `close` wait added after the click (always create it before clicking, fixed in every spec on `claude/pr3-rest`); tests that reload before a write reaches the emulator (wait for it with the emulator REST API, see `e2e/timetable-clash.spec.ts`).
   Accessibility checks run axe on light and dark. Keep exactly 6 links in the bottom nav, and every phone control at least 44px (`e2e/phone-layout.spec.ts`).
 - **Do not give a new element `role="status"`** unless needed: older tests use `getByRole('status')` and it must resolve to one element (the Saved badge uses `aria-live="polite"` for this reason).
 - CI on `main` shows two skipped "Deploy Firestore rules" checks (by design: rules are deployed by hand). Read CI failures from the run page in the browser pane

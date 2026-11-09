@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
+import { useAccountView } from '../store/useAccountView';
 import { getDaysRemaining } from '../utils/formatters';
 import { calculateCumulativeGpa, getAcademicStanding } from '../utils/academicCalculations';
 import type { Assignment } from '../types';
@@ -26,7 +27,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenAddModal,
   onOpenBackup
 }) => {
-  const { focusMinutes, isAnonymous, guestNoticeDismissed, dismissGuestNotice, assignments, sessions, grades, pomodorosCompleted, setActiveTab, toggleAssignmentComplete } = useStudyFlowStore();
+  const isAnonymous = !useAccountView().signedIn;
+  const { focusMinutes, guestNoticeDismissed, dismissGuestNotice, assignments, sessions, grades, pomodorosCompleted, setActiveTab, toggleAssignmentComplete } = useStudyFlowStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   // The assignment being edited from this screen (opens the same dialog as the Assignments page).
   const [editing, setEditing] = useState<Assignment | null>(null);

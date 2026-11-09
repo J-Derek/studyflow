@@ -8,6 +8,7 @@ import { BackupModal } from './components/BackupModal';
 import { ProfileModal } from './components/ProfileModal';
 import { HelpMenuModal } from './components/HelpMenuModal';
 import { AuthNotice } from './components/AuthNotice';
+import { SignInProgress } from './components/SignInProgress';
 import { SyncErrorToast } from './components/SyncErrorToast';
 import { useStudyFlowStore, getTabFromPath } from './store/studyFlowStore';
 import { startAuthSessionLazy } from './lib/authActions';
@@ -179,6 +180,10 @@ export function App() {
         <BackupModal
           isOpen={isBackupOpen}
           onClose={() => setIsBackupOpen(false)}
+          onOpenProfile={() => {
+            setIsBackupOpen(false);
+            setIsProfileOpen(true);
+          }}
         />
 
         {/* Profile modal */}
@@ -199,6 +204,9 @@ export function App() {
 
         {/* Messages from sign-in, such as "Google sign-in did not finish" */}
         <AuthNotice />
+
+        {/* "Signing you in…" while a sign-in into an existing account moves records and reloads */}
+        <SignInProgress />
 
         {/* Tells the student when a change reached the screen but not their account */}
         <SyncErrorToast />

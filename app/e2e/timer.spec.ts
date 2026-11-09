@@ -27,6 +27,9 @@ async function googleSignIn(page: Page, email: string): Promise<void> {
   const popupPromise = page.waitForEvent('popup');
   void page.evaluate(() => (window as unknown as W).__auth.signInOrLinkWithGoogle()).catch(() => undefined);
   const popup = await popupPromise;
+  // Listen for the close now: the pop-up can close as soon as the account is clicked, and a listener
+  // added after that never fires (the test then hung until its 60 s timeout).
+  const popupClosed = popup.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
   await popup.waitForLoadState('domcontentloaded');
   const existing = popup.getByText(email, { exact: false });
   if (await existing.count()) {
@@ -37,7 +40,7 @@ async function googleSignIn(page: Page, email: string): Promise<void> {
     await popup.locator('#email-input').fill(email);
     await popup.locator('#sign-in').click();
   }
-  await popup.waitForEvent('close').catch(() => undefined);
+  await popupClosed;
   await page.waitForFunction(() => {
     const s = (window as unknown as W).__store.getState();
     return !s.isAnonymous && !!s.userEmail;
@@ -89,7 +92,8 @@ test.describe('focus timer', () => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await boot(page);
-    await googleSignIn(page, 'timer-owner@example.com');
+    // A fresh account each run: a reused local emulator already has a fixed one, which takes the merge-and-reload path.
+    await googleSignIn(page, `timer-owner-${Date.now().toString(36)}@example.com`);
     const uid = await uidOf(page);
 
     await page.evaluate(() => {

@@ -8,6 +8,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
+import { useAccountView } from '../store/useAccountView';
 import { AccountMenu } from './AccountMenu';
 import { Avatar } from './Avatar';
 import { SaveBadge } from './SaveBadge';
@@ -28,7 +29,11 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenProfile,
   onOpenHelp 
 }) => {
-  const { theme, toggleTheme, isAnonymous, activeTab, user, userPhotoUrl, customPhotoUrl } = useStudyFlowStore();
+  const { theme, toggleTheme, activeTab, user, customPhotoUrl } = useStudyFlowStore();
+  // Shows the signed-in header straight after a reload, before Firebase has answered (display only).
+  const account = useAccountView();
+  const isAnonymous = !account.signedIn;
+  const userPhotoUrl = account.photoUrl;
 
   const getPageTitle = () => {
     switch (activeTab) {

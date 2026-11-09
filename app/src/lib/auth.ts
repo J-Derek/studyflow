@@ -25,6 +25,7 @@ import { markRedirectPending, takeRedirectPending, windowOpenIsReplaced } from '
 import { inAppBrowser } from '../utils/inAppBrowser';
 import { withoutSample } from '../utils/sampleData';
 import { clearPendingMerge, readPendingMerge, savePendingMerge } from './pendingMerge';
+import { MOVING_MESSAGE, markSigningInAcrossReload, setSignInProgress } from './signInProgress';
 
 export const STORAGE_KEY = 'studyflow_storage_v1';
 
@@ -117,10 +118,12 @@ let mergeInProgress = false;
 let wiping = false;
 
 /** Flushes in-flight writes, deletes every local trace of the previous user, then reloads clean. */
-async function wipeAndReload(): Promise<void> {
+async function wipeAndReload(opts: { signingIn?: boolean } = {}): Promise<void> {
   wiping = true; // the page is about to reload; ignore any further auth events
   await waitForPendingWrites(db).catch(() => undefined);
   await wipeLocalUserData({ clearFirestoreCache: true });
+  // After the wipe (which empties sessionStorage): keep "Signing you in…" on screen across the reload.
+  if (opts.signingIn) markSigningInAcrossReload();
   window.location.reload();
 }
 
@@ -303,11 +306,14 @@ async function mergeGuestIntoExistingAccount(error: unknown): Promise<User> {
     notes: state.notes
   };
   mergeInProgress = true;
+  // Google's window has closed, but moving the records and reloading takes a few seconds more: say so.
+  setSignInProgress(MOVING_MESSAGE);
   let result: Awaited<ReturnType<typeof signInWithCredential>>;
   try {
     result = await signInWithCredential(auth, credential);
   } catch (err) {
     mergeInProgress = false; // nothing has changed yet: the guest copy is still on screen
+    setSignInProgress(null);
     throw err;
   }
   // The account has switched and the on-screen guest copy is about to clear, so keep the records safe first.
@@ -317,13 +323,14 @@ async function mergeGuestIntoExistingAccount(error: unknown): Promise<User> {
     await mergeGuestDataIntoAccount(result.user.uid, guestData);
   } catch {
     mergeInProgress = false;
+    setSignInProgress(null);
     // Do not wipe or reload. The records wait on this device and are retried the next time the app opens.
     throw new AuthGuidanceError('auth/merge-failed', 'Could not move the guest records yet.');
   }
   mergeInProgress = false;
   clearPendingMerge();
   // The guest's records are now in the account; remove the guest copy from this device.
-  void wipeAndReload();
+  void wipeAndReload({ signingIn: true });
   return result.user;
 }
 

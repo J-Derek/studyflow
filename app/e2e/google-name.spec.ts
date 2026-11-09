@@ -37,13 +37,16 @@ test('a placeholder or old sample profile gives way to the Google name, and stay
   const popupPromise = page.waitForEvent('popup');
   void page.evaluate(() => (window as unknown as W).__auth.signInOrLinkWithGoogle()).catch(() => undefined);
   const popup = await popupPromise;
+  // Listen for the close now: the pop-up can close as soon as the account is clicked, and a listener
+  // added after that never fires (the test then hung until its 60 s timeout).
+  const popupClosed = popup.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
   await popup.waitForLoadState('domcontentloaded');
   await popup.locator('button.mdc-button--outlined').first().click();
   await popup.locator('#autogen-button').click();
   await popup.locator('#display-name-input').fill('Wanjiru Kamau');
   await popup.locator('#email-input').fill(`gname-${Date.now().toString(36)}@example.com`);
   await popup.locator('#sign-in').click();
-  await popup.waitForEvent('close').catch(() => undefined);
+  await popupClosed;
   await page.waitForFunction(() => (window as unknown as Partial<W>).__store?.getState().isAnonymous === false);
 
   await expect.poll(async () => (await state(page)).user.name, { timeout: 20_000 }).toBe('Wanjiru Kamau');

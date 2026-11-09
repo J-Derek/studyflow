@@ -42,6 +42,9 @@ async function googleSignIn(page: Page, email: string): Promise<void> {
     .evaluate(() => (window as unknown as { __auth: AuthApi }).__auth.signInOrLinkWithGoogle())
     .catch((e) => console.log('signInOrLink rejected:', String(e)));
   const popup = await popupPromise;
+  // Listen for the close now: the pop-up can close as soon as the account is clicked, and a listener
+  // added after that never fires (the test then hung until its 60 s timeout).
+  const popupClosed = popup.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
   await popup.waitForLoadState('domcontentloaded');
   const existing = popup.getByText(runEmail(email), { exact: false });
   if (await existing.count()) {
@@ -52,7 +55,7 @@ async function googleSignIn(page: Page, email: string): Promise<void> {
     await popup.locator('#email-input').fill(runEmail(email));
     await popup.locator('#sign-in').click();
   }
-  await popup.waitForEvent('close').catch(() => undefined);
+  await popupClosed;
 }
 
 async function currentUid(page: Page): Promise<string | null> {

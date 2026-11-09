@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { cleanSignedInHint, type SignedInHint } from '../utils/accountView';
 import type {
   Assignment,
   StudySession,
@@ -71,6 +72,8 @@ interface StudyFlowState {
   isSyncing: boolean;
   /** The name on the student's Google account (null for guests). Used to replace a placeholder profile name. */
   authDisplayName: string | null;
+  /** Last signed-in account on this device, for the header while auth starts up after a reload (display only, see utils/accountView). */
+  signedInHint: SignedInHint | null;
   setAuthUser: (uid: string | null, isAnonymous: boolean, email?: string | null, displayName?: string | null, photoUrl?: string | null) => void;
   resetStore: () => void;
 
@@ -225,6 +228,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       },
       isSyncing: false,
       authDisplayName: null,
+      signedInHint: null,
       setAuthUser: (uid, isAnonymous, email, displayName, photoUrl) => {
         set((state) => ({
           userId: uid,
@@ -233,6 +237,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           userEmail: email || null,
           userPhotoUrl: photoUrl || null,
           authDisplayName: isAnonymous ? null : displayName || null,
+          signedInHint: uid && !isAnonymous ? cleanSignedInHint({ uid, email: email || null, photoUrl: photoUrl || null }) : null,
           // On this device only (never written from here): a placeholder name shows the Google name. If the
           // account has a stored profile, the listener replaces this with it; if not, this is what gets stored.
           user: displayName && !isAnonymous && isPlaceholderName(state.user.name) ? { ...state.user, name: displayName } : state.user
@@ -249,6 +254,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           userEmail: null,
           userPhotoUrl: null,
           authDisplayName: null,
+          signedInHint: null,
           customPhotoUrl: null,
           isSyncing: false,
           assignments: [],
@@ -906,6 +912,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       name: 'studyflow_storage_v1',
       partialize: (state) => ({
         dataOwnerUid: state.dataOwnerUid,
+        signedInHint: state.signedInHint,
         guestNoticeDismissed: state.guestNoticeDismissed,
         icsExportCount: state.icsExportCount,
         user: state.user,
@@ -925,6 +932,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
+        state.signedInHint = cleanSignedInHint(state.signedInHint);
         // Older saves only counted blocks; estimate their minutes at the old fixed 25.
         if (typeof state.focusMinutes !== 'number') state.focusMinutes = (state.pomodorosCompleted ?? 0) * 25;
         // Before "match my device" existed the theme lived only in the saved data. Keep that choice.
