@@ -6,7 +6,8 @@ import {
   Plus
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import type { Priority } from '../types';
+import type { Priority, AssignmentKind } from '../types';
+import { KindPicker } from './KindPicker';
 import { DATE_MAX, DATE_MIN, LIMITS, isDateInRange, localDateISO } from '../utils/limits';
 
 interface FirstDeadlineCardProps {
@@ -19,6 +20,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
   const [title, setTitle] = useState('');
   const [course, setCourse] = useState('');
   const [priority, setPriority] = useState<Priority>('high');
+  const [kind, setKind] = useState<AssignmentKind>('assignment');
   const [dueDate, setDueDate] = useState<string>('');
   const [activeChip, setActiveChip] = useState<'today' | 'tomorrow' | 'friday' | 'nextWeek' | 'custom'>('tomorrow');
   
@@ -74,6 +76,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
       dueDate: finalDate,
       dueTime: '23:59',
       priority,
+      kind,
       status: 'pending',
       progress: 0,
       subtasks: [
@@ -188,6 +191,8 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             />
           </div>
         </div>
+
+        <KindPicker value={kind} onChange={setKind} />
 
         {/* Date Quick Chips */}
         <div>

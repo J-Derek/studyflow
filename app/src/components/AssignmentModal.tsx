@@ -1,8 +1,12 @@
 import { useDialog } from '../lib/useDialog';
+import { KindPicker } from './KindPicker';
+import { kindOf } from '../utils/kinds';
+import { progressInfo } from '../utils/progress';
+import { celebrate } from './CelebrateBurst';
 import React, { useState } from 'react';
 import { X, Calendar, Clock, BookOpen, AlertCircle } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import type { Priority, Assignment } from '../types';
+import type { Priority, Assignment, AssignmentKind } from '../types';
 import { DATE_MAX, DATE_MIN, LIMITS, isDateInRange, localDateISO } from '../utils/limits';
 
 interface AssignmentModalProps {
@@ -21,6 +25,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
   const [priority, setPriority] = useState<Priority>('medium');
   const [notes, setNotes] = useState('');
   const [progress, setProgress] = useState(0);
+  const [kind, setKind] = useState<AssignmentKind>('assignment');
 
   React.useEffect(() => {
     if (assignmentToEdit) {
@@ -31,6 +36,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
       setPriority(assignmentToEdit.priority);
       setNotes(assignmentToEdit.notes || '');
       setProgress(assignmentToEdit.progress);
+      setKind(kindOf(assignmentToEdit));
     } else {
       setTitle('');
       setCourse('');
@@ -39,6 +45,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
       setPriority('medium');
       setNotes('');
       setProgress(0);
+      setKind('assignment');
     }
   }, [assignmentToEdit, isOpen]);
 
@@ -51,15 +58,19 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
     if (!title.trim() || !course.trim() || !isDateInRange(dueDate)) return;
 
     if (assignmentToEdit) {
+      const hasChecklist = (assignmentToEdit.subtasks?.length ?? 0) > 0;
       updateAssignment(assignmentToEdit.id, {
         title: title.trim(),
         course: course.trim(),
         dueDate,
         dueTime,
         priority,
+        kind,
         notes,
-        progress
+        // With a checklist the ticks decide progress, so the dialog does not send a number.
+        ...(hasChecklist ? {} : { progress })
       });
+      if (!hasChecklist && progress === 100 && assignmentToEdit.status !== 'completed') celebrate(title.trim());
     } else {
       addAssignment({
         title: title.trim(),
@@ -67,6 +78,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         dueDate,
         dueTime,
         priority,
+        kind,
         status: 'pending',
         progress: 0,
         notes
@@ -83,7 +95,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         role="dialog"
         aria-modal="true"
         aria-labelledby="assignment-modal-title"
-        className="bg-surface-light dark:bg-surface-dark rounded-xl w-full max-w-lg shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-colors"
+        className="bg-surface-light dark:bg-surface-dark rounded-xl w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto shadow-2xl border border-zinc-200 dark:border-zinc-800 transition-colors"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800">
@@ -194,7 +206,16 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
             </div>
           </div>
 
-          {assignmentToEdit && (
+          <KindPicker value={kind} onChange={setKind} />
+
+          {assignmentToEdit && (assignmentToEdit.subtasks?.length ?? 0) > 0 && (
+            <div data-testid="checklist-progress" className="rounded-lg bg-zinc-50 dark:bg-zinc-800/60 px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300">
+              <p className="font-medium tabular-nums">Progress {progressInfo(assignmentToEdit).progress}%</p>
+              <p className="text-zinc-600 dark:text-zinc-400">{progressInfo(assignmentToEdit).note}. Tick items on the Assignments page to change it.</p>
+            </div>
+          )}
+
+          {assignmentToEdit && (assignmentToEdit.subtasks?.length ?? 0) === 0 && (
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 tabular-nums">
@@ -211,6 +232,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
                 onChange={(e) => setProgress(Number(e.target.value))}
                 className="w-full accent-blue-600 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
               />
+              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Set by you. Add a checklist on the Assignments page and it will be worked out from the ticks instead.</p>
             </div>
           )}
 

@@ -18,7 +18,8 @@ an in-app **writing space** per assignment with **Word and PDF** export; **timer
 | Merged by Derek (#21), app deploy is his step | from the Antigravity audit: grades read from the cloud held to 0-100; Content-Security-Policy as **report-only** (see "Audit verdicts") |
 | Branch `claude/pr4-shell` (PR4, waiting for Derek) | page-not-found screen, calm crash screen, offline banner, `/notes` in the sitemap, `docs/SECURITY.md` rewritten for Firebase. **`security.txt` skipped** until Derek picks a contact address |
 | Branch `claude/pr5-legal` (PR5, stacked on PR4, waiting for Derek) | draft legal pages, age question before sign-in, "Delete my account". **Rules change: deploy rules FIRST, then the app** |
-| Next to build | PR6 to PR10 (each stacked on the one before) |
+| Branch `claude/pr6-kinds` (PR6, stacked on PR5) | kinds of deadline (exam, test, reading, project), progress from the checklist, celebration, keys, class colours. **Rules change (additive `kind`): deploy rules FIRST** |
+| Next to build | PR7 to PR10 (each stacked on the one before) |
 
 ### What is merged AND deployed
 | PR | What it did |
@@ -166,9 +167,29 @@ Reason: the app now writes `ageConfirmed` in the profile; the old rules reject u
 - Safari risk (untested): the Google pop-up now opens after the age dialog's Continue click plus an async import; Safari is strict about pop-ups after waits.
 - Tests: `e2e/legal-pages.spec.ts`, `age-gate.spec.ts`, `account-deletion.spec.ts`, unit `miniMarkdown`, `ageGate`, `accountDeletion`, 4 rules tests.
 
-### Next: PR6 to PR10 (stacked: each branch starts from the one before; merge in order)
-PR3, PR4, PR5 are done. PR6 item kinds (exam, test, reading, project), progress from checklists, happy completion
-animation, legends/keys, nudges that students can add exams and readings. PR7 month calendar + deadlines on the timetable + pending items everywhere. PR8 Grades becomes Courses.
+### PR6 (branch `claude/pr6-kinds`, stacked on `claude/pr5-legal`)
+**Deploy order: rules first** (additive optional `kind` on assignments; the app only writes it for non-default kinds, but older rules would reject it), then the app.
+- `kind` (`assignment|exam|test|reading|project`, missing = assignment): `types`, `firestore.rules` (`kind in [...]`), `firestoreMappers.ts` (stored only when not
+  'assignment'; unknown values read as none), `backupValidator.ts` (kept, default dropped, unknown refused), rules tests, mapper and backup tests.
+  `utils/kinds.ts` holds the labels, hints, badge colours and the timetable class-type colours.
+- Picker: `components/KindPicker.tsx` in the add/edit dialog and the Today first-deadline card, with a hint line that nudges adding exams, tests, readings.
+  Badge `components/KindBadge.tsx` on the Assignments rows and Today (shown only for non-default kinds). Empty Assignments wording mentions exams and readings.
+- Progress (`utils/progress.ts`): with a checklist, progress comes from the ticks ("Based on your checklist: 2 of 5 done"), no slider; 100% only when all are ticked.
+  Without one, the slider stays. The edit dialog no longer sends a number for checklist items and the store ignores one if sent. Un-marking done recalculates (`afterUncomplete`:
+  from the ticks, at most 99, otherwise the old 50). Marking done with open items shows 100% and keeps the ticks as they are.
+- Celebration: `components/CelebrateBurst.tsx`, `celebrate(title)` called from mark-done on Assignments and Today, the edit dialog (slider to 100), and ticking the last checklist item.
+  Confetti is loaded on demand and skipped for reduced motion; the message is in a polite live region and always shown.
+- Keys: `components/Legend.tsx` ("What do the labels mean?", closed by default, 44px summary) on Assignments (kinds, priority, progress) and Timetable (class colours).
+  Class-type colours are now really applied (left edge of each block + the type word; `dark:` variants are needed because dark border utilities otherwise win).
+- Bug fixed on the way: the add/edit dialog could grow taller than a short screen and hide its buttons; it now scrolls inside the screen.
+- **Known issue, found and NOT fixed (real, pre-existing):** ticking two checklist items very fast can lose one. An old echo of the app's own save arrives after the next tick and rolls the
+  list back on screen; the next tick then saves from the rolled-back list. Seen about 1 in 7 runs when a test ticked without waiting. A fix that ignored snapshots holding pending writes
+  (like the timer listener does) broke other flows (notes on a second device, reload cases) and was reverted. A proper fix needs care in `services/firestoreSync.ts` listeners (merge by id/updatedAt instead of replacing the list). Tests wait for `isSyncing` to settle between ticks.
+- Not done: priority is still only a word and a filter (the key says so); reading/exam nudges on the timetable come with PR7 (deadlines on the timetable).
+- Tests: `e2e/kinds-progress.spec.ts` (6), unit `progress.test.ts`, mapper, backup, 3 rules tests.
+
+### Next: PR7 to PR10 (stacked: each branch starts from the one before; merge in order)
+PR3 to PR6 are done. PR7 month calendar + deadlines on the timetable + pending items everywhere. PR8 Grades becomes Courses.
 PR9 writing space + Word/PDF export. PR10 term vs semester + "Start a new semester" archive. Every PR that changes synced data touches: `types`, `firestore.rules`, `firestoreMappers.ts`,
 `backupValidator.ts`, rules tests, mapper tests.
 

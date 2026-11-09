@@ -6,6 +6,8 @@ import { useDialog } from '../lib/useDialog';
 import { exportTimetable } from '../lib/exportTimetable';
 import { clashingIds, findClashes, toMinutes } from '../utils/timetable';
 import type { StudySession } from '../types';
+import { Legend } from '../components/Legend';
+import { CLASS_TYPE_META } from '../utils/kinds';
 import { LIMITS } from '../utils/limits';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -194,6 +196,8 @@ export const CalendarPage: React.FC = () => {
         </div>
       )}
 
+      <Legend show={['classTypes']} />
+
       {/* Unified 7-Day Continuous Calendar Grid (Cron / Notion Calendar Architecture) */}
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark shadow-2xs overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 min-h-[500px]">
@@ -238,9 +242,10 @@ export const CalendarPage: React.FC = () => {
                       daySessions.map((session) => (
                         <div
                           key={session.id}
-                          className={`rounded-md border text-xs transition relative group bg-zinc-50/70 dark:bg-zinc-850/60 text-zinc-900 dark:text-zinc-100 ${
-                            clashing.has(session.id) ? 'border-amber-400 dark:border-amber-600' : 'border-zinc-200/80 dark:border-zinc-800/80'
-                          }`}
+                          data-class-type={session.type}
+                          className={`rounded-md border border-l-4 text-xs transition relative group bg-zinc-50/70 dark:bg-zinc-850/60 text-zinc-900 dark:text-zinc-100 ${
+                            CLASS_TYPE_META[session.type]?.edge ?? 'border-l-zinc-400'
+                          } ${clashing.has(session.id) ? 'border-amber-400 dark:border-amber-600' : 'border-zinc-200/80 dark:border-zinc-800/80'}`}
                         >
                           <button
                             type="button"
@@ -251,6 +256,7 @@ export const CalendarPage: React.FC = () => {
                             <span className="block tabular-nums text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-0.5">
                               <span className="sr-only">Edit </span>
                               {session.course.split('—')[0].trim()}
+                              <span className="font-normal"> · {CLASS_TYPE_META[session.type]?.label ?? session.type}</span>
                             </span>
                             <span className="block font-medium text-zinc-900 dark:text-zinc-100 text-xs leading-snug line-clamp-2">{session.title}</span>
                             <span className="mt-1 flex items-center gap-1 text-xs tabular-nums text-zinc-600 dark:text-zinc-400">

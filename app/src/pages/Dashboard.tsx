@@ -15,6 +15,9 @@ import { calculateCumulativeGpa, getAcademicStanding } from '../utils/academicCa
 import type { Assignment } from '../types';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { FirstDeadlineCard } from '../components/FirstDeadlineCard';
+import { KindBadge } from '../components/KindBadge';
+import { celebrate } from '../components/CelebrateBurst';
+import { kindOf } from '../utils/kinds';
 import { SignInButton } from '../components/SignInButton';
 import { GettingStartedChecklist } from '../components/GettingStartedChecklist';
 
@@ -147,6 +150,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span>{nextUp.course.split('—')[0].trim()}</span>
             <span aria-hidden="true">·</span>
             <span className={`tabular-nums font-medium ${nextUpDue.isUrgent ? 'text-red-600 dark:text-red-400' : ''}`}>{nextUpDue.label}</span>
+            {kindOf(nextUp) !== 'assignment' && <KindBadge kind={kindOf(nextUp)} />}
           </p>
           {nextUp.notes && (
             <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap line-clamp-3">{nextUp.notes}</p>
@@ -154,7 +158,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="mt-5 flex flex-wrap gap-2.5">
             <button
               type="button"
-              onClick={() => toggleAssignmentComplete(nextUp.id)}
+              onClick={() => {
+                toggleAssignmentComplete(nextUp.id);
+                celebrate(nextUp.title);
+              }}
               className="inline-flex items-center gap-2 px-4 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium cursor-pointer"
             >
               <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
@@ -254,7 +261,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   >
                     <div className="flex items-center gap-2 overflow-hidden min-w-0">
                       <button
-                        onClick={() => toggleAssignmentComplete(asg.id)}
+                        onClick={() => {
+                          toggleAssignmentComplete(asg.id);
+                          celebrate(asg.title);
+                        }}
                         className="min-h-[44px] min-w-[44px] flex items-center justify-center -my-2 -ml-2 text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shrink-0 cursor-pointer"
                         title={`Mark "${asg.title}" complete`}
                         aria-label={`Mark "${asg.title}" complete`}
@@ -270,6 +280,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           {asg.title}
                         </span>
+                        {kindOf(asg) !== 'assignment' && <KindBadge kind={kindOf(asg)} />}
 
                         {asg.notes && (
                           <span className="text-xs text-zinc-600 dark:text-zinc-400 truncate hidden md:inline">

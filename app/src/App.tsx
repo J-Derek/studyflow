@@ -10,6 +10,7 @@ import { HelpMenuModal } from './components/HelpMenuModal';
 import { AuthNotice } from './components/AuthNotice';
 import { SignInProgress } from './components/SignInProgress';
 import { AgeGateDialog } from './components/AgeGateDialog';
+import { CelebrateBurst } from './components/CelebrateBurst';
 import { SyncErrorToast } from './components/SyncErrorToast';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -228,6 +229,9 @@ export function App() {
 
         {/* The one-time age question before signing in */}
         <AgeGateDialog />
+
+        {/* A happy burst when work is marked done */}
+        <CelebrateBurst />
 
         {/* Tells the student when a change reached the screen but not their account */}
         <SyncErrorToast />

@@ -1,5 +1,7 @@
 export type Priority = 'low' | 'medium' | 'high';
 export type AssignmentStatus = 'pending' | 'in_progress' | 'completed';
+/** What sort of deadline an item is. Missing means an ordinary assignment. */
+export type AssignmentKind = 'assignment' | 'exam' | 'test' | 'reading' | 'project';
 
 export interface Subtask {
   id: string;
@@ -15,6 +17,8 @@ export interface Assignment {
   dueTime?: string; // HH:mm
   priority: Priority;
   status: AssignmentStatus;
+  /** Missing means 'assignment'. */
+  kind?: AssignmentKind;
   progress: number; // 0 - 100
   notes?: string;
   subtasks?: Subtask[];

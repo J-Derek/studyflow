@@ -246,6 +246,17 @@ describe('assignments: shape', () => {
       )
     );
   });
+  it('accepts every kind, and rejects an unknown one or a wrong type', async () => {
+    for (const kind of ['assignment', 'exam', 'test', 'reading', 'project']) {
+      await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ kind, updatedAt: serverTimestamp() })));
+    }
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ kind: 'homework', updatedAt: serverTimestamp() })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ kind: 5, updatedAt: serverTimestamp() })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ kind: ['exam'], updatedAt: serverTimestamp() })));
+  });
+  it('still accepts an assignment with no kind (everything made before kinds existed)', async () => {
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ updatedAt: serverTimestamp() })));
+  });
   it('rejects unknown keys', async () => {
     await assertFails(setDoc(aDoc(asAlice()), asg({ role: 'admin' })));
   });

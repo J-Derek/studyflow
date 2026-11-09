@@ -1,4 +1,5 @@
 import type { Assignment, CourseGrade, Note, StudySession, Subtask, UserPreferences } from '../types';
+import { isAssignmentKind } from '../utils/kinds';
 import { sanitizeTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 import type { AgeRecord } from '../utils/ageGate';
 import { clampScore } from '../utils/academicCalculations';
@@ -21,6 +22,8 @@ export function assignmentToDoc(a: Assignment): Doc {
     createdAt: a.createdAt
   };
   if (a.dueTime && TIME_RE.test(a.dueTime)) out.dueTime = a.dueTime;
+  // 'assignment' is what a missing kind means, so only the other kinds are stored (older app versions never see an unknown key).
+  if (isAssignmentKind(a.kind) && a.kind !== 'assignment') out.kind = a.kind;
   if (a.notes) out.notes = a.notes;
   if (a.completedAt) out.completedAt = a.completedAt;
   if (a.sample) out.sample = true;
@@ -61,6 +64,7 @@ export function docToAssignment(id: string, data: Doc): Assignment {
     dueTime: typeof data.dueTime === 'string' ? data.dueTime : undefined,
     priority: data.priority === 'low' || data.priority === 'high' ? data.priority : 'medium',
     status: data.status === 'in_progress' || data.status === 'completed' ? data.status : 'pending',
+    ...(isAssignmentKind(data.kind) && data.kind !== 'assignment' ? { kind: data.kind } : {}),
     progress: typeof data.progress === 'number' && Number.isFinite(data.progress) ? data.progress : 0,
     notes: typeof data.notes === 'string' ? data.notes : undefined,
     subtasks,

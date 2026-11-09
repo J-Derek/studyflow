@@ -35,6 +35,21 @@ describe('assignmentToDoc', () => {
     expect(assignmentToDoc({ ...base, sample: true }).sample).toBe(true);
     expect(docToAssignment('a1', assignmentToDoc({ ...base, sample: true })).sample).toBe(true);
   });
+  it('stores the kind only when it is not an ordinary assignment, and reads it back', () => {
+    expect('kind' in assignmentToDoc(base)).toBe(false);
+    expect('kind' in assignmentToDoc({ ...base, kind: 'assignment' })).toBe(false);
+    for (const kind of ['exam', 'test', 'reading', 'project'] as const) {
+      const doc = assignmentToDoc({ ...base, kind });
+      expect(doc.kind).toBe(kind);
+      expect(docToAssignment('a1', doc).kind).toBe(kind);
+    }
+    expect(docToAssignment('a1', assignmentToDoc(base)).kind).toBeUndefined();
+  });
+  it('treats an unknown or odd kind from the cloud as no kind', () => {
+    expect(docToAssignment('a1', { ...assignmentToDoc(base), kind: 'homework' }).kind).toBeUndefined();
+    expect(docToAssignment('a1', { ...assignmentToDoc(base), kind: 5 }).kind).toBeUndefined();
+    expect(docToAssignment('a1', { ...assignmentToDoc(base), kind: { exam: true } }).kind).toBeUndefined();
+  });
   it('survives hostile remote data without throwing', () => {
     const a = docToAssignment('a1', { title: 5, progress: 'x', subtasks: 'nope', priority: { __proto__: 1 } });
     expect(a.title).toBe('');

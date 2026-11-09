@@ -12,7 +12,7 @@ service cloud.firestore {
     //
     // /users/{userId}/assignments/{id}
     //   id, title, course, dueDate (YYYY-MM-DD), dueTime? (HH:mm), priority,
-    //   status, progress (0..100), createdAt (client ISO string, immutable),
+    //   status, kind? ('assignment'|'exam'|'test'|'reading'|'project'; missing = assignment), progress (0..100), createdAt (client ISO string, immutable),
     //   updatedAt (server time), notes?, completedAt?, sample? (bool),
     //   subtasks? (map keyed by subtask id, or legacy list; max 100)
     //
@@ -122,11 +122,12 @@ service cloud.firestore {
       return data.keys().hasAll(['id', 'title', 'course', 'dueDate', 'priority', 'status', 'progress', 'createdAt', 'updatedAt']) &&
              data.keys().hasOnly([
                'id', 'title', 'course', 'dueDate', 'dueTime', 'priority', 'status',
-               'progress', 'notes', 'subtasks', 'createdAt', 'completedAt', 'updatedAt', 'sample'
+               'progress', 'notes', 'subtasks', 'createdAt', 'completedAt', 'updatedAt', 'sample', 'kind'
              ]) &&
              validString(data.id, 1, 100) &&
              validString(data.title, 1, 250) &&
              validString(data.course, 1, 200) &&
+             (!('kind' in data) || data.kind in ['assignment', 'exam', 'test', 'reading', 'project']) &&
              validDate(data.dueDate) &&
              (!('dueTime' in data) || validTime(data.dueTime)) &&
              data.priority in ['low', 'medium', 'high'] &&

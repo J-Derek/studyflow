@@ -181,6 +181,22 @@ describe('backupValidator', () => {
     }
   });
 
+  it('keeps a kind through a backup, drops the default one, and refuses an unknown one', () => {
+    const withKind = (kind: unknown) => {
+      const p = JSON.parse(JSON.stringify(sampleValidPayload));
+      p.ledger.assignments[0].kind = kind;
+      return validateBackupJson(JSON.stringify(p));
+    };
+    const exam = withKind('exam');
+    expect(exam.success).toBe(true);
+    if (exam.success) expect(exam.data.ledger.assignments[0].kind).toBe('exam');
+    const plain = withKind('assignment');
+    expect(plain.success).toBe(true);
+    if (plain.success) expect(plain.data.ledger.assignments[0].kind).toBeUndefined();
+    expect(withKind('homework').success).toBe(false);
+    expect(withKind(7).success).toBe(false);
+  });
+
   it('handles empty or malformed JSON syntax gracefully', () => {
     expect(validateBackupJson('').success).toBe(false);
     expect(validateBackupJson('{ broken json').success).toBe(false);

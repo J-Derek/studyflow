@@ -1,5 +1,6 @@
 import type { Assignment, StudySession, CourseGrade, Note, Priority, AssignmentStatus } from '../types';
 import { LIMITS } from './limits';
+import { isAssignmentKind } from './kinds';
 
 export interface ValidatedBackupPayload {
   version: string;
@@ -84,6 +85,7 @@ function isValidAssignment(item: unknown): item is Assignment {
   if (a.dueTime !== undefined && (typeof a.dueTime !== 'string' || !TIME_RE.test(a.dueTime))) return false;
   if (!VALID_PRIORITIES.has(a.priority as Priority)) return false;
   if (!VALID_STATUSES.has(a.status as AssignmentStatus)) return false;
+  if (a.kind !== undefined && !isAssignmentKind(a.kind)) return false;
   if (typeof a.progress !== 'number' || a.progress < 0 || a.progress > 100 || Number.isNaN(a.progress)) return false;
   if (a.status === 'completed' && a.progress !== 100) return false;
   if (a.notes !== undefined && (typeof a.notes !== 'string' || a.notes.length > 5000)) return false;
@@ -163,6 +165,7 @@ function cleanAssignment(a: Assignment): Assignment {
     ...(a.dueTime !== undefined ? { dueTime: a.dueTime } : {}),
     priority: a.priority,
     status: a.status,
+    ...(isAssignmentKind(a.kind) && a.kind !== 'assignment' ? { kind: a.kind } : {}),
     progress: a.progress,
     ...(a.notes !== undefined ? { notes: a.notes } : {}),
     ...(a.subtasks !== undefined

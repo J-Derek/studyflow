@@ -39,6 +39,7 @@ import { reportSyncError } from '../lib/syncErrors';
 import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 import { clampScore } from '../utils/academicCalculations';
+import { afterUncomplete } from '../utils/progress';
 import { normalizeAssessments } from '../utils/assessments';
 
 export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades' | 'notes';
@@ -480,7 +481,9 @@ export const useStudyFlowStore = create<StudyFlowState>()(
               if (updates.title !== undefined) updated.title = clampText(updates.title, LIMITS.assignmentTitle);
               if (updates.course !== undefined) updated.course = clampText(updates.course, LIMITS.assignmentCourse);
               if (updates.notes !== undefined) updated.notes = updates.notes.slice(0, LIMITS.assignmentNotes);
-              if (updates.progress !== undefined) {
+              // With a checklist the ticks decide progress; a number sent from outside is ignored (see utils/progress).
+              if (updates.progress !== undefined && a.subtasks && a.subtasks.length > 0) updated.progress = a.progress;
+              if (updates.progress !== undefined && !(a.subtasks && a.subtasks.length > 0)) {
                 if (updates.progress === 100 && a.status !== 'completed') {
                   updated.status = 'completed';
                   updated.completedAt = new Date().toISOString();
@@ -593,10 +596,12 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           assignments: state.assignments.map((a) => {
             if (a.id === id) {
               const isCompleted = a.status === 'completed';
+              // Un-marking recalculates: from the checklist ticks if there is one, otherwise the usual halfway value.
+              const back = afterUncomplete(a);
               const updated: Assignment = {
                 ...a,
-                status: isCompleted ? 'in_progress' : 'completed',
-                progress: isCompleted ? 50 : 100,
+                status: isCompleted ? back.status : 'completed',
+                progress: isCompleted ? back.progress : 100,
                 completedAt: isCompleted ? undefined : new Date().toISOString()
               };
               const uid = get().userId;
