@@ -11,6 +11,7 @@ import { AuthNotice } from './components/AuthNotice';
 import { SignInProgress } from './components/SignInProgress';
 import { AgeGateDialog } from './components/AgeGateDialog';
 import { CelebrateBurst } from './components/CelebrateBurst';
+import { CourseSuggestions } from './components/CourseSuggestions';
 import { SyncErrorToast } from './components/SyncErrorToast';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -25,7 +26,7 @@ import { Dashboard } from './pages/Dashboard';
 const AssignmentsPage = lazy(() => import('./pages/Assignments').then((m) => ({ default: m.AssignmentsPage })));
 const CalendarPage = lazy(() => import('./pages/Calendar').then((m) => ({ default: m.CalendarPage })));
 const FocusTimerPage = lazy(() => import('./pages/FocusTimer').then((m) => ({ default: m.FocusTimerPage })));
-const GradesPage = lazy(() => import('./pages/Grades').then((m) => ({ default: m.GradesPage })));
+const CoursesPage = lazy(() => import('./pages/Courses').then((m) => ({ default: m.CoursesPage })));
 const NotesPage = lazy(() => import('./pages/Notes').then((m) => ({ default: m.NotesPage })));
 const LegalPage = lazy(() => import('./pages/LegalPage').then((m) => ({ default: m.LegalPage })));
 
@@ -89,6 +90,11 @@ export function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // The old /grades address is now /courses: show the new one in the address bar too.
+  useEffect(() => {
+    if (window.location.pathname.replace(/\/$/, '').toLowerCase() === '/grades') window.history.replaceState({}, '', '/courses');
   }, []);
 
   // Synchronize HTML5 History popstate for Browser Back/Forward buttons
@@ -167,7 +173,7 @@ export function App() {
             {activeTab === 'assignments' && <AssignmentsPage />}
             {activeTab === 'calendar' && <CalendarPage />}
             {activeTab === 'timer' && <FocusTimerPage />}
-            {activeTab === 'grades' && <GradesPage />}
+            {activeTab === 'courses' && <CoursesPage />}
             {activeTab === 'notes' && <NotesPage />}
             {activeTab === 'notfound' && <NotFoundPage />}
             {(LEGAL_TABS as string[]).includes(activeTab) && <LegalPage doc={activeTab as (typeof LEGAL_TABS)[number]} />}
@@ -232,6 +238,9 @@ export function App() {
 
         {/* A happy burst when work is marked done */}
         <CelebrateBurst />
+
+        {/* Course codes already in use, offered in every course field */}
+        <CourseSuggestions />
 
         {/* Tells the student when a change reached the screen but not their account */}
         <SyncErrorToast />

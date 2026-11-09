@@ -67,7 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, o
     { id: 'assignments' as const, label: 'Assignments', icon: CheckSquare, badge: pendingCount },
     { id: 'calendar' as const, label: 'Timetable', icon: CalendarIcon },
     { id: 'timer' as const, label: 'Focus Timer', icon: Timer },
-    { id: 'grades' as const, label: 'Grades', icon: Award },
+    { id: 'courses' as const, label: 'Courses', icon: Award },
     { id: 'notes' as const, label: 'Notes', icon: NotebookPen }
   ];
 

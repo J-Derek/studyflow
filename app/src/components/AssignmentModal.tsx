@@ -142,6 +142,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
               type="text"
               required
               maxLength={LIMITS.assignmentCourse}
+              list="course-suggestions"
               placeholder="e.g. CS 101 or Physics"
               value={course}
               onChange={(e) => setCourse(e.target.value)}

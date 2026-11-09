@@ -7,7 +7,7 @@ const LINKS: { tab: NavigationTab; label: string }[] = [
   { tab: 'assignments', label: 'Assignments' },
   { tab: 'calendar', label: 'Timetable' },
   { tab: 'timer', label: 'Focus timer' },
-  { tab: 'grades', label: 'Grades' },
+  { tab: 'courses', label: 'Courses' },
   { tab: 'notes', label: 'Notes' }
 ];
 

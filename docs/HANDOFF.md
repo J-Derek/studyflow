@@ -20,7 +20,8 @@ an in-app **writing space** per assignment with **Word and PDF** export; **timer
 | Branch `claude/pr5-legal` (PR5, stacked on PR4, waiting for Derek) | draft legal pages, age question before sign-in, "Delete my account". **Rules change: deploy rules FIRST, then the app** |
 | Branch `claude/pr6-kinds` (PR6, stacked on PR5) | kinds of deadline (exam, test, reading, project), progress from the checklist, celebration, keys, class colours. **Rules change (additive `kind`): deploy rules FIRST** |
 | Branch `claude/pr7-calendar` (PR7, stacked on PR6; **no rules change**) | Week/Month toggle, tap a day, deadlines on the timetable, "Due soon" strip |
-| Next to build | PR8 to PR10 (each stacked on the one before) |
+| Branch `claude/pr8-courses` (PR8, stacked on PR7; **no rules change**) | Grades tab becomes Courses (course list, course detail, grades calculator below); `/grades` still works |
+| Next to build | PR9 and PR10 (**on hold until Derek says go**) |
 
 ### What is merged AND deployed
 | PR | What it did |
@@ -199,8 +200,19 @@ Reason: the app now writes `ageConfirmed` in the profile; the old rules reject u
 - Tests: `e2e/calendar-month.spec.ts` (4: week deadlines and strip, month counts/stepping/toggle back, tap-a-day and quick add, phone 44px + axe light/dark + sheet fits), unit `calendarMonth.test.ts`.
 - Not done: notes are not on the calendar; deadlines are not drawn on the timetable as time blocks (they are listed per day).
 
-### Next: PR8 to PR10 (stacked: each branch starts from the one before; merge in order)
-PR3 to PR7 are done. PR8 Grades becomes Courses.
+### PR8 (branch `claude/pr8-courses`, stacked on `claude/pr7-calendar`; no rules change, deploy is the app only)
+- The nav item is **Courses** (`NavigationTab` 'grades' became 'courses'; still six links). `/courses` is the page; `/grades` (old bookmarks, the sitemap) is the same page and the
+  address bar is rewritten to `/courses` (`getTabFromPath`, a `replaceState` in `App.tsx`).
+- `pages/Courses.tsx`: a card per course (to-do count, classes, notes, next deadline, grade so far); tap one for `CourseDetail` (work still to do, finished count, classes by weekday, notes, grade);
+  the old grades calculator (`pages/Grades.tsx`, now `embedded` with an h2 "Grades and GPA") sits under the list, where courses are added and weights/scores set.
+- `utils/courses.ts`: items are matched to a course **by the code text** before the dash, ignoring case and spaces (`belongsToCourse`), so everything entered before Courses existed is covered.
+- **Deliberate scope cut:** no `courseId` field on assignments/classes/notes and no CoursePicker. That would have meant rules + mapper + backup changes on three collections, and it only matters when a course
+  is renamed (a renamed code detaches its items until they are edited). Instead `components/CourseSuggestions.tsx` offers the codes already in use (a `<datalist>`) in the assignment, first-deadline and class forms.
+  If you want ids later: optional `courseId` on the three types, additive rules, mappers, backup, tests, and `belongsToCourse` preferring the id.
+- Tests: `e2e/courses.spec.ts` (5), unit `courses.test.ts`, `tabFromPath.test.ts` updated.
+
+### Next: PR9 and PR10 (**on hold: Derek asked me to stop after the current PR until he says go**)
+PR3 to PR8 are done.
 PR9 writing space + Word/PDF export. PR10 term vs semester + "Start a new semester" archive. Every PR that changes synced data touches: `types`, `firestore.rules`, `firestoreMappers.ts`,
 `backupValidator.ts`, rules tests, mapper tests.
 

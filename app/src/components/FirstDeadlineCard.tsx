@@ -186,6 +186,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               value={course}
               onChange={(e) => setCourse(e.target.value)}
               maxLength={LIMITS.assignmentCourse}
+              list="course-suggestions"
               placeholder="e.g. CS 101 or Physics"
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
             />

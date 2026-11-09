@@ -45,8 +45,8 @@ export const Header: React.FC<HeaderProps> = ({
         return 'Timetable';
       case 'timer':
         return 'Focus timer';
-      case 'grades':
-        return 'Grades';
+      case 'courses':
+        return 'Courses';
       case 'notes':
         return 'Notes';
       case 'notfound':

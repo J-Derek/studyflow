@@ -8,7 +8,8 @@ describe('getTabFromPath', () => {
     expect(getTabFromPath('/assignments')).toBe('assignments');
     expect(getTabFromPath('/Calendar/')).toBe('calendar');
     expect(getTabFromPath('/timer')).toBe('timer');
-    expect(getTabFromPath('/grades')).toBe('grades');
+    expect(getTabFromPath('/courses')).toBe('courses');
+    expect(getTabFromPath('/Grades/')).toBe('courses'); // the old address still works
     expect(getTabFromPath('/notes')).toBe('notes');
   });
 
@@ -19,7 +20,7 @@ describe('getTabFromPath', () => {
   });
 
   it('round-trips the six pages', () => {
-    for (const tab of ['dashboard', 'assignments', 'calendar', 'timer', 'grades', 'notes'] as const) {
+    for (const tab of ['dashboard', 'assignments', 'calendar', 'timer', 'courses', 'notes'] as const) {
       expect(getTabFromPath(getPathFromTab(tab))).toBe(tab);
     }
   });

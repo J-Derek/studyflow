@@ -83,7 +83,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: 'nav-asg', label: 'Go to Assignments', category: 'Navigation', icon: CheckSquare, action: () => { setActiveTab('assignments'); onClose(); } },
     { id: 'nav-cal', label: 'Go to Timetable', category: 'Navigation', icon: Calendar, action: () => { setActiveTab('calendar'); onClose(); } },
     { id: 'nav-timer', label: 'Go to Focus timer', category: 'Navigation', icon: Timer, action: () => { setActiveTab('timer'); onClose(); } },
-    { id: 'nav-grades', label: 'Go to Grades', category: 'Navigation', icon: Award, action: () => { setActiveTab('grades'); onClose(); } },
+    { id: 'nav-courses', label: 'Go to Courses', category: 'Navigation', icon: Award, action: () => { setActiveTab('courses'); onClose(); } },
     { id: 'nav-notes', label: 'Go to Notes', category: 'Navigation', icon: NotebookPen, action: () => { setActiveTab('notes'); onClose(); } }
   ];
 

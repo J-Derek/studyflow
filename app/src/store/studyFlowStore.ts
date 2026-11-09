@@ -42,7 +42,7 @@ import { clampScore } from '../utils/academicCalculations';
 import { afterUncomplete } from '../utils/progress';
 import { normalizeAssessments } from '../utils/assessments';
 
-export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'grades' | 'notes';
+export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'courses' | 'notes';
 
 /** The pages that explain the app's rules (draft legal text). */
 export type LegalTab = 'privacy' | 'terms' | 'children' | 'storage' | 'accessibility';
@@ -57,7 +57,8 @@ export function getTabFromPath(path: string): AppTab {
   if (clean === '/assignments') return 'assignments';
   if (clean === '/calendar') return 'calendar';
   if (clean === '/timer') return 'timer';
-  if (clean === '/grades') return 'grades';
+  // "Grades" became "Courses"; the old address (bookmarks, links, the sitemap) still lands on the right page.
+  if (clean === '/courses' || clean === '/grades') return 'courses';
   if (clean === '/notes') return 'notes';
   const legal = LEGAL_TABS.find((t) => clean === `/${t}`);
   if (legal) return legal;

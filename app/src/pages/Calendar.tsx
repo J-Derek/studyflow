@@ -483,6 +483,7 @@ export const CalendarPage: React.FC = () => {
                   type="text"
                   required
                   maxLength={LIMITS.blockCourse}
+                  list="course-suggestions"
                   placeholder="e.g. CS 101"
                   value={course}
                   onChange={(e) => setCourse(e.target.value)}

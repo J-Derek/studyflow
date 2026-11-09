@@ -20,7 +20,7 @@ import {
   getAcademicStanding
 } from '../utils/academicCalculations';
 
-export const GradesPage: React.FC = () => {
+export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { grades, updateAssessmentScore, setCourseAssessments, addCourseGrade, deleteCourseGrade } = useStudyFlowStore();
   // The course whose weights are being edited (one at a time).
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
@@ -87,7 +87,11 @@ export const GradesPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in pb-16">
       <div className="space-y-1">
-        <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Grades</h1>
+        {embedded ? (
+          <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Grades and GPA</h2>
+        ) : (
+          <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Grades</h1>
+        )}
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Your courses, and what they add up to.</p>
       </div>
       <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-1 md:grid-cols-3 overflow-hidden">

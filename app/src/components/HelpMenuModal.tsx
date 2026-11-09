@@ -99,10 +99,10 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
         'Honors ranges shown as projections, not official standing'
       ],
       action: () => {
-        setActiveTab('grades');
+        setActiveTab('courses');
         onClose();
       },
-      actionLabel: 'Open grades'
+      actionLabel: 'Open courses'
     }
   ];
 
