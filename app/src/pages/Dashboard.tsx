@@ -5,6 +5,7 @@ import {
   ArrowRight,
   Flame,
   Pencil,
+  PenLine,
   Plus,
 } from 'lucide-react';
 import { EmptyIllustration } from '../components/EmptyIllustration';
@@ -16,6 +17,7 @@ import type { Assignment } from '../types';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { FirstDeadlineCard } from '../components/FirstDeadlineCard';
 import { KindBadge } from '../components/KindBadge';
+import { WritingSpace } from '../components/WritingSpace';
 import { celebrate } from '../components/CelebrateBurst';
 import { kindOf } from '../utils/kinds';
 import { selectPendingDeadlines } from '../utils/calendarMonth';
@@ -36,6 +38,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   // The assignment being edited from this screen (opens the same dialog as the Assignments page).
   const [editing, setEditing] = useState<Assignment | null>(null);
+  const [writing, setWriting] = useState<Assignment | null>(null);
   // If the assignment is deleted elsewhere while its dialog is open, close the dialog rather than recreate it.
   const editingStillExists = !editing || assignments.some((a) => a.id === editing.id);
   // Right after the very first assignment is saved, say what happened and where to change it.
@@ -173,6 +176,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
             >
               <Pencil className="h-4 w-4" aria-hidden="true" />
               <span>Edit</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setWriting(nextUp)}
+              className="inline-flex items-center gap-2 px-4 min-h-[44px] rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-100 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer"
+            >
+              <PenLine className="h-4 w-4" aria-hidden="true" />
+              <span>Write</span>
             </button>
           </div>
         </section>
@@ -373,6 +384,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }}
         assignmentToEdit={editing}
       />
+
+      {writing && <WritingSpace assignment={writing} onClose={() => setWriting(null)} />}
     </div>
   );
 };

@@ -16,6 +16,9 @@ service cloud.firestore {
     //   updatedAt (server time), notes?, completedAt?, sample? (bool),
     //   subtasks? (map keyed by subtask id, or legacy list; max 100)
     //
+    // /users/{userId}/drafts/{assignmentId}
+    //   id (= assignment id), body (Markdown, up to 200000 characters), format ('markdown'), editedAt (ISO text), updatedAt (server time)
+    //
     // /users/{userId}/sessions/{id}          (weekly timetable blocks)
     //   id, title, course, dayOfWeek (0..6), startTime, endTime, type,
     //   updatedAt (server time), color?, sample? (bool)
@@ -144,6 +147,17 @@ service cloud.firestore {
              isServerTime(data.updatedAt);
     }
 
+    // The text a student writes for one assignment in the writing space. The document id is the assignment's id.
+    function isValidDraft(data) {
+      return data.keys().hasAll(['id', 'body', 'format', 'editedAt', 'updatedAt']) &&
+             data.keys().hasOnly(['id', 'body', 'format', 'editedAt', 'updatedAt']) &&
+             validString(data.id, 1, 100) &&
+             data.body is string && data.body.size() <= 200000 &&
+             data.format == 'markdown' &&
+             validString(data.editedAt, 1, 50) &&
+             isServerTime(data.updatedAt);
+    }
+
     function isValidNote(data) {
       return data.keys().hasAll(['id', 'title', 'body', 'course', 'pinned', 'createdAt', 'editedAt', 'updatedAt']) &&
              data.keys().hasOnly(['id', 'title', 'body', 'course', 'pinned', 'createdAt', 'editedAt', 'updatedAt']) &&
@@ -258,6 +272,18 @@ service cloud.firestore {
         allow update: if isOwner(userId) &&
                          isValidNote(request.resource.data) &&
                          immutable(['id', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      match /drafts/{draftId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId) && request.query.limit <= 500;
+        allow create: if isOwner(userId) &&
+                         isValidDraft(request.resource.data) &&
+                         request.resource.data.id == draftId;
+        allow update: if isOwner(userId) &&
+                         isValidDraft(request.resource.data) &&
+                         immutable(['id']);
         allow delete: if isOwner(userId);
       }
 

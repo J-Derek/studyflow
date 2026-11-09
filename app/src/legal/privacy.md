@@ -5,7 +5,7 @@ StudyFlow is a study planner. This page explains, in plain words, what it keeps 
 ## What we keep
 
 - **If you sign in with Google:** your name, email address and profile picture address, as Google gives them to us.
-- **What you type:** your profile (name, university, programme, semester, time zone, and a picture if you choose one), assignments, timetable classes, grades, notes, timer settings and finished focus sessions.
+- **What you type:** your profile (name, university, programme, semester, time zone, and a picture if you choose one), assignments, timetable classes, grades, notes, the text you write in the writing space, timer settings and finished focus sessions.
 - **Your age band:** whether you said you are 13 to 17 or 18 and over, and whether a parent or guardian agreed. We do not ask for your date of birth.
 - **Guests too:** if you use StudyFlow without signing in, your plan is still saved to a private guest account so it appears on that device. If you clear your browser, you lose access to it.
 - **PDFs you attach to notes stay on your device.** They are never uploaded.

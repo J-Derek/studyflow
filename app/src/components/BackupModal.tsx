@@ -39,7 +39,7 @@ const secondaryButton =
  * PR5 adds a "Delete my account" section at the bottom of the signed-in view.
  */
 export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpenProfile }) => {
-  const { assignments, sessions, grades, notes, customPhotoUrl, user, isSyncing, userId } = useStudyFlowStore();
+  const { assignments, sessions, grades, notes, drafts, customPhotoUrl, user, isSyncing, userId } = useStudyFlowStore();
   const account = useAccountView();
   const isAnonymous = !account.signedIn;
   const errors = useSyncErrors();
@@ -69,7 +69,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
     notes
   };
 
-  const handleExportJSON = () => downloadBackup(buildBackup({ assignments, sessions, grades, notes }));
+  const handleExportJSON = () => downloadBackup(buildBackup({ assignments, sessions, grades, notes, drafts }));
 
   const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

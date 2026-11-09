@@ -15,10 +15,10 @@ import {
   type Unsubscribe
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import type { Assignment, CourseGrade, Note, StudySession } from '../types';
+import type { Assignment, CourseGrade, Draft, Note, StudySession } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
-import { ageToDoc, assignmentToDoc, docToAssignment, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
+import { ageToDoc, assignmentToDoc, docToAssignment, docToDraft, draftToDoc, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
 import { isDefaultTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 import { cleanUpProfile } from '../utils/placeholderProfile';
 import { cleanAgeRecord, readDeviceAge } from '../utils/ageGate';
@@ -249,6 +249,37 @@ export function initFirestoreSync(uid: string): () => void {
     (err) => console.warn('Firestore notes listener warning (using offline cache):', err.message)
   );
   activeUnsubscribes.push(unsubNotes);
+
+  // Drafts from the writing space, one per assignment. Same pattern as notes.
+  let draftsSeeded = false;
+  const unsubDrafts = onSnapshot(
+    query(collection(db, 'users', uid, 'drafts'), limit(LIST_CAP)),
+    async (snapshot) => {
+      if (!isCurrentUser(uid)) return;
+      trackPending('drafts', snapshot.metadata.hasPendingWrites);
+      if (snapshot.metadata.fromCache && snapshot.empty) return;
+
+      if (snapshot.empty && !draftsSeeded) {
+        draftsSeeded = true;
+        const local = useStudyFlowStore.getState().drafts;
+        if (local.length > 0) {
+          const batch = writeBatch(db);
+          for (const d of local.slice(0, LIST_CAP)) {
+            batch.set(doc(db, 'users', uid, 'drafts', d.id), { ...draftToDoc(d), updatedAt: serverTimestamp() });
+          }
+          await batch.commit().catch((err) => console.warn('Batched draft upload warning:', err));
+        }
+        return;
+      }
+      draftsSeeded = true;
+
+      const remote: Draft[] = [];
+      snapshot.forEach((d) => remote.push(docToDraft(d.id, d.data())));
+      if (isCurrentUser(uid)) useStudyFlowStore.setState({ drafts: remote });
+    },
+    (err) => console.warn('Firestore drafts listener warning (using offline cache):', err.message)
+  );
+  activeUnsubscribes.push(unsubDrafts);
 
   let sessionsSeeded = false;
   const unsubSessions = onSnapshot(
@@ -531,6 +562,14 @@ export async function syncNoteToFirestore(uid: string, note: Note): Promise<void
 
 export async function deleteNoteFromFirestore(uid: string, noteId: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid, 'notes', noteId));
+}
+
+export async function syncDraftToFirestore(uid: string, draft: Draft): Promise<void> {
+  await setDoc(doc(db, 'users', uid, 'drafts', draft.id), { ...draftToDoc(draft), updatedAt: serverTimestamp() });
+}
+
+export async function deleteDraftFromFirestore(uid: string, draftId: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', uid, 'drafts', draftId));
 }
 
 export async function syncGradeToFirestore(uid: string, grade: CourseGrade): Promise<void> {

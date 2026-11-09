@@ -381,6 +381,35 @@ describe('notes', () => {
   });
 });
 
+describe('drafts (writing space)', () => {
+  const draft = (over: Record<string, unknown> = {}) => ({ id: 'a1', body: 'Hello', format: 'markdown', editedAt: '2030-01-01T00:00:00.000Z', updatedAt: serverTimestamp(), ...over });
+  const ref = (db: Db = asAlice(), id = 'a1') => doc(db, 'users', ALICE, 'drafts', id);
+  it('lets the owner write, read, edit and delete a draft, up to 200000 characters', async () => {
+    await assertSucceeds(setDoc(ref(), draft()));
+    await assertSucceeds(getDoc(ref()));
+    await assertSucceeds(setDoc(ref(), draft({ body: 'x'.repeat(200000) })));
+    await assertSucceeds(deleteDoc(ref()));
+  });
+  it('rejects a body over 200000 characters, a bad format, extra keys, a wrong id and a client-sent updatedAt', async () => {
+    await assertFails(setDoc(ref(), draft({ body: 'x'.repeat(200001) })));
+    await assertFails(setDoc(ref(), draft({ format: 'html' })));
+    await assertFails(setDoc(ref(), draft({ isAdmin: true })));
+    await assertFails(setDoc(ref(), draft({ id: 'other' })));
+    await assertFails(setDoc(ref(), draft({ body: 5 })));
+    await assertFails(setDoc(ref(), draft({ updatedAt: Timestamp.fromMillis(1) })));
+  });
+  it('keeps one student drafts from every other student and from signed-out visitors', async () => {
+    await assertSucceeds(setDoc(ref(), draft()));
+    await assertFails(getDoc(ref(asBob())));
+    await assertFails(setDoc(ref(asBob()), draft()));
+    await assertFails(getDoc(ref(anon())));
+  });
+  it('caps list queries', async () => {
+    await assertSucceeds(getDocs(query(collection(asAlice(), 'users', ALICE, 'drafts'), limit(500))));
+    await assertFails(getDocs(query(collection(asAlice(), 'users', ALICE, 'drafts'), limit(501))));
+  });
+});
+
 describe('sessions (timetable)', () => {
   it('accepts valid, rejects bad day, bad time, unknown type, extra key', async () => {
     await assertSucceeds(setDoc(sDoc(asAlice()), ses({ sample: true })));

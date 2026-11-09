@@ -9,6 +9,7 @@ import type {
   UserPreferences,
   Assessment,
   CourseGrade,
+  Draft,
   Note,
   SoundscapeType,
   Subtask
@@ -24,6 +25,8 @@ import {
   syncTimerPrefs,
   syncNoteToFirestore,
   deleteNoteFromFirestore,
+  syncDraftToFirestore,
+  deleteDraftFromFirestore,
   syncGradeToFirestore,
   deleteGradeFromFirestore,
   pushTimerState,
@@ -40,6 +43,7 @@ import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pause
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 import { clampScore } from '../utils/academicCalculations';
 import { afterUncomplete } from '../utils/progress';
+import { MAX_DRAFT_BODY } from '../services/firestoreMappers';
 import { normalizeAssessments } from '../utils/assessments';
 
 export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'courses' | 'notes';
@@ -101,7 +105,7 @@ interface StudyFlowState {
   loadSampleData: () => void;
   icsExportCount: number;
   bumpIcsExport: () => void;
-  importLedger: (ledger: { assignments: Assignment[]; sessions: StudySession[]; grades: CourseGrade[]; notes?: Note[] }) => void;
+  importLedger: (ledger: { assignments: Assignment[]; sessions: StudySession[]; grades: CourseGrade[]; notes?: Note[]; drafts?: Draft[] }) => void;
   clearSampleData: () => void;
   clearAllData: () => void;
 
@@ -126,6 +130,12 @@ interface StudyFlowState {
   /** Puts a just-deleted assignment back (same id), for the Undo button. */
   restoreAssignment: (assignment: Assignment) => void;
   toggleAssignmentComplete: (id: string) => void;
+
+  // Writing space: one draft per assignment (id = the assignment's id)
+  drafts: Draft[];
+  /** Saves the text written for an assignment (an empty text removes the draft). */
+  saveDraft: (assignmentId: string, body: string) => void;
+  deleteDraft: (assignmentId: string) => void;
 
   // Notes
   notes: Note[];
@@ -196,6 +206,8 @@ const SYNC_WHAT: Record<string, string> = {
   deleteGradeFromFirestore: 'a course you deleted',
   syncNoteToFirestore: 'your note',
   deleteNoteFromFirestore: 'a note you deleted',
+  syncDraftToFirestore: 'your writing',
+  deleteDraftFromFirestore: 'writing you deleted',
   syncProfile: 'your profile',
   syncTimerPrefs: 'your timer settings',
   syncOnboardingDismissed: 'your checklist choice'
@@ -273,6 +285,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           sessions: [],
           grades: [],
           notes: [],
+          drafts: [],
           onboardingDismissed: false,
           guestNoticeDismissed: false,
           pomodorosCompleted: 0,
@@ -352,6 +365,15 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const removedA = state.assignments.filter((x) => !keepA.has(x.id));
         const removedS = state.sessions.filter((x) => !keepS.has(x.id));
         set({ assignments: ledger.assignments, sessions: ledger.sessions, grades: ledger.grades });
+        if (ledger.drafts) {
+          const keepD = new Set(ledger.drafts.map((x) => x.id));
+          const removedD = state.drafts.filter((x) => !keepD.has(x.id));
+          set({ drafts: ledger.drafts });
+          if (uid) {
+            ledger.drafts.forEach((x) => syncDraftToFirestore(uid, x).catch(failed('syncDraftToFirestore', () => syncDraftToFirestore(uid, x))));
+            removedD.forEach((x) => deleteDraftFromFirestore(uid, x.id).catch(failed('deleteDraftFromFirestore', () => deleteDraftFromFirestore(uid, x.id))));
+          }
+        }
         if (ledger.notes) {
           const keepN = new Set(ledger.notes.map((x) => x.id));
           const removedN = state.notes.filter((x) => !keepN.has(x.id));
@@ -398,12 +420,14 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           state.sessions.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(failed('deleteSessionFromFirestore', () => deleteSessionFromFirestore(uid, x.id))));
           state.grades.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(failed('deleteGradeFromFirestore', () => deleteGradeFromFirestore(uid, x.id))));
           state.notes.forEach((x) => deleteNoteFromFirestore(uid, x.id).catch(failed('deleteNoteFromFirestore', () => deleteNoteFromFirestore(uid, x.id))));
+          state.drafts.forEach((x) => deleteDraftFromFirestore(uid, x.id).catch(failed('deleteDraftFromFirestore', () => deleteDraftFromFirestore(uid, x.id))));
         }
         set({
           assignments: [],
           sessions: [],
           grades: [],
           notes: [],
+          drafts: [],
           pomodorosCompleted: 0,
           focusMinutes: 0
         });
@@ -533,6 +557,25 @@ export const useStudyFlowStore = create<StudyFlowState>()(
             failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, assignment))(err);
           });
         }
+      },
+
+      drafts: [],
+      saveDraft: (assignmentId, body) => {
+        const text = body.slice(0, MAX_DRAFT_BODY);
+        const uid = get().userId;
+        if (text.trim() === '') {
+          get().deleteDraft(assignmentId);
+          return;
+        }
+        const draft: Draft = { id: assignmentId, body: text, editedAt: new Date().toISOString() };
+        set((state) => ({ drafts: [draft, ...state.drafts.filter((d) => d.id !== assignmentId)] }));
+        if (uid) syncDraftToFirestore(uid, draft).catch(failed('syncDraftToFirestore', () => syncDraftToFirestore(uid, draft)));
+      },
+      deleteDraft: (assignmentId) => {
+        if (!get().drafts.some((d) => d.id === assignmentId)) return;
+        set((state) => ({ drafts: state.drafts.filter((d) => d.id !== assignmentId) }));
+        const uid = get().userId;
+        if (uid) deleteDraftFromFirestore(uid, assignmentId).catch(failed('deleteDraftFromFirestore', () => deleteDraftFromFirestore(uid, assignmentId)));
       },
 
       notes: [],
@@ -938,6 +981,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         sessions: state.sessions,
         grades: state.grades,
         notes: state.notes,
+        drafts: state.drafts,
         pomodorosCompleted: state.pomodorosCompleted,
         focusMinutes: state.focusMinutes,
         timer: state.timer,

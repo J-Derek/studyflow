@@ -6,7 +6,8 @@ import {
   Circle, 
   Trash2, 
   Edit3, 
-  CheckSquare
+  CheckSquare,
+  PenLine
 } from 'lucide-react';
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
@@ -14,6 +15,7 @@ import type { Assignment, Subtask } from '../types';
 import { getDaysRemaining } from '../utils/formatters';
 import { LIMITS } from '../utils/limits';
 import { AssignmentModal } from '../components/AssignmentModal';
+import { WritingSpace } from '../components/WritingSpace';
 import { KindBadge } from '../components/KindBadge';
 import { Legend } from '../components/Legend';
 import { celebrate } from '../components/CelebrateBurst';
@@ -38,6 +40,8 @@ export const AssignmentsPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  // The assignment whose writing space is open.
+  const [writing, setWriting] = useState<Assignment | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
@@ -313,11 +317,11 @@ export const AssignmentsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="pl-7 pr-2">
+                <div className="pl-7 pr-2 flex items-center justify-between gap-3">
                   <button
                     type="button"
                     onClick={() => handleEdit(asg)}
-                    className="text-left text-xs cursor-pointer min-h-[44px] flex items-center"
+                    className="text-left text-xs cursor-pointer min-h-[44px] flex items-center min-w-0"
                   >
                     {asg.notes ? (
                       <>
@@ -330,6 +334,15 @@ export const AssignmentsPage: React.FC = () => {
                         <span className="sr-only"> to {asg.title}</span>
                       </>
                     )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWriting(asg)}
+                    aria-label={`Write for "${asg.title}"`}
+                    className="shrink-0 inline-flex items-center gap-1.5 min-h-[44px] px-2 rounded text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+                  >
+                    <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
+                    Write
                   </button>
                 </div>
 
@@ -459,6 +472,8 @@ export const AssignmentsPage: React.FC = () => {
         onClose={() => setModalOpen(false)}
         assignmentToEdit={editingAssignment}
       />
+
+      {writing && <WritingSpace assignment={writing} onClose={() => setWriting(null)} />}
     </div>
   );
 };

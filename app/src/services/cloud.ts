@@ -23,5 +23,7 @@ export const syncProfile = lazy('syncProfile');
 export const syncTimerPrefs = lazy('syncTimerPrefs');
 export const syncNoteToFirestore = lazy('syncNoteToFirestore');
 export const deleteNoteFromFirestore = lazy('deleteNoteFromFirestore');
+export const syncDraftToFirestore = lazy('syncDraftToFirestore');
+export const deleteDraftFromFirestore = lazy('deleteDraftFromFirestore');
 export const pushTimerState = lazy('pushTimerState');
 export const completeFocusSession = lazy('completeFocusSession');

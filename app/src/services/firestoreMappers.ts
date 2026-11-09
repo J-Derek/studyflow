@@ -1,4 +1,4 @@
-import type { Assignment, CourseGrade, Note, StudySession, Subtask, UserPreferences } from '../types';
+import type { Assignment, CourseGrade, Draft, Note, StudySession, Subtask, UserPreferences } from '../types';
 import { isAssignmentKind } from '../utils/kinds';
 import { sanitizeTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 import type { AgeRecord } from '../utils/ageGate';
@@ -244,6 +244,21 @@ export function docToProfile(data: Doc): { user: Partial<UserPreferences>; photo
   user.timeZone = zone || undefined;
   const photo = str(data.photo);
   return { user, photo: validPhoto(photo) ? photo : null };
+}
+
+export const MAX_DRAFT_BODY = 200000;
+
+/** A draft as stored. The limit matches firestore.rules. */
+export function draftToDoc(d: Draft): Doc {
+  return { id: d.id, body: d.body.slice(0, MAX_DRAFT_BODY), format: 'markdown', editedAt: d.editedAt };
+}
+
+export function docToDraft(id: string, data: Doc): Draft {
+  return {
+    id,
+    body: typeof data.body === 'string' ? data.body.slice(0, MAX_DRAFT_BODY) : '',
+    editedAt: typeof data.editedAt === 'string' ? data.editedAt : new Date(0).toISOString()
+  };
 }
 
 export const MAX_NOTE_TITLE = 200;

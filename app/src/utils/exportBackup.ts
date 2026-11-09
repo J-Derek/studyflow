@@ -7,6 +7,7 @@ interface Ledger {
   sessions: { sample?: boolean }[];
   grades: { sample?: boolean }[];
   notes: unknown[];
+  drafts?: unknown[];
 }
 
 export const BACKUP_VERSION = 'StudyFlow-v1.2';
@@ -20,7 +21,8 @@ export function buildBackup(state: Ledger, now: Date = new Date()) {
       assignments: state.assignments.filter((x) => !x.sample),
       sessions: state.sessions.filter((x) => !x.sample),
       grades: state.grades.filter((x) => !x.sample),
-      notes: state.notes
+      notes: state.notes,
+      ...(state.drafts ? { drafts: state.drafts } : {})
     }
   };
 }
@@ -47,7 +49,7 @@ export function backupFromSavedCopy(raw: string | null, now: Date = new Date()) 
     if (!state || typeof state !== 'object') return null;
     const list = (v: unknown) => (Array.isArray(v) ? v.filter((x) => x && typeof x === 'object') : []);
     return buildBackup(
-      { assignments: list(state.assignments), sessions: list(state.sessions), grades: list(state.grades), notes: list(state.notes) },
+      { assignments: list(state.assignments), sessions: list(state.sessions), grades: list(state.grades), notes: list(state.notes), drafts: list(state.drafts) },
       now
     );
   } catch {

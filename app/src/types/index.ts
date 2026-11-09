@@ -59,6 +59,13 @@ export interface Note {
   editedAt: string; // ISO
 }
 
+/** What a student has written for one assignment (the writing space). `id` is the assignment's id; the text is Markdown. */
+export interface Draft {
+  id: string;
+  body: string;
+  editedAt: string; // ISO
+}
+
 export interface CourseGrade {
   id: string;
   courseCode: string;

@@ -21,7 +21,8 @@ an in-app **writing space** per assignment with **Word and PDF** export; **timer
 | Branch `claude/pr6-kinds` (PR6, stacked on PR5) | kinds of deadline (exam, test, reading, project), progress from the checklist, celebration, keys, class colours. **Rules change (additive `kind`): deploy rules FIRST** |
 | Branch `claude/pr7-calendar` (PR7, stacked on PR6; **no rules change**) | Week/Month toggle, tap a day, deadlines on the timetable, "Due soon" strip |
 | Branch `claude/pr8-courses` (PR8, stacked on PR7; **no rules change**) | Grades tab becomes Courses (course list, course detail, grades calculator below); `/grades` still works |
-| Next to build | PR9 and PR10 (**on hold until Derek says go**) |
+| Branch `claude/pr9-writing` (PR9, stacked on PR8) | writing space per assignment with Word and PDF export. **Rules change (new `drafts` collection): deploy rules FIRST**; adds the `docx` package |
+| Next to build | PR10 (term vs semester, new-semester archive) |
 
 ### What is merged AND deployed
 | PR | What it did |
@@ -211,8 +212,19 @@ Reason: the app now writes `ageConfirmed` in the profile; the old rules reject u
   If you want ids later: optional `courseId` on the three types, additive rules, mappers, backup, tests, and `belongsToCourse` preferring the id.
 - Tests: `e2e/courses.spec.ts` (5), unit `courses.test.ts`, `tabFromPath.test.ts` updated.
 
-### Next: PR9 and PR10 (**on hold: Derek asked me to stop after the current PR until he says go**)
-PR3 to PR8 are done.
+### PR9 (branch `claude/pr9-writing`, stacked on `claude/pr8-courses`)
+**Deploy order: rules first** (new `users/{uid}/drafts/{assignmentId}`: `id`, `body` up to 200000, `format == 'markdown'`, `editedAt`, server `updatedAt`), then the app. New dependency `docx` (loaded only when "Word" is pressed) and dev dependency `fflate` (tests unzip the .docx).
+- Data: `Draft` type; `drafts` in the store (persisted, synced like notes by a listener in `firestoreSync.ts`, `saveDraft` removes the draft when the text is empty), mappers `draftToDoc`/`docToDraft`,
+  rules + 4 rules tests, backup file `ledger.drafts` (validated, capped at 500; older files without it still restore), `ACCOUNT_COLLECTIONS` includes `drafts` (the guard test passes), Download my data and the crash screen's download include drafts.
+- UI: `components/WritingSpace.tsx` (full-screen dialog: textarea, buttons for heading/bold/italic/lists via `utils/markdownEdit.ts`, live preview through `MiniMarkdown`, autosave 1 s after typing stops and on close/Escape/page hide, word count,
+  Write/Preview tabs on phones). Opened from a pen button on every Assignments row and a "Write" button on Today's Next up.
+- Word: `lib/exportDocx.ts` (`buildDocx`: title, headings, bold/italic, bullet and numbered lists that restart, web links; markup is plain text). PDF: the page prints a hidden copy (`#print-root`, rules in `index.css`) black on white; the browser's print dialog saves as PDF.
+- Known limits: a guest who signs in to an EXISTING account does not carry drafts over (the merge copies assignments, classes, grades and notes only); a backup with several huge drafts can pass the 5 MB restore limit; there is no version history; PDF depends on the browser's print dialog (phones differ).
+- Tests: `e2e/writing-space.spec.ts` (6: write/format/autosave/reload, reaches the account and HTML stays text, real .docx with the text, print view is black on white and `page.pdf()` works, phone tabs/44px/axe light+dark, Today button + Escape),
+  units `markdownEdit`, `exportDocx`, mapper, backup, 4 rules tests.
+
+### Next: PR10 (the last one)
+PR3 to PR9 are done.
 PR9 writing space + Word/PDF export. PR10 term vs semester + "Start a new semester" archive. Every PR that changes synced data touches: `types`, `firestore.rules`, `firestoreMappers.ts`,
 `backupValidator.ts`, rules tests, mapper tests.
 

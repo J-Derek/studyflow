@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assignmentToDoc, docToAssignment, docToNote, docToProfile, docToTimerPrefs, timerPrefsToDoc, MAX_NOTE_BODY, MAX_PHOTO_CHARS, noteToDoc, profileToDoc, sessionToDoc, validPhoto } from './firestoreMappers';
+import { assignmentToDoc, docToAssignment, draftToDoc, docToDraft, MAX_DRAFT_BODY, docToNote, docToProfile, docToTimerPrefs, timerPrefsToDoc, MAX_NOTE_BODY, MAX_PHOTO_CHARS, noteToDoc, profileToDoc, sessionToDoc, validPhoto } from './firestoreMappers';
 import type { Assignment } from '../types';
 
 const base: Assignment = {
@@ -103,6 +103,18 @@ describe('grade mappers', () => {
   it('keeps the sample flag', () => {
     expect(gradeToDoc({ ...g, sample: true }).sample).toBe(true);
     expect(docToGrade('g1', gradeToDoc({ ...g, sample: true })).sample).toBe(true);
+  });
+});
+
+describe('draft documents', () => {
+  it('round-trips and always stores the format', () => {
+    const d = { id: 'a1', body: 'Some **text**', editedAt: '2030-01-01T00:00:00.000Z' };
+    expect(draftToDoc(d)).toEqual({ id: 'a1', body: 'Some **text**', format: 'markdown', editedAt: d.editedAt });
+    expect(docToDraft('a1', draftToDoc(d))).toEqual(d);
+  });
+  it('holds the body to the limit the rules use, and survives hostile data', () => {
+    expect(draftToDoc({ id: 'a', body: 'x'.repeat(MAX_DRAFT_BODY + 50), editedAt: 'z' }).body).toHaveLength(MAX_DRAFT_BODY);
+    expect(docToDraft('a', { body: 5, editedAt: {} })).toMatchObject({ id: 'a', body: '' });
   });
 });
 

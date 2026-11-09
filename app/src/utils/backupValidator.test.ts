@@ -197,6 +197,22 @@ describe('backupValidator', () => {
     expect(withKind(7).success).toBe(false);
   });
 
+  it('keeps drafts through a backup, and refuses a malformed or oversized list', () => {
+    const withDrafts = (drafts: unknown) => {
+      const p = JSON.parse(JSON.stringify(sampleValidPayload));
+      p.ledger.drafts = drafts;
+      return validateBackupJson(JSON.stringify(p));
+    };
+    const ok = withDrafts([{ id: 'asg-1', body: 'My essay', editedAt: '2030-01-01T00:00:00.000Z', extra: 'dropped' }]);
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data.ledger.drafts).toEqual([{ id: 'asg-1', body: 'My essay', editedAt: '2030-01-01T00:00:00.000Z' }]);
+    expect(validateBackupJson(JSON.stringify(sampleValidPayload)).success).toBe(true); // older files have no drafts
+    expect(withDrafts('nope').success).toBe(false);
+    expect(withDrafts([{ id: '', body: 'x', editedAt: 'z' }]).success).toBe(false);
+    expect(withDrafts([{ id: 'a', body: 5, editedAt: 'z' }]).success).toBe(false);
+    expect(withDrafts([{ id: 'a', body: 'x', editedAt: 'z' }, { id: 'a', body: 'y', editedAt: 'z' }]).success).toBe(false);
+  });
+
   it('handles empty or malformed JSON syntax gracefully', () => {
     expect(validateBackupJson('').success).toBe(false);
     expect(validateBackupJson('{ broken json').success).toBe(false);

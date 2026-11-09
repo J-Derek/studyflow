@@ -14,7 +14,7 @@ unless it says so.
 |---|---|---|
 | Google name, email, photo address (signed-in students) | Firebase Authentication (Google) | The student; the project owner through the Firebase console |
 | Profile: name, university, programme, semester, time zone, optional chosen picture | Firestore `users/{uid}` | Only that student (rules) and the project owner via the console |
-| Assignments, timetable, grades, notes, timer settings and focus sessions | Firestore `users/{uid}/...` | Same |
+| Assignments, timetable, grades, notes, writing-space drafts, timer settings and focus sessions | Firestore `users/{uid}/...` | Same |
 | PDFs attached to notes | This browser only (IndexedDB), never uploaded | The student on that device |
 | Age answer (13 to 17, or 18 and over, and a guardian tick) | Device, then Firestore `users/{uid}.ageConfirmed` | Same as above |
 | Ordinary server logs (IP address, browser, time) | Vercel, the host | Vercel |
