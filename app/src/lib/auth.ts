@@ -4,7 +4,9 @@ import {
   GoogleAuthProvider,
   linkWithPopup,
   linkWithRedirect,
+  deleteUser,
   onAuthStateChanged,
+  reauthenticateWithPopup,
   signInAnonymously,
   signInWithCredential,
   signInWithPopup,
@@ -25,6 +27,8 @@ import { markRedirectPending, takeRedirectPending, windowOpenIsReplaced } from '
 import { inAppBrowser } from '../utils/inAppBrowser';
 import { withoutSample } from '../utils/sampleData';
 import { clearPendingMerge, readPendingMerge, savePendingMerge } from './pendingMerge';
+import { clearDeviceAge } from '../utils/ageGate';
+import { deleteAllUserData } from '../services/accountDeletion';
 import { MOVING_MESSAGE, markSigningInAcrossReload, setSignInProgress } from './signInProgress';
 
 export const STORAGE_KEY = 'studyflow_storage_v1';
@@ -45,7 +49,7 @@ if (authBroadcast) {
  * Removes everything this browser holds for the previous user: listeners, in-memory store,
  * localStorage, sessionStorage, Cache Storage and (optionally) the Firestore IndexedDB cache.
  */
-export async function wipeLocalUserData(opts: { clearFirestoreCache: boolean }): Promise<void> {
+export async function wipeLocalUserData(opts: { clearFirestoreCache: boolean; keepAge?: boolean }): Promise<void> {
   unsubscribeAllFirestoreSync();
   clearSyncErrors(); // the previous person's failed saves must not follow the next person
   useStudyFlowStore.getState().resetStore();
@@ -55,6 +59,8 @@ export async function wipeLocalUserData(opts: { clearFirestoreCache: boolean }):
   } catch {
     /* storage unavailable */
   }
+  // The age answer belongs to the person who gave it. It stays only while a sign-in reloads the page (it is still to be stored in the account).
+  if (!opts.keepAge) clearDeviceAge();
   // PDFs attached to notes live only in this browser, so they must not outlive the signed-in student.
   await deleteAllFiles().catch(() => undefined);
   try {
@@ -121,7 +127,7 @@ let wiping = false;
 async function wipeAndReload(opts: { signingIn?: boolean } = {}): Promise<void> {
   wiping = true; // the page is about to reload; ignore any further auth events
   await waitForPendingWrites(db).catch(() => undefined);
-  await wipeLocalUserData({ clearFirestoreCache: true });
+  await wipeLocalUserData({ clearFirestoreCache: true, keepAge: opts.signingIn === true });
   // After the wipe (which empties sessionStorage): keep "Signing you in…" on screen across the reload.
   if (opts.signingIn) markSigningInAcrossReload();
   window.location.reload();
@@ -364,6 +370,35 @@ export async function completeRedirectSignIn(): Promise<void> {
       if (message) postAuthNotice(message);
     }
   }
+}
+
+/**
+ * Deletes the signed-in student's account and everything stored for it. Steps, in this order:
+ * 1. Google asks them to sign in again (a deletion that cannot be undone needs a fresh sign-in; Firebase requires it too).
+ * 2. Pending saves are flushed and the live listeners stopped, so nothing re-creates the profile while it is being deleted.
+ * 3. Every collection, the timer and the profile document are deleted; then the sign-in account itself.
+ * 4. Other tabs are told, this device is wiped, and the page reloads into a fresh guest session.
+ * If something fails midway nothing is half-hidden: running it again deletes what is left.
+ */
+export async function deleteMyAccount(): Promise<void> {
+  const user = auth.currentUser;
+  if (!user || user.isAnonymous) throw new AuthGuidanceError('auth/no-account', 'There is no signed-in account to delete.');
+  await reauthenticateWithPopup(user, googleProvider, browserPopupRedirectResolver);
+  wiping = true; // ignore auth events while the account goes away
+  try {
+    await waitForPendingWrites(db).catch(() => undefined);
+    unsubscribeAllFirestoreSync();
+    await deleteAllUserData(user.uid);
+    await deleteUser(user);
+  } catch (err) {
+    wiping = false;
+    // Bring the listeners back so the app keeps working if the deletion could not finish.
+    if (auth.currentUser) bindUser(auth.currentUser);
+    throw err;
+  }
+  authBroadcast?.postMessage('signout');
+  await wipeLocalUserData({ clearFirestoreCache: true });
+  window.location.reload();
 }
 
 /**

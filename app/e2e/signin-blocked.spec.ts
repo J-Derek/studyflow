@@ -1,4 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
+import { continueThroughAgeGate } from './ageHelper';
 
 const ready = (page: Page) =>
   page.waitForFunction(() => !!(window as unknown as { __store?: { getState: () => { userId: string | null } } }).__store?.getState().userId);
@@ -28,6 +29,7 @@ async function expectFullyOnScreen(page: Page, locator: ReturnType<Page['getByRo
 test('a sign-in message is fully visible and says what to do (sidebar button, bottom of the screen)', async ({ browser }) => {
   const { context, page } = await openAsInstagram(browser);
   await page.locator('aside').getByRole('button', { name: 'Sign in with Google' }).click();
+  await continueThroughAgeGate(page);
   const message = page.getByRole('alert').filter({ hasText: 'does not work inside this app' });
   await expect(message).toBeVisible();
   await expect(message).toContainText('Open StudyFlow in Chrome or Safari');
@@ -38,6 +40,7 @@ test('a sign-in message is fully visible and says what to do (sidebar button, bo
 test('the same message is fully visible from the top bar button', async ({ browser }) => {
   const { context, page } = await openAsInstagram(browser);
   await page.locator('header').getByRole('button', { name: 'Sign in with Google' }).click();
+  await continueThroughAgeGate(page);
   const message = page.getByRole('alert').filter({ hasText: 'does not work inside this app' });
   await expect(message).toBeVisible();
   await expectFullyOnScreen(page, message, 'top bar message');

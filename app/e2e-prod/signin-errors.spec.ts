@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { continueThroughAgeGate } from '../e2e/ageHelper';
 
 type Store = { userId: string | null; isAnonymous: boolean; userEmail: string | null; assignments: Array<{ title: string }>; addAssignment: (a: unknown) => void };
 const store = () => (window as unknown as { __store: { getState: () => Store } }).__store.getState();
@@ -22,6 +23,7 @@ test('a blocked Google pop-up falls back to signing in on the same page, in the 
   const uidBefore = await page.evaluate(() => (window as unknown as { __store: { getState: () => Store } }).__store.getState().userId);
 
   await page.getByRole('button', { name: 'Sign in with Google' }).first().click();
+  await continueThroughAgeGate(page);
 
   // the page goes to Google (the Auth emulator's stand-in page) instead of opening a window
   await page.waitForURL(/emulator\/auth\/handler/, { timeout: 20_000 });

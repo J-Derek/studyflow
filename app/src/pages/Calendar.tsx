@@ -1,17 +1,43 @@
 import React, { useState, useMemo } from 'react';
-import { Clock, ChevronLeft, ChevronRight, Plus, X, Download, RotateCcw } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, Plus, X, Download, RotateCcw, CalendarDays, CalendarRange } from 'lucide-react';
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useDialog } from '../lib/useDialog';
 import { exportTimetable } from '../lib/exportTimetable';
 import { clashingIds, findClashes, toMinutes } from '../utils/timetable';
 import type { StudySession } from '../types';
-import { LIMITS } from '../utils/limits';
+import { Legend } from '../components/Legend';
+import { CLASS_TYPE_META } from '../utils/kinds';
+import { LIMITS, localDateISO } from '../utils/limits';
+import type { Assignment } from '../types';
+import { MonthGrid } from '../components/MonthGrid';
+import { DaySheet } from '../components/DaySheet';
+import { AssignmentModal } from '../components/AssignmentModal';
+import { KindBadge } from '../components/KindBadge';
+import { classesOn, deadlinesByDate, monthLabel, selectPendingDeadlines } from '../utils/calendarMonth';
+import { kindOf } from '../utils/kinds';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export const CalendarPage: React.FC = () => {
-  const { sessions, addSession, updateSession, deleteSession } = useStudyFlowStore();
+  const { sessions, assignments, addSession, updateSession, deleteSession } = useStudyFlowStore();
+
+  // Week or month, which month is shown, the day whose list is open, and the deadline being added or edited from a day.
+  const [view, setView] = useState<'week' | 'month'>('week');
+  const [monthCursor, setMonthCursor] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  });
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [deadlineDialog, setDeadlineDialog] = useState<{ date?: string; edit?: Assignment } | null>(null);
+  const todayISO = localDateISO();
+  const deadlines = useMemo(() => deadlinesByDate(assignments, { withoutSample: false }), [assignments]);
+  const dueSoon = useMemo(() => selectPendingDeadlines(assignments).slice(0, 3), [assignments]);
+  const stepMonth = (by: number) =>
+    setMonthCursor((c) => {
+      const t = c.year * 12 + (c.month - 1) + by;
+      return { year: Math.floor(t / 12), month: (t % 12) + 1 };
+    });
 
   const [modalOpen, setModalOpen] = useState(false);
   // The block being edited, or null when adding a new one.
@@ -36,6 +62,7 @@ export const CalendarPage: React.FC = () => {
       d.setDate(monday.getDate() + i);
       const isToday = d.toDateString() === now.toDateString();
       return {
+        date: localDateISO(d),
         dayName: name,
         dayNumber: (i + 1) % 7, // Mon = 1 ... Sat = 6, Sun = 0 (same as StudySession.dayOfWeek)
         dateNumber: d.getDate(),
@@ -128,6 +155,46 @@ export const CalendarPage: React.FC = () => {
             <span className="hidden sm:inline tabular-nums">Export .ICS</span>
           </button>
 
+          <div role="group" aria-label="Calendar view" className="flex items-center gap-1 bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-lg p-0.5 shadow-2xs">
+            {(['week', 'month'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                aria-pressed={view === v}
+                onClick={() => setView(v)}
+                className={`inline-flex items-center justify-center gap-1.5 min-h-[44px] md:min-h-0 px-3 py-1 rounded text-xs font-medium capitalize transition-colors cursor-pointer ${
+                  view === v ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                }`}
+              >
+                {v === 'week' ? <CalendarRange className="h-3.5 w-3.5" aria-hidden="true" /> : <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />}
+                {v}
+              </button>
+            ))}
+          </div>
+
+          {view === 'month' && (
+            <div className="flex items-center gap-1 bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-lg p-0.5 shadow-2xs">
+              <button
+                onClick={() => stepMonth(-1)}
+                className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                aria-label="Previous month"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+              <span data-testid="month-label" className="text-xs tabular-nums font-medium text-zinc-800 dark:text-zinc-200 px-2 min-w-[120px] text-center">
+                {monthLabel(monthCursor.year, monthCursor.month)}
+              </span>
+              <button
+                onClick={() => stepMonth(1)}
+                className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                aria-label="Next month"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+
+          {view === 'week' && (
           <div className="flex items-center gap-1 bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-lg p-0.5 shadow-2xs">
             <button
               onClick={() => setWeekOffset((prev) => prev - 1)}
@@ -149,8 +216,9 @@ export const CalendarPage: React.FC = () => {
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
+          )}
 
-          {weekOffset !== 0 && (
+          {view === 'week' && weekOffset !== 0 && (
             <button
               onClick={() => setWeekOffset(0)}
               className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs transition"
@@ -194,7 +262,29 @@ export const CalendarPage: React.FC = () => {
         </div>
       )}
 
+      {dueSoon.length > 0 && (
+        <section aria-label="Due soon" data-testid="due-soon" className="rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark px-3 py-2 text-xs">
+          <h2 className="font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Due soon</h2>
+          <ul className="flex flex-wrap gap-x-4 gap-y-1">
+            {dueSoon.map((a) => (
+              <li key={a.id} className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200 [overflow-wrap:anywhere]">
+                <span className="tabular-nums text-zinc-600 dark:text-zinc-400">{a.dueDate.slice(5)}</span>
+                {a.title}
+                {kindOf(a) !== 'assignment' && <KindBadge kind={kindOf(a)} />}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <Legend show={view === 'month' ? ['month', 'classTypes', 'kinds'] : ['classTypes', 'kinds']} />
+
+      {view === 'month' && (
+        <MonthGrid year={monthCursor.year} month={monthCursor.month} sessions={sessions} deadlines={deadlines} today={todayISO} onSelectDay={setSelectedDate} />
+      )}
+
       {/* Unified 7-Day Continuous Calendar Grid (Cron / Notion Calendar Architecture) */}
+      {view === 'week' && (
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark shadow-2xs overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 min-h-[500px]">
           {weekDays.map((day) => {
@@ -238,9 +328,10 @@ export const CalendarPage: React.FC = () => {
                       daySessions.map((session) => (
                         <div
                           key={session.id}
-                          className={`rounded-md border text-xs transition relative group bg-zinc-50/70 dark:bg-zinc-850/60 text-zinc-900 dark:text-zinc-100 ${
-                            clashing.has(session.id) ? 'border-amber-400 dark:border-amber-600' : 'border-zinc-200/80 dark:border-zinc-800/80'
-                          }`}
+                          data-class-type={session.type}
+                          className={`rounded-md border border-l-4 text-xs transition relative group bg-zinc-50/70 dark:bg-zinc-850/60 text-zinc-900 dark:text-zinc-100 ${
+                            CLASS_TYPE_META[session.type]?.edge ?? 'border-l-zinc-400'
+                          } ${clashing.has(session.id) ? 'border-amber-400 dark:border-amber-600' : 'border-zinc-200/80 dark:border-zinc-800/80'}`}
                         >
                           <button
                             type="button"
@@ -251,6 +342,7 @@ export const CalendarPage: React.FC = () => {
                             <span className="block tabular-nums text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-0.5">
                               <span className="sr-only">Edit </span>
                               {session.course.split('—')[0].trim()}
+                              <span className="font-normal"> · {CLASS_TYPE_META[session.type]?.label ?? session.type}</span>
                             </span>
                             <span className="block font-medium text-zinc-900 dark:text-zinc-100 text-xs leading-snug line-clamp-2">{session.title}</span>
                             <span className="mt-1 flex items-center gap-1 text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
@@ -274,6 +366,27 @@ export const CalendarPage: React.FC = () => {
                       ))
                     )}
                   </div>
+
+                  {/* Deadlines due on this day */}
+                  {(deadlines.get(day.date) ?? []).length > 0 && (
+                    <ul aria-label={`Deadlines on ${day.dayName} ${day.dateNumber}`} data-testid="week-deadlines" className="mt-2 space-y-1">
+                      {(deadlines.get(day.date) ?? []).map((a) => (
+                        <li key={a.id}>
+                          <button
+                            type="button"
+                            onClick={() => setDeadlineDialog({ edit: a })}
+                            className="w-full min-h-[44px] flex items-center gap-1.5 rounded-md border border-rose-200 dark:border-rose-900 bg-rose-50/60 dark:bg-rose-950/30 px-2 py-1 text-left text-xs cursor-pointer hover:bg-rose-100/70 dark:hover:bg-rose-950/50"
+                          >
+                            <span className={`flex-1 min-w-0 [overflow-wrap:anywhere] ${a.status === 'completed' ? 'line-through text-zinc-600 dark:text-zinc-400' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                              <span className="sr-only">Deadline: </span>
+                              {a.title}
+                            </span>
+                            {kindOf(a) !== 'assignment' && <KindBadge kind={kindOf(a)} />}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
                 {/* Quick Add slot button */}
@@ -288,6 +401,37 @@ export const CalendarPage: React.FC = () => {
           })}
         </div>
       </div>
+      )}
+
+      <DaySheet
+        date={selectedDate}
+        classes={selectedDate ? classesOn(sessions, selectedDate) : []}
+        deadlines={selectedDate ? (deadlines.get(selectedDate) ?? []) : []}
+        onClose={() => setSelectedDate(null)}
+        onAddDeadline={(date) => {
+          setSelectedDate(null);
+          setDeadlineDialog({ date });
+        }}
+        onAddClass={(dow) => {
+          setSelectedDate(null);
+          openAdd(dow);
+        }}
+        onEditDeadline={(a) => {
+          setSelectedDate(null);
+          setDeadlineDialog({ edit: a });
+        }}
+        onEditClass={(s) => {
+          setSelectedDate(null);
+          openEdit(s);
+        }}
+      />
+
+      <AssignmentModal
+        isOpen={deadlineDialog !== null}
+        onClose={() => setDeadlineDialog(null)}
+        assignmentToEdit={deadlineDialog?.edit ?? null}
+        initialDueDate={deadlineDialog?.date}
+      />
 
       {/* Add Session Modal */}
       {modalOpen && (
@@ -339,6 +483,7 @@ export const CalendarPage: React.FC = () => {
                   type="text"
                   required
                   maxLength={LIMITS.blockCourse}
+                  list="course-suggestions"
                   placeholder="e.g. CS 101"
                   value={course}
                   onChange={(e) => setCourse(e.target.value)}

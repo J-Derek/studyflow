@@ -6,7 +6,8 @@ import {
   Circle, 
   Trash2, 
   Edit3, 
-  CheckSquare
+  CheckSquare,
+  PenLine
 } from 'lucide-react';
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
@@ -14,6 +15,12 @@ import type { Assignment, Subtask } from '../types';
 import { getDaysRemaining } from '../utils/formatters';
 import { LIMITS } from '../utils/limits';
 import { AssignmentModal } from '../components/AssignmentModal';
+import { WritingSpace } from '../components/WritingSpace';
+import { KindBadge } from '../components/KindBadge';
+import { Legend } from '../components/Legend';
+import { celebrate } from '../components/CelebrateBurst';
+import { kindOf } from '../utils/kinds';
+import { progressInfo } from '../utils/progress';
 
 export const AssignmentsPage: React.FC = () => {
   const { assignments, toggleAssignmentComplete, deleteAssignment, restoreAssignment, toggleSubtask, addSubtask } = useStudyFlowStore();
@@ -33,6 +40,8 @@ export const AssignmentsPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  // The assignment whose writing space is open.
+  const [writing, setWriting] = useState<Assignment | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
@@ -165,6 +174,8 @@ export const AssignmentsPage: React.FC = () => {
         </div>
       </div>
 
+      <Legend show={['kinds', 'priority', 'progress']} />
+
       {/* Linear-Tier Unified Issue Matrix Container */}
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark overflow-hidden divide-y divide-zinc-200/70 dark:divide-zinc-800/70 shadow-2xs">
         {filteredAssignments.length === 0 ? (
@@ -179,7 +190,7 @@ export const AssignmentsPage: React.FC = () => {
             </h2>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mt-0.5">
               {assignments.length === 0 
-                ? 'Add your first problem set, paper, or lab report to start tracking your deadlines.' 
+                ? 'Add your first problem set, paper, or lab report, and your exams, tests and readings too, to start tracking your deadlines.' 
                 : 'Adjust your search filters or click "New Assignment" to add an assignments milestone.'}
             </p>
             {assignments.length === 0 && (
@@ -199,6 +210,7 @@ export const AssignmentsPage: React.FC = () => {
             const isCompleted = asg.status === 'completed';
             const { label, isUrgent } = getDaysRemaining(asg.dueDate);
             const effectiveSubtasks: Subtask[] = asg.subtasks ?? [];
+            const progress = progressInfo(asg);
 
             return (
               <div
@@ -211,7 +223,10 @@ export const AssignmentsPage: React.FC = () => {
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 overflow-hidden min-w-0">
                     <button
-                      onClick={() => toggleAssignmentComplete(asg.id)}
+                      onClick={() => {
+                        toggleAssignmentComplete(asg.id);
+                        if (!isCompleted) celebrate(asg.title);
+                      }}
                       className="p-3.5 -m-3.5 text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shrink-0"
                       title={isCompleted ? `Mark "${asg.title}" incomplete` : `Mark "${asg.title}" complete`}
                       aria-label={isCompleted ? `Mark "${asg.title}" incomplete` : `Mark "${asg.title}" complete`}
@@ -235,6 +250,7 @@ export const AssignmentsPage: React.FC = () => {
                       >
                         {asg.title}
                       </span>
+                      {kindOf(asg) !== 'assignment' && <KindBadge kind={kindOf(asg)} />}
                       {asg.sample && (
                         <span className="shrink-0 text-xs font-medium px-1.5 py-0.5 rounded border border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400">
                           Sample
@@ -252,14 +268,17 @@ export const AssignmentsPage: React.FC = () => {
                     </span>
 
                     {/* Progress Percentage */}
-                    <div className="hidden lg:flex items-center gap-1.5 tabular-nums text-xs text-zinc-600 dark:text-zinc-400">
+                    <div
+                      className="hidden lg:flex items-center gap-1.5 tabular-nums text-xs text-zinc-600 dark:text-zinc-400"
+                      title={progress.mode === 'checklist' ? progress.note : 'Progress you set yourself'}
+                    >
                       <div className="w-12 bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
                         <div
                           className="bg-zinc-400 dark:bg-zinc-500 h-full rounded-full"
-                          style={{ width: `${asg.progress}%` }}
+                          style={{ width: `${progress.progress}%` }}
                         />
                       </div>
-                      <span className="tabular-nums">{asg.progress}%</span>
+                      <span className="tabular-nums">{progress.progress}%</span>
                     </div>
 
                     {/* Due Date — clean monospace */}
@@ -298,11 +317,11 @@ export const AssignmentsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="pl-7 pr-2">
+                <div className="pl-7 pr-2 flex items-center justify-between gap-3">
                   <button
                     type="button"
                     onClick={() => handleEdit(asg)}
-                    className="text-left text-xs cursor-pointer min-h-[44px] flex items-center"
+                    className="text-left text-xs cursor-pointer min-h-[44px] flex items-center min-w-0"
                   >
                     {asg.notes ? (
                       <>
@@ -316,6 +335,15 @@ export const AssignmentsPage: React.FC = () => {
                       </>
                     )}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setWriting(asg)}
+                    aria-label={`Write for "${asg.title}"`}
+                    className="shrink-0 inline-flex items-center gap-1.5 min-h-[44px] px-2 rounded text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+                  >
+                    <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
+                    Write
+                  </button>
                 </div>
 
                 {(effectiveSubtasks.length > 0 || addingFor === asg.id) && (
@@ -323,7 +351,7 @@ export const AssignmentsPage: React.FC = () => {
                     {effectiveSubtasks.length > 0 && (
                       <>
                         <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                          Subtasks · {effectiveSubtasks.filter((st) => st.completed).length} of {effectiveSubtasks.length} done
+                          Checklist · {effectiveSubtasks.filter((st) => st.completed).length} of {effectiveSubtasks.length} done. Progress is worked out from these.
                         </div>
                         <ul className="grid grid-cols-1 sm:grid-cols-3 gap-1">
                           {effectiveSubtasks.map((st) => (
@@ -332,7 +360,11 @@ export const AssignmentsPage: React.FC = () => {
                                 <input
                                   type="checkbox"
                                   checked={st.completed}
-                                  onChange={() => toggleSubtask(asg.id, st.id)}
+                                  onChange={() => {
+                                    toggleSubtask(asg.id, st.id);
+                                    // ticking the last open item finishes the assignment
+                                    if (!st.completed && !isCompleted && effectiveSubtasks.filter((x) => !x.completed).length === 1) celebrate(asg.title);
+                                  }}
                                   className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-700 text-blue-600 cursor-pointer"
                                 />
                                 <span
@@ -440,6 +472,8 @@ export const AssignmentsPage: React.FC = () => {
         onClose={() => setModalOpen(false)}
         assignmentToEdit={editingAssignment}
       />
+
+      {writing && <WritingSpace assignment={writing} onClose={() => setWriting(null)} />}
     </div>
   );
 };

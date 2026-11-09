@@ -15,8 +15,15 @@ an in-app **writing space** per assignment with **Word and PDF** export; **timer
 |---|---|
 | Live (merged, rules + app deployed) | everything up to and including **PR #18 (PR2: timer settings per account)** |
 | Merged by Derek (#19, #20; app deploy is Derek's step, no rules change) | **PR3 complete**: Google name and photo; signed-in header on reload; "Signing you in…"; refreshed "Your account" dialog |
-| Branch `claude/audit-fixes` (waiting for Derek) | from the Antigravity audit: grades read from the cloud held to 0-100; Content-Security-Policy as **report-only** (see "Audit verdicts") |
-| Next to build | PR4 to PR10 |
+| Merged by Derek (#21), app deploy is his step | from the Antigravity audit: grades read from the cloud held to 0-100; Content-Security-Policy as **report-only** (see "Audit verdicts") |
+| Branch `claude/pr4-shell` (PR4, waiting for Derek) | page-not-found screen, calm crash screen, offline banner, `/notes` in the sitemap, `docs/SECURITY.md` rewritten for Firebase. **`security.txt` skipped** until Derek picks a contact address |
+| Branch `claude/pr5-legal` (PR5, stacked on PR4, waiting for Derek) | draft legal pages, age question before sign-in, "Delete my account". **Rules change: deploy rules FIRST, then the app** |
+| Branch `claude/pr6-kinds` (PR6, stacked on PR5) | kinds of deadline (exam, test, reading, project), progress from the checklist, celebration, keys, class colours. **Rules change (additive `kind`): deploy rules FIRST** |
+| Branch `claude/pr7-calendar` (PR7, stacked on PR6; **no rules change**) | Week/Month toggle, tap a day, deadlines on the timetable, "Due soon" strip |
+| Branch `claude/pr8-courses` (PR8, stacked on PR7; **no rules change**) | Grades tab becomes Courses (course list, course detail, grades calculator below); `/grades` still works |
+| Branch `claude/pr9-writing` (PR9, stacked on PR8) | writing space per assignment with Word and PDF export. **Rules change (new `drafts` collection): deploy rules FIRST**; adds the `docx` package |
+| Branch `claude/pr10-semesters` (PR10, the last one, stacked on PR9) | semester/term/trimester wording, "Start a new semester" archive with a review screen, Past semesters. **Rules change: deploy rules FIRST** |
+| Next to build | nothing planned: Round 2 is complete. Derek's list of new findings after testing is next |
 
 ### What is merged AND deployed
 | PR | What it did |
@@ -128,11 +135,111 @@ in with real Google (ad blocker on and off) on the live site with the browser co
 up, add the address to the matching directive in `vercel.json`. The theme script in `index.html` is allowed by its hash: `src/utils/csp.test.ts`
 fails if that script is edited without refreshing the two hashes (LF and CRLF forms).
 
-### Next: PR4 to PR10 (each from the latest `origin/main`, only after Derek merges the one before)
-PR3 is merged. PR4 404 + error boundary + offline page + rewrite
-`docs/SECURITY.md` (still describes Supabase) + `security.txt` + `/notes` in the sitemap. PR5 legal pages (privacy, terms, children, storage/cookies, accessibility), age step, delete-my-account;
-**research Kenya DPA 2019, GDPR, COPPA, UK AADC first and mark everything as a draft for a Kenyan lawyer**. PR6 item kinds (exam, test, reading, project), progress from checklists, happy completion
-animation, legends/keys, nudges that students can add exams and readings. PR7 month calendar + deadlines on the timetable + pending items everywhere. PR8 Grades becomes Courses.
+### PR4 (branch `claude/pr4-shell`)
+- `getTabFromPath` (`store/studyFlowStore.ts`) now answers `'notfound'` for an address the app does not have (it used to quietly show Today);
+  `pages/NotFound.tsx` ("We can't find that page", Go to Today, links to the six pages, `noindex` while shown). Vercel answers every address
+  without a dot with the app, so this screen is how unknown addresses are handled.
+- `components/ErrorBoundary.tsx`: around the page area (menus keep working; the `key` retries when another page is opened) and around the whole
+  app in `main.tsx`. "Reload" and "Download my data", which reads the saved copy on this device through `utils/exportBackup.ts`
+  (`backupFromSavedCopy`) and so works even when the store is the broken part. The Your account dialog uses the same `buildBackup`/`downloadBackup`.
+- `components/OfflineBanner.tsx` (shared `lib/useOnline.ts`, also used by the Saved badge and the account dialog). There is **no offline page**: the app
+  has no service worker, so a first visit with no connection cannot load anything. A service worker is a bigger decision, not done.
+- Sitemap has `/notes`. `docs/SECURITY.md` is rewritten: every row names its test, and the "known limits" list is honest (no account deletion, no
+  security.txt, headers not auto-tested).
+- Tests: `e2e/app-shell.spec.ts` (404 light/dark with axe and 44px, Back from 404, a forced crash on Notes with the menus still working and the
+  download containing the record, offline banner), unit `tabFromPath.test.ts`, `exportBackup.test.ts`.
+- Gap found, not fixed: a bad value saved in `localStorage` would crash the same page again after Reload (the error screen's Download still works).
+- To do when Derek chooses a contact: `app/public/.well-known/security.txt` (RFC 9116: Contact, Expires, Preferred-Languages) and a link in SECURITY.md section 6.
+
+### PR5 (branch `claude/pr5-legal`, stacked on `claude/pr4-shell`)
+**Deploy order: rules first** (`cd app`, `npx firebase deploy --config ../firebase.json --only firestore:rules,firestore:indexes --project studyflow-app-8f038`), **then** `npx vercel --prod`.
+Reason: the app now writes `ageConfirmed` in the profile; the old rules reject unknown keys, so a profile save would fail until the rules are live.
+- Research and honest gaps: `docs/COMPLIANCE.md` (I could not read the Kenyan Act or the ODPC notes as text: age of a "child", registration list and
+  s.33 wording are for a lawyer to confirm). Open questions there: contact address, controller name, Firestore region, guest data clean-up.
+- Pages: `src/legal/*.md` (privacy, terms, children, storage, accessibility) loaded lazily by `pages/LegalPage.tsx` through `components/MiniMarkdown.tsx` and
+  `utils/miniMarkdown.ts` (no HTML is ever produced, unsafe link addresses are dropped; PR9 reuses the parser). Routes `/privacy` etc. in
+  `store/studyFlowStore.ts` (`LegalTab`, `LEGAL_TABS`), footer `components/LegalFooter.tsx`, sitemap, Help and Your account link to them. Each shows a **Draft** notice.
+  Placeholders on purpose: "Contact address: to be added before launch", "Data location: to be confirmed".
+- Age question: `components/AgeGateDialog.tsx` + `lib/ageGate.ts` (promise bridge) + `utils/ageGate.ts`; `lib/authActions.ts` `signInOrLinkWithGoogle` asks first.
+  Under 13: no account, carry on as guest. 13-17: guardian tick. 18+: continue. Kept in `localStorage` key `studyflow_age_confirmed`, copied to the account
+  (`ageConfirmed` map on the user doc, rules `isValidAgeConfirmed`: band never "under13", 13-17 needs `guardian == true`), forgotten at sign-out
+  (`wipeLocalUserData`, except while a sign-in reloads the page). Tests that click a sign-in button call `e2e/ageHelper.ts` `continueThroughAgeGate`.
+  Tests calling `__auth.signInOrLinkWithGoogle` directly skip the question (they use `lib/auth`, not `lib/authActions`).
+- Delete my account: `lib/auth.ts` `deleteMyAccount` (Google re-sign-in, flush writes, stop listeners, `services/accountDeletion.ts` `deleteAllUserData`, `deleteUser`,
+  wipe, reload). `accountDeletion.test.ts` fails if `firestore.rules` gets a collection the list does not name. **Anyone adding a collection (PR9 drafts, PR10 semesters)
+  must add it to `ACCOUNT_COLLECTIONS`.** Guests have no delete button.
+- Safari risk (untested): the Google pop-up now opens after the age dialog's Continue click plus an async import; Safari is strict about pop-ups after waits.
+- Tests: `e2e/legal-pages.spec.ts`, `age-gate.spec.ts`, `account-deletion.spec.ts`, unit `miniMarkdown`, `ageGate`, `accountDeletion`, 4 rules tests.
+
+### PR6 (branch `claude/pr6-kinds`, stacked on `claude/pr5-legal`)
+**Deploy order: rules first** (additive optional `kind` on assignments; the app only writes it for non-default kinds, but older rules would reject it), then the app.
+- `kind` (`assignment|exam|test|reading|project`, missing = assignment): `types`, `firestore.rules` (`kind in [...]`), `firestoreMappers.ts` (stored only when not
+  'assignment'; unknown values read as none), `backupValidator.ts` (kept, default dropped, unknown refused), rules tests, mapper and backup tests.
+  `utils/kinds.ts` holds the labels, hints, badge colours and the timetable class-type colours.
+- Picker: `components/KindPicker.tsx` in the add/edit dialog and the Today first-deadline card, with a hint line that nudges adding exams, tests, readings.
+  Badge `components/KindBadge.tsx` on the Assignments rows and Today (shown only for non-default kinds). Empty Assignments wording mentions exams and readings.
+- Progress (`utils/progress.ts`): with a checklist, progress comes from the ticks ("Based on your checklist: 2 of 5 done"), no slider; 100% only when all are ticked.
+  Without one, the slider stays. The edit dialog no longer sends a number for checklist items and the store ignores one if sent. Un-marking done recalculates (`afterUncomplete`:
+  from the ticks, at most 99, otherwise the old 50). Marking done with open items shows 100% and keeps the ticks as they are.
+- Celebration: `components/CelebrateBurst.tsx`, `celebrate(title)` called from mark-done on Assignments and Today, the edit dialog (slider to 100), and ticking the last checklist item.
+  Confetti is loaded on demand and skipped for reduced motion; the message is in a polite live region and always shown.
+- Keys: `components/Legend.tsx` ("What do the labels mean?", closed by default, 44px summary) on Assignments (kinds, priority, progress) and Timetable (class colours).
+  Class-type colours are now really applied (left edge of each block + the type word; `dark:` variants are needed because dark border utilities otherwise win).
+- Bug fixed on the way: the add/edit dialog could grow taller than a short screen and hide its buttons; it now scrolls inside the screen.
+- **Known issue, found and NOT fixed (real, pre-existing):** ticking two checklist items very fast can lose one. An old echo of the app's own save arrives after the next tick and rolls the
+  list back on screen; the next tick then saves from the rolled-back list. Seen about 1 in 7 runs when a test ticked without waiting. A fix that ignored snapshots holding pending writes
+  (like the timer listener does) broke other flows (notes on a second device, reload cases) and was reverted. A proper fix needs care in `services/firestoreSync.ts` listeners (merge by id/updatedAt instead of replacing the list). Tests wait for `isSyncing` to settle between ticks.
+- Not done: priority is still only a word and a filter (the key says so); reading/exam nudges on the timetable come with PR7 (deadlines on the timetable).
+- Tests: `e2e/kinds-progress.spec.ts` (6), unit `progress.test.ts`, mapper, backup, 3 rules tests.
+
+### PR7 (branch `claude/pr7-calendar`, stacked on `claude/pr6-kinds`; no rules change, deploy is the app only)
+- `utils/calendarMonth.ts`: `monthGrid` (Monday-first full rows), `classesOn`/`occurrencesInRange` (classes repeat weekly by weekday), `deadlinesByDate`, `selectPendingDeadlines`
+  (the one shared "still to do, soonest first" rule; Today and the Timetable use it, Courses will in PR8), date helpers. Plain "YYYY-MM-DD" text, no time zones.
+- `pages/Calendar.tsx`: Week/Month toggle (`aria-pressed`), month stepper, deadlines listed inside each week column (tap to edit), a "Due soon" strip, key with a month section.
+  `components/MonthGrid.tsx` (each day is one button, 56px on phones, accessible name like "Tuesday 17 November, 1 class, 2 deadlines" in an sr-only span so the visible
+  numbers cannot mismatch), `components/DaySheet.tsx` (tap a day: its deadlines and classes, "Add a deadline for this day", "Add a class on this weekday").
+  `AssignmentModal` got an optional `initialDueDate`.
+- Tests: `e2e/calendar-month.spec.ts` (4: week deadlines and strip, month counts/stepping/toggle back, tap-a-day and quick add, phone 44px + axe light/dark + sheet fits), unit `calendarMonth.test.ts`.
+- Not done: notes are not on the calendar; deadlines are not drawn on the timetable as time blocks (they are listed per day).
+
+### PR8 (branch `claude/pr8-courses`, stacked on `claude/pr7-calendar`; no rules change, deploy is the app only)
+- The nav item is **Courses** (`NavigationTab` 'grades' became 'courses'; still six links). `/courses` is the page; `/grades` (old bookmarks, the sitemap) is the same page and the
+  address bar is rewritten to `/courses` (`getTabFromPath`, a `replaceState` in `App.tsx`).
+- `pages/Courses.tsx`: a card per course (to-do count, classes, notes, next deadline, grade so far); tap one for `CourseDetail` (work still to do, finished count, classes by weekday, notes, grade);
+  the old grades calculator (`pages/Grades.tsx`, now `embedded` with an h2 "Grades and GPA") sits under the list, where courses are added and weights/scores set.
+- `utils/courses.ts`: items are matched to a course **by the code text** before the dash, ignoring case and spaces (`belongsToCourse`), so everything entered before Courses existed is covered.
+- **Deliberate scope cut:** no `courseId` field on assignments/classes/notes and no CoursePicker. That would have meant rules + mapper + backup changes on three collections, and it only matters when a course
+  is renamed (a renamed code detaches its items until they are edited). Instead `components/CourseSuggestions.tsx` offers the codes already in use (a `<datalist>`) in the assignment, first-deadline and class forms.
+  If you want ids later: optional `courseId` on the three types, additive rules, mappers, backup, tests, and `belongsToCourse` preferring the id.
+- Tests: `e2e/courses.spec.ts` (5), unit `courses.test.ts`, `tabFromPath.test.ts` updated.
+
+### PR9 (branch `claude/pr9-writing`, stacked on `claude/pr8-courses`)
+**Deploy order: rules first** (new `users/{uid}/drafts/{assignmentId}`: `id`, `body` up to 200000, `format == 'markdown'`, `editedAt`, server `updatedAt`), then the app. New dependency `docx` (loaded only when "Word" is pressed) and dev dependency `fflate` (tests unzip the .docx).
+- Data: `Draft` type; `drafts` in the store (persisted, synced like notes by a listener in `firestoreSync.ts`, `saveDraft` removes the draft when the text is empty), mappers `draftToDoc`/`docToDraft`,
+  rules + 4 rules tests, backup file `ledger.drafts` (validated, capped at 500; older files without it still restore), `ACCOUNT_COLLECTIONS` includes `drafts` (the guard test passes), Download my data and the crash screen's download include drafts.
+- UI: `components/WritingSpace.tsx` (full-screen dialog: textarea, buttons for heading/bold/italic/lists via `utils/markdownEdit.ts`, live preview through `MiniMarkdown`, autosave 1 s after typing stops and on close/Escape/page hide, word count,
+  Write/Preview tabs on phones). Opened from a pen button on every Assignments row and a "Write" button on Today's Next up.
+- Word: `lib/exportDocx.ts` (`buildDocx`: title, headings, bold/italic, bullet and numbered lists that restart, web links; markup is plain text). PDF: the page prints a hidden copy (`#print-root`, rules in `index.css`) black on white; the browser's print dialog saves as PDF.
+- Known limits: a guest who signs in to an EXISTING account does not carry drafts over (the merge copies assignments, classes, grades and notes only); a backup with several huge drafts can pass the 5 MB restore limit; there is no version history; PDF depends on the browser's print dialog (phones differ).
+- Tests: `e2e/writing-space.spec.ts` (6: write/format/autosave/reload, reaches the account and HTML stays text, real .docx with the text, print view is black on white and `page.pdf()` works, phone tabs/44px/axe light+dark, Today button + Escape),
+  units `markdownEdit`, `exportDocx`, mapper, backup, 4 rules tests.
+
+### PR10 (branch `claude/pr10-semesters`, stacked on `claude/pr9-writing`)
+**Deploy order: rules first.** Additive rules: optional `periodLabel` on the user doc; new `users/{uid}/semesters/{id}` (`id`, `name`, `label`, `archivedAt`, `counts {assignments,sessions,grades,notes}`, server `updatedAt`);
+optional `archivedPeriod` (1-60 chars) on assignments, sessions, grades and notes. No backfill is needed: a missing `archivedPeriod` means "current".
+- Model: archived items stay in their own collections with `archivedPeriod` set. The four listeners in `firestoreSync.ts` split what arrives into current (the arrays everything else uses, unchanged) and
+  `archived.{assignments,sessions,grades,notes}` (new store field), so no existing screen needed touching and nothing archived leaks into lists, counts, GPA, the timetable or the .ics export. `periods` holds the semester records.
+- `utils/periods.ts` (`planArchive`, labels, ids): finished work and anything not ticked is archived; unfinished work and notes stay only when ticked; the timetable and courses stay only when chosen. A kept course has its scores cleared and its old
+  copy goes to the archive under id `<id>~<periodId>`. `store.startNewPeriod` applies the plan locally at once, then `commitArchive` writes in batches of 400 (idempotent: whole-document sets, no deletes; the period record goes in last).
+- Screens: `components/NewSemesterDialog.tsx` (name, "Called a" semester/term/trimester, tick lists, keep timetable/courses, live summary, done message) and `components/PastSemestersDialog.tsx` (read-only record), both opened from "Semesters and terms" in Your account.
+  The profile has "Your school calls it a ..." and its fields read "Current term", "Term starts", and so on. Both dialogs render in a portal; Your account lets go of the keyboard while they are open.
+- Backup: `ledger.periods` and the `archivedPeriod` tags are in the file and restored; archived items are part of "Download my data" and the crash-screen download. "Delete all my data" and "Delete my account" remove archived items and semester records too (`ACCOUNT_COLLECTIONS` has `semesters`).
+- **Known limits:** the 500-document list cap per collection counts archived items too (the listeners read everything), so after many semesters a collection could pass 500 and the oldest items stop loading; a fix is querying only current items (needs `archived:false` backfilled) and loading past semesters on demand.
+  "Semester" wording elsewhere (Help text, legal pages, the sample profile default "Current semester") is not yet switched to the chosen word. A guest signing in to an existing account does not carry archives over (same as drafts).
+- Tests: `e2e/new-semester.spec.ts` (4: the whole flow with carry choices, cloud check and reload; keep timetable and courses; phone and axe light/dark; profile word), `account-deletion.spec.ts` now seeds drafts and semesters, units `periods`, mapper, backup, 4 rules tests.
+
+### Round 2 is finished: next is whatever Derek finds when he tests PR3 to PR10
+Merge order: PR4, PR5, PR6, PR7, PR8, PR9, PR10 (all stacked). Rules to deploy first: PR5, PR6, PR9, PR10 (each additive; deploying the final rules file once, before the final app, covers all of them).
 PR9 writing space + Word/PDF export. PR10 term vs semester + "Start a new semester" archive. Every PR that changes synced data touches: `types`, `firestore.rules`, `firestoreMappers.ts`,
 `backupValidator.ts`, rules tests, mapper tests.
 

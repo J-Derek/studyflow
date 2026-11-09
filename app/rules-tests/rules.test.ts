@@ -178,6 +178,30 @@ describe('user profile', () => {
     await assertFails(setDoc(ref(), user({ onboarding: { dismissed: 'yes' } })));
     await assertFails(setDoc(ref(), user({ onboarding: { dismissed: true, extra: 1 } })));
   });
+  describe('ageConfirmed', () => {
+    const at = '2030-05-06T07:08:09.000Z';
+    it('accepts an adult answer and a 13 to 17 answer with the guardian tick', async () => {
+      await assertSucceeds(setDoc(ref(), user({ ageConfirmed: { band: '18+', guardian: false, at } })));
+      await assertSucceeds(setDoc(ref(), user({ ageConfirmed: { band: '13-17', guardian: true, at } })));
+    });
+    it('never stores under 13, and refuses 13 to 17 without the guardian tick', async () => {
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: 'under13', guardian: true, at } })));
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: '12', guardian: true, at } })));
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: '13-17', guardian: false, at } })));
+    });
+    it('rejects a birth date, extra keys, missing keys, wrong types and an oversized time', async () => {
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: '18+', guardian: false, at, birthDate: '2001-01-01' } })));
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: '18+', guardian: false } })));
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: '18+', guardian: 'no', at } })));
+      await assertFails(setDoc(ref(), user({ ageConfirmed: { band: '18+', guardian: false, at: 'x'.repeat(41) } })));
+      await assertFails(setDoc(ref(), user({ ageConfirmed: '18+' })));
+    });
+    it('can be added to an existing profile with a merge, and nobody else can add it', async () => {
+      await assertSucceeds(setDoc(ref(), user()));
+      await assertSucceeds(setDoc(ref(), { ageConfirmed: { band: '18+', guardian: false, at }, updatedAt: serverTimestamp() }, { merge: true }));
+      await assertFails(setDoc(doc(asBob(), 'users', ALICE), { ageConfirmed: { band: '18+', guardian: false, at }, updatedAt: serverTimestamp() }, { merge: true }));
+    });
+  });
   it('rejects a client-sent updatedAt', async () => {
     await assertFails(setDoc(ref(), user({ updatedAt: Timestamp.fromMillis(1) })));
   });
@@ -221,6 +245,17 @@ describe('assignments: shape', () => {
         })
       )
     );
+  });
+  it('accepts every kind, and rejects an unknown one or a wrong type', async () => {
+    for (const kind of ['assignment', 'exam', 'test', 'reading', 'project']) {
+      await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ kind, updatedAt: serverTimestamp() })));
+    }
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ kind: 'homework', updatedAt: serverTimestamp() })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ kind: 5, updatedAt: serverTimestamp() })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ kind: ['exam'], updatedAt: serverTimestamp() })));
+  });
+  it('still accepts an assignment with no kind (everything made before kinds existed)', async () => {
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ updatedAt: serverTimestamp() })));
   });
   it('rejects unknown keys', async () => {
     await assertFails(setDoc(aDoc(asAlice()), asg({ role: 'admin' })));
@@ -343,6 +378,77 @@ describe('notes', () => {
   it('caps list queries', async () => {
     await assertSucceeds(getDocs(query(collection(asAlice(), 'users', ALICE, 'notes'), limit(500))));
     await assertFails(getDocs(query(collection(asAlice(), 'users', ALICE, 'notes'), limit(501))));
+  });
+});
+
+describe('past semesters (archiving)', () => {
+  const period = (over: Record<string, unknown> = {}) => ({
+    id: 'p-2026-11-09-ab3x', name: 'Semester 2, 2026', label: 'semester', archivedAt: '2026-11-09T10:00:00.000Z',
+    counts: { assignments: 3, sessions: 2, grades: 1, notes: 4 }, updatedAt: serverTimestamp(), ...over
+  });
+  const pref = (db: Db = asAlice(), id = 'p-2026-11-09-ab3x') => doc(db, 'users', ALICE, 'semesters', id);
+  it('lets the owner keep a past semester record, and nobody else see it', async () => {
+    await assertSucceeds(setDoc(pref(), period()));
+    await assertSucceeds(getDoc(pref()));
+    await assertFails(getDoc(pref(asBob())));
+    await assertFails(setDoc(pref(asBob()), period()));
+    await assertFails(getDoc(pref(anon())));
+    await assertSucceeds(deleteDoc(pref()));
+  });
+  it('rejects a bad label, extra keys, odd counts, a wrong id and a client-sent updatedAt', async () => {
+    await assertFails(setDoc(pref(), period({ label: 'year' })));
+    await assertFails(setDoc(pref(), period({ isAdmin: true })));
+    await assertFails(setDoc(pref(), period({ counts: { assignments: -1, sessions: 0, grades: 0, notes: 0 } })));
+    await assertFails(setDoc(pref(), period({ counts: { assignments: 1, sessions: 0, grades: 0 } })));
+    await assertFails(setDoc(pref(), period({ counts: { assignments: 1.5, sessions: 0, grades: 0, notes: 0 } })));
+    await assertFails(setDoc(pref(), period({ id: 'other' })));
+    await assertFails(setDoc(pref(), period({ name: '' })));
+    await assertFails(setDoc(pref(), period({ updatedAt: Timestamp.fromMillis(1) })));
+  });
+  it('lets assignments, classes, courses and notes carry the period they were archived into, and nothing odd', async () => {
+    const id = 'p-2026-11-09-ab3x';
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: id })));
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'sessions', 's1'), ses({ archivedPeriod: id })));
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'grades', 'g1'), { id: 'g1', courseCode: 'C', courseName: 'N', credits: 3, targetLetter: 'A', color: '#000', assessments: [], updatedAt: serverTimestamp(), archivedPeriod: id }));
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'notes', 'n1'), { id: 'n1', title: 'T', body: '', course: '', pinned: false, createdAt: 'z', editedAt: 'z', updatedAt: serverTimestamp(), archivedPeriod: id }));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: 5 })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: '' })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: 'x'.repeat(61) })));
+  });
+  it('accepts a semester, term or trimester label on the profile, and nothing else', async () => {
+    const user = (over: Record<string, unknown> = {}) => ({ uid: ALICE, name: 'A', university: 'U', program: 'P', semester: 'S', updatedAt: serverTimestamp(), ...over });
+    for (const periodLabel of ['semester', 'term', 'trimester']) await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE), user({ periodLabel })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE), user({ periodLabel: 'year' })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE), user({ periodLabel: 5 })));
+  });
+});
+
+describe('drafts (writing space)', () => {
+  const draft = (over: Record<string, unknown> = {}) => ({ id: 'a1', body: 'Hello', format: 'markdown', editedAt: '2030-01-01T00:00:00.000Z', updatedAt: serverTimestamp(), ...over });
+  const ref = (db: Db = asAlice(), id = 'a1') => doc(db, 'users', ALICE, 'drafts', id);
+  it('lets the owner write, read, edit and delete a draft, up to 200000 characters', async () => {
+    await assertSucceeds(setDoc(ref(), draft()));
+    await assertSucceeds(getDoc(ref()));
+    await assertSucceeds(setDoc(ref(), draft({ body: 'x'.repeat(200000) })));
+    await assertSucceeds(deleteDoc(ref()));
+  });
+  it('rejects a body over 200000 characters, a bad format, extra keys, a wrong id and a client-sent updatedAt', async () => {
+    await assertFails(setDoc(ref(), draft({ body: 'x'.repeat(200001) })));
+    await assertFails(setDoc(ref(), draft({ format: 'html' })));
+    await assertFails(setDoc(ref(), draft({ isAdmin: true })));
+    await assertFails(setDoc(ref(), draft({ id: 'other' })));
+    await assertFails(setDoc(ref(), draft({ body: 5 })));
+    await assertFails(setDoc(ref(), draft({ updatedAt: Timestamp.fromMillis(1) })));
+  });
+  it('keeps one student drafts from every other student and from signed-out visitors', async () => {
+    await assertSucceeds(setDoc(ref(), draft()));
+    await assertFails(getDoc(ref(asBob())));
+    await assertFails(setDoc(ref(asBob()), draft()));
+    await assertFails(getDoc(ref(anon())));
+  });
+  it('caps list queries', async () => {
+    await assertSucceeds(getDocs(query(collection(asAlice(), 'users', ALICE, 'drafts'), limit(500))));
+    await assertFails(getDocs(query(collection(asAlice(), 'users', ALICE, 'drafts'), limit(501))));
   });
 });
 

@@ -6,6 +6,7 @@ import './index.css'
 import App from './App.tsx'
 import { useStudyFlowStore } from './store/studyFlowStore'
 import { startTimerScheduler } from './lib/timerScheduler'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 if (typeof window !== 'undefined') {
   startTimerScheduler();
@@ -36,6 +37,8 @@ if (typeof window !== 'undefined') {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary scope="app">
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )

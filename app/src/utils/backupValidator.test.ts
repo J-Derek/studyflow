@@ -181,6 +181,69 @@ describe('backupValidator', () => {
     }
   });
 
+  it('keeps a kind through a backup, drops the default one, and refuses an unknown one', () => {
+    const withKind = (kind: unknown) => {
+      const p = JSON.parse(JSON.stringify(sampleValidPayload));
+      p.ledger.assignments[0].kind = kind;
+      return validateBackupJson(JSON.stringify(p));
+    };
+    const exam = withKind('exam');
+    expect(exam.success).toBe(true);
+    if (exam.success) expect(exam.data.ledger.assignments[0].kind).toBe('exam');
+    const plain = withKind('assignment');
+    expect(plain.success).toBe(true);
+    if (plain.success) expect(plain.data.ledger.assignments[0].kind).toBeUndefined();
+    expect(withKind('homework').success).toBe(false);
+    expect(withKind(7).success).toBe(false);
+  });
+
+  it('keeps drafts through a backup, and refuses a malformed or oversized list', () => {
+    const withDrafts = (drafts: unknown) => {
+      const p = JSON.parse(JSON.stringify(sampleValidPayload));
+      p.ledger.drafts = drafts;
+      return validateBackupJson(JSON.stringify(p));
+    };
+    const ok = withDrafts([{ id: 'asg-1', body: 'My essay', editedAt: '2030-01-01T00:00:00.000Z', extra: 'dropped' }]);
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data.ledger.drafts).toEqual([{ id: 'asg-1', body: 'My essay', editedAt: '2030-01-01T00:00:00.000Z' }]);
+    expect(validateBackupJson(JSON.stringify(sampleValidPayload)).success).toBe(true); // older files have no drafts
+    expect(withDrafts('nope').success).toBe(false);
+    expect(withDrafts([{ id: '', body: 'x', editedAt: 'z' }]).success).toBe(false);
+    expect(withDrafts([{ id: 'a', body: 5, editedAt: 'z' }]).success).toBe(false);
+    expect(withDrafts([{ id: 'a', body: 'x', editedAt: 'z' }, { id: 'a', body: 'y', editedAt: 'z' }]).success).toBe(false);
+  });
+
+  it('keeps archived items with their period, and the list of past semesters', () => {
+    const p = JSON.parse(JSON.stringify(sampleValidPayload));
+    p.ledger.assignments[0].archivedPeriod = 'p1';
+    p.ledger.sessions[0].archivedPeriod = 'p1';
+    p.ledger.grades[0].archivedPeriod = 'p1';
+    p.ledger.periods = [{ id: 'p1', name: 'Semester 1', label: 'term', archivedAt: '2026-01-01T00:00:00.000Z', counts: { assignments: 1, sessions: 1, grades: 1, notes: 0 } }];
+    const r = validateBackupJson(JSON.stringify(p));
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.ledger.assignments[0].archivedPeriod).toBe('p1');
+      expect(r.data.ledger.sessions[0].archivedPeriod).toBe('p1');
+      expect(r.data.ledger.grades[0].archivedPeriod).toBe('p1');
+      expect(r.data.ledger.periods).toEqual(p.ledger.periods);
+    }
+  });
+  it('refuses a malformed or oversized list of past semesters and cleans odd values', () => {
+    const withPeriods = (periods: unknown) => {
+      const p = JSON.parse(JSON.stringify(sampleValidPayload));
+      p.ledger.periods = periods;
+      return validateBackupJson(JSON.stringify(p));
+    };
+    expect(withPeriods('x').success).toBe(false);
+    expect(withPeriods([{ id: '', name: 'a', archivedAt: 'z' }]).success).toBe(false);
+    expect(withPeriods([{ id: 'p', name: 5, archivedAt: 'z' }]).success).toBe(false);
+    expect(withPeriods(Array.from({ length: 101 }, (_, i) => ({ id: `p${i}`, name: 'n', archivedAt: 'z' }))).success).toBe(false);
+    expect(withPeriods([{ id: 'p', name: 'n', archivedAt: 'z' }, { id: 'p', name: 'm', archivedAt: 'z' }]).success).toBe(false);
+    const ok = withPeriods([{ id: 'p', name: 'n', label: 'year', archivedAt: 'z', counts: { assignments: -3, sessions: 99999 } }]);
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data.ledger.periods![0]).toMatchObject({ label: 'semester', counts: { assignments: 0, sessions: 5000, grades: 0, notes: 0 } });
+  });
+
   it('handles empty or malformed JSON syntax gracefully', () => {
     expect(validateBackupJson('').success).toBe(false);
     expect(validateBackupJson('{ broken json').success).toBe(false);

@@ -45,10 +45,22 @@ export const Header: React.FC<HeaderProps> = ({
         return 'Timetable';
       case 'timer':
         return 'Focus timer';
-      case 'grades':
-        return 'Grades';
+      case 'courses':
+        return 'Courses';
       case 'notes':
         return 'Notes';
+      case 'notfound':
+        return 'Page not found';
+      case 'privacy':
+        return 'Privacy';
+      case 'terms':
+        return 'Terms of use';
+      case 'children':
+        return 'Children and parents';
+      case 'storage':
+        return 'Storage on your device';
+      case 'accessibility':
+        return 'Accessibility';
       default:
         return 'StudyFlow';
     }

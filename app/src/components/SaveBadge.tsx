@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useSyncErrors } from '../lib/syncErrors';
+import { useOnline } from '../lib/useOnline';
 import { getSaveCopy, getSaveState, type SaveState } from '../utils/saveStatus';
 
 const STYLE: Record<SaveState, { box: string; dot: string }> = {
@@ -18,18 +19,7 @@ const STYLE: Record<SaveState, { box: string; dot: string }> = {
 export const SaveBadge: React.FC = () => {
   const { isSyncing, userId, isAnonymous } = useStudyFlowStore();
   const errors = useSyncErrors();
-  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
-
-  useEffect(() => {
-    const on = () => setIsOnline(true);
-    const off = () => setIsOnline(false);
-    window.addEventListener('online', on);
-    window.addEventListener('offline', off);
-    return () => {
-      window.removeEventListener('online', on);
-      window.removeEventListener('offline', off);
-    };
-  }, []);
+  const isOnline = useOnline();
 
   const isSignedIn = !isAnonymous;
   const state = getSaveState({ isOnline, isSyncing, errorCount: errors.length, hasAccount: userId !== null, isSignedIn });

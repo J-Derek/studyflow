@@ -5,6 +5,7 @@ import {
   ArrowRight,
   Flame,
   Pencil,
+  PenLine,
   Plus,
 } from 'lucide-react';
 import { EmptyIllustration } from '../components/EmptyIllustration';
@@ -15,6 +16,11 @@ import { calculateCumulativeGpa, getAcademicStanding } from '../utils/academicCa
 import type { Assignment } from '../types';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { FirstDeadlineCard } from '../components/FirstDeadlineCard';
+import { KindBadge } from '../components/KindBadge';
+import { WritingSpace } from '../components/WritingSpace';
+import { celebrate } from '../components/CelebrateBurst';
+import { kindOf } from '../utils/kinds';
+import { selectPendingDeadlines } from '../utils/calendarMonth';
 import { SignInButton } from '../components/SignInButton';
 import { GettingStartedChecklist } from '../components/GettingStartedChecklist';
 
@@ -32,6 +38,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   // The assignment being edited from this screen (opens the same dialog as the Assignments page).
   const [editing, setEditing] = useState<Assignment | null>(null);
+  const [writing, setWriting] = useState<Assignment | null>(null);
   // If the assignment is deleted elsewhere while its dialog is open, close the dialog rather than recreate it.
   const editingStillExists = !editing || assignments.some((a) => a.id === editing.id);
   // Right after the very first assignment is saved, say what happened and where to change it.
@@ -61,9 +68,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const todayLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
   // Urgent / Upcoming assignments sorted by due date
-  const urgentAssignments = [...pendingAssignments]
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-    .slice(0, 4);
+  const urgentAssignments = selectPendingDeadlines(pendingAssignments).slice(0, 4);
   const nextUp = urgentAssignments[0];
   const nextUpDue = nextUp ? getDaysRemaining(nextUp.dueDate) : { label: '', isUrgent: false };
 
@@ -147,6 +152,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span>{nextUp.course.split('—')[0].trim()}</span>
             <span aria-hidden="true">·</span>
             <span className={`tabular-nums font-medium ${nextUpDue.isUrgent ? 'text-red-600 dark:text-red-400' : ''}`}>{nextUpDue.label}</span>
+            {kindOf(nextUp) !== 'assignment' && <KindBadge kind={kindOf(nextUp)} />}
           </p>
           {nextUp.notes && (
             <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap line-clamp-3">{nextUp.notes}</p>
@@ -154,7 +160,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="mt-5 flex flex-wrap gap-2.5">
             <button
               type="button"
-              onClick={() => toggleAssignmentComplete(nextUp.id)}
+              onClick={() => {
+                toggleAssignmentComplete(nextUp.id);
+                celebrate(nextUp.title);
+              }}
               className="inline-flex items-center gap-2 px-4 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium cursor-pointer"
             >
               <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
@@ -167,6 +176,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
             >
               <Pencil className="h-4 w-4" aria-hidden="true" />
               <span>Edit</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setWriting(nextUp)}
+              className="inline-flex items-center gap-2 px-4 min-h-[44px] rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-100 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer"
+            >
+              <PenLine className="h-4 w-4" aria-hidden="true" />
+              <span>Write</span>
             </button>
           </div>
         </section>
@@ -254,7 +271,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   >
                     <div className="flex items-center gap-2 overflow-hidden min-w-0">
                       <button
-                        onClick={() => toggleAssignmentComplete(asg.id)}
+                        onClick={() => {
+                          toggleAssignmentComplete(asg.id);
+                          celebrate(asg.title);
+                        }}
                         className="min-h-[44px] min-w-[44px] flex items-center justify-center -my-2 -ml-2 text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shrink-0 cursor-pointer"
                         title={`Mark "${asg.title}" complete`}
                         aria-label={`Mark "${asg.title}" complete`}
@@ -270,6 +290,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           {asg.title}
                         </span>
+                        {kindOf(asg) !== 'assignment' && <KindBadge kind={kindOf(asg)} />}
 
                         {asg.notes && (
                           <span className="text-xs text-zinc-600 dark:text-zinc-400 truncate hidden md:inline">
@@ -363,6 +384,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }}
         assignmentToEdit={editing}
       />
+
+      {writing && <WritingSpace assignment={writing} onClose={() => setWriting(null)} />}
     </div>
   );
 };

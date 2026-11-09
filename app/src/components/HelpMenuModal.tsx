@@ -99,10 +99,10 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
         'Honors ranges shown as projections, not official standing'
       ],
       action: () => {
-        setActiveTab('grades');
+        setActiveTab('courses');
         onClose();
       },
-      actionLabel: 'Open grades'
+      actionLabel: 'Open courses'
     }
   ];
 
@@ -338,7 +338,8 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                   <li>PDFs you add to a note stay on this device only. They are never uploaded, do not appear on your other devices, and are removed when you sign out or delete all your data.</li>
                   <li>Only your own account can read or write your records. Other students cannot see them.</li>
                   <li>There are no ads and no analytics. The site is hosted on Vercel, which keeps ordinary server logs.</li>
-                  <li>Backup exports everything to a file you keep. “Delete all my data” removes your assignments, timetable blocks, grades, notes and PDFs from this device and from the cloud. Deleting the account itself is not built yet.</li>
+                  <li>Backup exports everything to a file you keep. “Delete all my data” removes your assignments, timetable blocks, grades, notes and PDFs from this device and from the cloud. Signed-in students can also delete the whole account (Your account, then Delete my account), which removes the profile and the sign-in account too.</li>
+                  <li>The full rules are on the Privacy, Terms, Children and parents, Storage and Accessibility pages, linked at the bottom of every screen. They are drafts that a lawyer has not checked yet.</li>
                 </ul>
               </div>
             </div>

@@ -6,7 +6,8 @@ import {
   Plus
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import type { Priority } from '../types';
+import type { Priority, AssignmentKind } from '../types';
+import { KindPicker } from './KindPicker';
 import { DATE_MAX, DATE_MIN, LIMITS, isDateInRange, localDateISO } from '../utils/limits';
 
 interface FirstDeadlineCardProps {
@@ -19,6 +20,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
   const [title, setTitle] = useState('');
   const [course, setCourse] = useState('');
   const [priority, setPriority] = useState<Priority>('high');
+  const [kind, setKind] = useState<AssignmentKind>('assignment');
   const [dueDate, setDueDate] = useState<string>('');
   const [activeChip, setActiveChip] = useState<'today' | 'tomorrow' | 'friday' | 'nextWeek' | 'custom'>('tomorrow');
   
@@ -74,6 +76,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
       dueDate: finalDate,
       dueTime: '23:59',
       priority,
+      kind,
       status: 'pending',
       progress: 0,
       subtasks: [
@@ -183,11 +186,14 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               value={course}
               onChange={(e) => setCourse(e.target.value)}
               maxLength={LIMITS.assignmentCourse}
+              list="course-suggestions"
               placeholder="e.g. CS 101 or Physics"
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
             />
           </div>
         </div>
+
+        <KindPicker value={kind} onChange={setKind} />
 
         {/* Date Quick Chips */}
         <div>

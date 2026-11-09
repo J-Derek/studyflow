@@ -13,7 +13,7 @@ export const MobileNav: React.FC = () => {
     { id: 'assignments' as const, label: 'Tasks', fullName: 'assignments', icon: CheckSquare, badge: pendingCount },
     { id: 'calendar' as const, label: 'Timetable', icon: CalendarIcon },
     { id: 'timer' as const, label: 'Timer', icon: Timer },
-    { id: 'grades' as const, label: 'Grades', icon: Award },
+    { id: 'courses' as const, label: 'Courses', icon: Award },
     { id: 'notes' as const, label: 'Notes', icon: NotebookPen }
   ];
 

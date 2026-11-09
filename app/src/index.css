@@ -102,3 +102,26 @@ summary:focus-visible,
   .sf-draw, .sf-grow, .sf-pop, .sf-bob, .sf-rise, .sf-pulse, .sf-float { animation: none !important; }
   .sf-float { opacity: 0; }
 }
+
+/* The writing space prints its own copy of the text (see components/WritingSpace). On screen it is hidden; when printing, only it shows. */
+#print-root {
+  display: none;
+}
+@media print {
+  body > #root {
+    display: none !important;
+  }
+  #print-root {
+    display: block !important;
+    color: #000 !important;
+    background: #fff !important;
+    padding: 0;
+  }
+  #print-root * {
+    color: #000 !important;
+    background: transparent !important;
+  }
+  #print-root a {
+    text-decoration: underline;
+  }
+}

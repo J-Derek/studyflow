@@ -21,8 +21,38 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://app-beta-lilac-23.vercel.app/grades</loc>
+    <loc>https://app-beta-lilac-23.vercel.app/courses</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://app-beta-lilac-23.vercel.app/notes</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://app-beta-lilac-23.vercel.app/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://app-beta-lilac-23.vercel.app/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://app-beta-lilac-23.vercel.app/children</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://app-beta-lilac-23.vercel.app/storage</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://app-beta-lilac-23.vercel.app/accessibility</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>
