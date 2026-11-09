@@ -180,6 +180,10 @@ export function App() {
         <BackupModal
           isOpen={isBackupOpen}
           onClose={() => setIsBackupOpen(false)}
+          onOpenProfile={() => {
+            setIsBackupOpen(false);
+            setIsProfileOpen(true);
+          }}
         />
 
         {/* Profile modal */}
