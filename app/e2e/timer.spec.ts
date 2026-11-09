@@ -92,7 +92,8 @@ test.describe('focus timer', () => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await boot(page);
-    await googleSignIn(page, 'timer-owner@example.com');
+    // A fresh account each run: a reused local emulator already has a fixed one, which takes the merge-and-reload path.
+    await googleSignIn(page, `timer-owner-${Date.now().toString(36)}@example.com`);
     const uid = await uidOf(page);
 
     await page.evaluate(() => {
