@@ -5,6 +5,8 @@ import { useStudyFlowStore } from '../store/studyFlowStore';
 import { Avatar } from './Avatar';
 import { resizeImageToDataUrl } from '../utils/imageResize';
 import { LIMITS } from '../utils/limits';
+import { PERIOD_LABELS, periodWord, periodWordCapital } from '../utils/periods';
+import type { PeriodLabel } from '../types';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -19,6 +21,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
   const [university, setUniversity] = useState(user.university);
   const [program, setProgram] = useState(user.program);
   const [semester, setSemester] = useState(user.semester);
+  const [periodLabel, setPeriodLabel] = useState<PeriodLabel>(user.periodLabel ?? 'semester');
   const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const [semesterStart, setSemesterStart] = useState(user.semesterStart ?? '');
   const [semesterEnd, setSemesterEnd] = useState(user.semesterEnd ?? '');
@@ -34,6 +37,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
       setUniversity(user.university);
       setProgram(user.program);
       setSemester(user.semester === 'Current Term' ? 'Current semester' : user.semester);
+      setPeriodLabel(user.periodLabel ?? 'semester');
       setSemesterStart(user.semesterStart ?? '');
       setSemesterEnd(user.semesterEnd ?? '');
       setTimeZone(user.timeZone ?? deviceZone);
@@ -51,7 +55,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
       name: name.trim() || 'Student',
       university: university.trim() || 'My university',
       program: program.trim() || 'My programme',
-      semester: semester.trim() || 'Current semester',
+      semester: semester.trim() || `Current ${periodWord(periodLabel)}`,
+      periodLabel,
       semesterStart: semesterStart || undefined,
       semesterEnd: semesterEnd && semesterEnd >= semesterStart ? semesterEnd : undefined,
       timeZone
@@ -223,17 +228,25 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" />
-              <span>Current semester</span>
+              <span>Current {periodWord(periodLabel)}</span>
             </label>
             <input
               type="text"
               value={semester}
               maxLength={LIMITS.profileSemester}
               onChange={(e) => setSemester(e.target.value)}
-              placeholder="e.g. Semester 1, 2026"
+              placeholder={`e.g. ${periodWordCapital(periodLabel)} 1, 2026`}
               required
               className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
+            <label className="mt-2 block text-xs text-zinc-600 dark:text-zinc-400">
+              Your school calls it a
+              <select value={periodLabel} onChange={(e) => setPeriodLabel(e.target.value as PeriodLabel)} className="mt-1 w-full px-3 py-1.5 text-xs capitalize rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                {PERIOD_LABELS.map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            </label>
           </div>
 
           <fieldset className="space-y-2 pt-1">
@@ -241,11 +254,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
             <p className="text-xs text-zinc-600 dark:text-zinc-400">Your timetable repeats weekly between these dates when you export it to a calendar app.</p>
             <div className="grid grid-cols-2 gap-2">
               <label className="block text-xs text-zinc-600 dark:text-zinc-400">
-                Semester starts
+                {periodWordCapital(periodLabel)} starts
                 <input type="date" value={semesterStart} onChange={(e) => setSemesterStart(e.target.value)} className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
               </label>
               <label className="block text-xs text-zinc-600 dark:text-zinc-400">
-                Semester ends
+                {periodWordCapital(periodLabel)} ends
                 <input type="date" value={semesterEnd} min={semesterStart || undefined} onChange={(e) => setSemesterEnd(e.target.value)} className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
               </label>
             </div>

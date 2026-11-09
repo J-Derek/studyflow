@@ -14,6 +14,9 @@ import { useOnline } from '../lib/useOnline';
 import { isPlaceholderDetail } from '../utils/placeholderProfile';
 import { getSaveState } from '../utils/saveStatus';
 import { accountSyncLine, planSummary } from '../utils/accountSummary';
+import { periodWord } from '../utils/periods';
+import { NewSemesterDialog } from './NewSemesterDialog';
+import { PastSemestersDialog } from './PastSemestersDialog';
 
 interface BackupModalProps {
   isOpen: boolean;
@@ -39,7 +42,7 @@ const secondaryButton =
  * PR5 adds a "Delete my account" section at the bottom of the signed-in view.
  */
 export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpenProfile }) => {
-  const { assignments, sessions, grades, notes, drafts, customPhotoUrl, user, isSyncing, userId } = useStudyFlowStore();
+  const { assignments, sessions, grades, notes, drafts, archived, periods, customPhotoUrl, user, isSyncing, userId } = useStudyFlowStore();
   const account = useAccountView();
   const isAnonymous = !account.signedIn;
   const errors = useSyncErrors();
@@ -49,11 +52,14 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
   const [signingOut, setSigningOut] = useState(false);
   const [importStatus, setImportStatus] = useState<{ ok: boolean; text: string } | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [showNewPeriod, setShowNewPeriod] = useState(false);
+  const [showPast, setShowPast] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const dialogRef = useDialog(isOpen, onClose);
+  // While the semester dialogs are open (they have their own), this one lets go of the keyboard.
+  const dialogRef = useDialog(isOpen && !showNewPeriod && !showPast, onClose);
 
   // Get Google's sign-in ready while the student reads the dialog, so the pop-up opens instantly on click.
   useEffect(() => {
@@ -69,7 +75,16 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
     notes
   };
 
-  const handleExportJSON = () => downloadBackup(buildBackup({ assignments, sessions, grades, notes, drafts }));
+  const handleExportJSON = () => downloadBackup(
+      buildBackup({
+        assignments: [...assignments, ...archived.assignments],
+        sessions: [...sessions, ...archived.sessions],
+        grades: [...grades, ...archived.grades],
+        notes: [...notes, ...archived.notes],
+        drafts,
+        periods
+      })
+    );
 
   const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -311,6 +326,34 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
             )}
           </div>
         </section>
+
+        {/* A fresh start without losing anything */}
+        <section aria-labelledby="account-period-title" className="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+          <h3 id="account-period-title" className={sectionTitle}>
+            {`Semesters and terms`}
+          </h3>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">
+            When a {periodWord(user.periodLabel)} ends, start the next one. Nothing is deleted: the old one is kept to read in Past {periodWord(user.periodLabel)}s.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button type="button" onClick={() => setShowNewPeriod(true)} className={secondaryButton}>
+              Start a new {periodWord(user.periodLabel)}
+            </button>
+            <button type="button" onClick={() => setShowPast(true)} className={secondaryButton}>
+              Past {periodWord(user.periodLabel)}s{periods.length > 0 ? ` (${periods.length})` : ''}
+            </button>
+          </div>
+        </section>
+        {showNewPeriod && (
+          <NewSemesterDialog
+            onClose={() => setShowNewPeriod(false)}
+            onOpenPast={() => {
+              setShowNewPeriod(false);
+              setShowPast(true);
+            }}
+          />
+        )}
+        {showPast && <PastSemestersDialog onClose={() => setShowPast(false)} />}
 
         {/* The one thing that cannot be undone */}
         {!isAnonymous && (

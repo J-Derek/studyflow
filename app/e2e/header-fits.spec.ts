@@ -42,7 +42,8 @@ test('on a phone, profile, theme and help are all reachable from the profile dia
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('Current semester');
   await expect(dialog).toContainText('Semester starts');
-  await expect(dialog).not.toContainText('term');
+  // the default wording is semester, not the old "Term" labels (the dropdown's own option names are allowed)
+  await expect(dialog).not.toContainText(/Current term|Term starts|Term ends/i);
   await dialog.getByRole('button', { name: /Use dark theme/ }).click();
   await expect(page.locator('html')).toHaveClass(/dark/);
   await dialog.getByRole('button', { name: 'Help' }).click();

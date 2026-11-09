@@ -16,6 +16,10 @@ service cloud.firestore {
     //   updatedAt (server time), notes?, completedAt?, sample? (bool),
     //   subtasks? (map keyed by subtask id, or legacy list; max 100)
     //
+    // /users/{userId}/semesters/{periodId}
+    //   id, name, label ('semester'|'term'|'trimester'), archivedAt (ISO text), counts {assignments, sessions, grades, notes}, updatedAt (server time)
+    //   Items archived into it carry archivedPeriod = this id (optional on assignments, sessions, grades, notes).
+    //
     // /users/{userId}/drafts/{assignmentId}
     //   id (= assignment id), body (Markdown, up to 200000 characters), format ('markdown'), editedAt (ISO text), updatedAt (server time)
     //
@@ -73,7 +77,7 @@ service cloud.firestore {
 
     function isValidUser(data, userId) {
       return data.keys().hasAll(['uid', 'name', 'university', 'program', 'semester', 'updatedAt']) &&
-             data.keys().hasOnly(['uid', 'name', 'university', 'program', 'semester', 'semesterStart', 'semesterEnd', 'timeZone', 'photo', 'updatedAt', 'onboarding', 'timerPrefs', 'ageConfirmed']) &&
+             data.keys().hasOnly(['uid', 'name', 'university', 'program', 'semester', 'semesterStart', 'semesterEnd', 'timeZone', 'photo', 'updatedAt', 'onboarding', 'timerPrefs', 'ageConfirmed', 'periodLabel']) &&
              data.uid is string && data.uid == userId &&
              validString(data.name, 1, 100) &&
              validString(data.university, 1, 150) &&
@@ -91,6 +95,7 @@ service cloud.firestore {
                 data.onboarding.keys().hasAll(['dismissed']) &&
                 data.onboarding.dismissed is bool)) &&
              (!('timerPrefs' in data) || isValidTimerPrefs(data.timerPrefs)) &&
+             (!('periodLabel' in data) || data.periodLabel in ['semester', 'term', 'trimester']) &&
              (!('ageConfirmed' in data) || isValidAgeConfirmed(data.ageConfirmed));
     }
 
@@ -125,8 +130,9 @@ service cloud.firestore {
       return data.keys().hasAll(['id', 'title', 'course', 'dueDate', 'priority', 'status', 'progress', 'createdAt', 'updatedAt']) &&
              data.keys().hasOnly([
                'id', 'title', 'course', 'dueDate', 'dueTime', 'priority', 'status',
-               'progress', 'notes', 'subtasks', 'createdAt', 'completedAt', 'updatedAt', 'sample', 'kind'
+               'progress', 'notes', 'subtasks', 'createdAt', 'completedAt', 'updatedAt', 'sample', 'kind', 'archivedPeriod'
              ]) &&
+             optionalString(data, 'archivedPeriod', 1, 60) &&
              validString(data.id, 1, 100) &&
              validString(data.title, 1, 250) &&
              validString(data.course, 1, 200) &&
@@ -158,9 +164,28 @@ service cloud.firestore {
              isServerTime(data.updatedAt);
     }
 
+    // A past semester or term the student archived. Its items carry `archivedPeriod` = this document's id.
+    function isValidPeriod(data) {
+      return data.keys().hasAll(['id', 'name', 'label', 'archivedAt', 'counts', 'updatedAt']) &&
+             data.keys().hasOnly(['id', 'name', 'label', 'archivedAt', 'counts', 'updatedAt']) &&
+             validString(data.id, 1, 60) &&
+             validString(data.name, 1, 100) &&
+             data.label in ['semester', 'term', 'trimester'] &&
+             validString(data.archivedAt, 1, 50) &&
+             data.counts is map &&
+             data.counts.keys().hasOnly(['assignments', 'sessions', 'grades', 'notes']) &&
+             data.counts.keys().hasAll(['assignments', 'sessions', 'grades', 'notes']) &&
+             data.counts.assignments is int && data.counts.assignments >= 0 && data.counts.assignments <= 5000 &&
+             data.counts.sessions is int && data.counts.sessions >= 0 && data.counts.sessions <= 5000 &&
+             data.counts.grades is int && data.counts.grades >= 0 && data.counts.grades <= 5000 &&
+             data.counts.notes is int && data.counts.notes >= 0 && data.counts.notes <= 5000 &&
+             isServerTime(data.updatedAt);
+    }
+
     function isValidNote(data) {
       return data.keys().hasAll(['id', 'title', 'body', 'course', 'pinned', 'createdAt', 'editedAt', 'updatedAt']) &&
-             data.keys().hasOnly(['id', 'title', 'body', 'course', 'pinned', 'createdAt', 'editedAt', 'updatedAt']) &&
+             data.keys().hasOnly(['id', 'title', 'body', 'course', 'pinned', 'createdAt', 'editedAt', 'updatedAt', 'archivedPeriod']) &&
+             optionalString(data, 'archivedPeriod', 1, 60) &&
              validString(data.id, 1, 100) &&
              validString(data.title, 1, 200) &&
              data.body is string && data.body.size() <= 20000 &&
@@ -174,8 +199,9 @@ service cloud.firestore {
     function isValidSession(data) {
       return data.keys().hasAll(['id', 'title', 'course', 'dayOfWeek', 'startTime', 'endTime', 'type', 'updatedAt']) &&
              data.keys().hasOnly([
-               'id', 'title', 'course', 'dayOfWeek', 'startTime', 'endTime', 'type', 'color', 'updatedAt', 'sample'
+               'id', 'title', 'course', 'dayOfWeek', 'startTime', 'endTime', 'type', 'color', 'updatedAt', 'sample', 'archivedPeriod'
              ]) &&
+             optionalString(data, 'archivedPeriod', 1, 60) &&
              validString(data.id, 1, 100) &&
              validString(data.title, 1, 200) &&
              validString(data.course, 1, 200) &&
@@ -190,7 +216,8 @@ service cloud.firestore {
 
     function isValidGrade(data) {
       return data.keys().hasAll(['id', 'courseCode', 'courseName', 'credits', 'targetLetter', 'color', 'assessments', 'updatedAt']) &&
-             data.keys().hasOnly(['id', 'courseCode', 'courseName', 'credits', 'targetLetter', 'color', 'assessments', 'updatedAt', 'sample']) &&
+             data.keys().hasOnly(['id', 'courseCode', 'courseName', 'credits', 'targetLetter', 'color', 'assessments', 'updatedAt', 'sample', 'archivedPeriod']) &&
+             optionalString(data, 'archivedPeriod', 1, 60) &&
              validString(data.id, 1, 100) &&
              validString(data.courseCode, 1, 50) &&
              validString(data.courseName, 1, 200) &&
@@ -272,6 +299,18 @@ service cloud.firestore {
         allow update: if isOwner(userId) &&
                          isValidNote(request.resource.data) &&
                          immutable(['id', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      match /semesters/{periodId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId) && request.query.limit <= 500;
+        allow create: if isOwner(userId) &&
+                         isValidPeriod(request.resource.data) &&
+                         request.resource.data.id == periodId;
+        allow update: if isOwner(userId) &&
+                         isValidPeriod(request.resource.data) &&
+                         immutable(['id']);
         allow delete: if isOwner(userId);
       }
 

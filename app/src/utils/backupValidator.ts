@@ -1,4 +1,5 @@
-import type { Assignment, StudySession, CourseGrade, Draft, Note, Priority, AssignmentStatus } from '../types';
+import type { Assignment, StudySession, CourseGrade, Draft, Note, Period, Priority, AssignmentStatus } from '../types';
+import { isPeriodLabel } from './periods';
 import { LIMITS } from './limits';
 import { isAssignmentKind } from './kinds';
 
@@ -13,6 +14,8 @@ export interface ValidatedBackupPayload {
     notes?: Note[];
     /** Absent when the file predates the writing space. */
     drafts?: Draft[];
+    /** Past semesters. Items in the lists above that carry `archivedPeriod` belong to one of these. */
+    periods?: Period[];
   };
 }
 
@@ -26,6 +29,10 @@ const MAX_SESSIONS = 500;
 const MAX_GRADES = 100;
 const MAX_NOTES = 500;
 const MAX_DRAFTS = 500;
+const MAX_PERIODS = 100;
+
+/** Items archived into a past semester keep the period they belong to; current items have none. */
+const archivedTag = (v: unknown): { archivedPeriod?: string } => (typeof v === 'string' && v.length > 0 ? { archivedPeriod: v.slice(0, 60) } : {});
 const MAX_DRAFT_BODY = 200000;
 const MAX_SUBTASKS_PER_ASSIGNMENT = 100;
 const MAX_ASSESSMENTS_PER_GRADE = 50;
@@ -176,7 +183,8 @@ function cleanAssignment(a: Assignment): Assignment {
       ? { subtasks: a.subtasks.map((t) => ({ id: t.id, title: t.title.trim().slice(0, LIMITS.subtaskTitle), completed: t.completed })) }
       : {}),
     createdAt: a.createdAt,
-    ...(typeof a.completedAt === 'string' ? { completedAt: a.completedAt.slice(0, 50) } : {})
+    ...(typeof a.completedAt === 'string' ? { completedAt: a.completedAt.slice(0, 50) } : {}),
+    ...archivedTag(a.archivedPeriod)
   };
 }
 
@@ -189,7 +197,8 @@ function cleanSession(x: StudySession): StudySession {
     startTime: x.startTime,
     endTime: x.endTime,
     type: x.type,
-    ...(typeof x.color === 'string' ? { color: x.color.slice(0, 50) } : {})
+    ...(typeof x.color === 'string' ? { color: x.color.slice(0, 50) } : {}),
+    ...archivedTag(x.archivedPeriod)
   };
 }
 
@@ -206,7 +215,8 @@ function cleanGrade(g: CourseGrade): CourseGrade {
       name: m.name,
       weight: m.weight,
       ...(m.score !== undefined && m.score !== null ? { score: m.score } : {})
-    }))
+    })),
+    ...archivedTag(g.archivedPeriod)
   };
 }
 
@@ -317,7 +327,8 @@ export function validateBackupJson(rawJsonString: string): ValidationResult {
         course: note.course.trim().slice(0, 50),
         pinned: note.pinned === true,
         createdAt: note.createdAt.slice(0, 50),
-        editedAt: note.editedAt.slice(0, 50)
+        editedAt: note.editedAt.slice(0, 50),
+        ...archivedTag(note.archivedPeriod)
       });
     }
   }
@@ -343,6 +354,27 @@ export function validateBackupJson(rawJsonString: string): ValidationResult {
     }
   }
 
+  let periods: Period[] | undefined;
+  if (ledger.periods !== undefined) {
+    if (!Array.isArray(ledger.periods)) return { success: false, error: 'Invalid ledger structure: "periods" must be an array.' };
+    if (ledger.periods.length > MAX_PERIODS) return { success: false, error: `Exceeded maximum allowable past semesters (${MAX_PERIODS}).` };
+    periods = [];
+    for (let i = 0; i < ledger.periods.length; i++) {
+      const p = ledger.periods[i] as Record<string, unknown> | null;
+      const c = (p && typeof p.counts === 'object' && p.counts ? p.counts : {}) as Record<string, unknown>;
+      const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.min(5000, Math.floor(v)) : 0);
+      const ok = p !== null && typeof p === 'object' && typeof p.id === 'string' && p.id.length > 0 && p.id.length <= 60 && typeof p.name === 'string' && typeof p.archivedAt === 'string';
+      if (!ok) return { success: false, error: `Malformed past semester at index ${i}.` };
+      periods.push({
+        id: p.id as string,
+        name: (p.name as string).trim().slice(0, 100) || 'Past semester',
+        label: isPeriodLabel(p.label) ? p.label : 'semester',
+        archivedAt: (p.archivedAt as string).slice(0, 50),
+        counts: { assignments: n(c.assignments), sessions: n(c.sessions), grades: n(c.grades), notes: n(c.notes) }
+      });
+    }
+  }
+
   const cleanAssignments = (ledger.assignments as Assignment[]).map(cleanAssignment);
   const cleanSessions = sessions.map(cleanSession);
   const cleanGrades = grades.map(cleanGrade);
@@ -352,7 +384,8 @@ export function validateBackupJson(rawJsonString: string): ValidationResult {
     ['session', cleanSessions],
     ['course', cleanGrades],
     ['note', notes ?? []],
-    ['draft', drafts ?? []]
+    ['draft', drafts ?? []],
+    ['past semester', periods ?? []]
   ];
   for (const [label, list] of lists) {
     const dup = firstDuplicate(list);
@@ -370,7 +403,8 @@ export function validateBackupJson(rawJsonString: string): ValidationResult {
         grades: cleanGrades,
         // Notes were checked above but used to be left out here, so restoring a backup silently lost them.
         ...(notes ? { notes } : {}),
-        ...(drafts ? { drafts } : {})
+        ...(drafts ? { drafts } : {}),
+        ...(periods ? { periods } : {})
       }
     }
   };

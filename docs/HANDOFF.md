@@ -22,7 +22,8 @@ an in-app **writing space** per assignment with **Word and PDF** export; **timer
 | Branch `claude/pr7-calendar` (PR7, stacked on PR6; **no rules change**) | Week/Month toggle, tap a day, deadlines on the timetable, "Due soon" strip |
 | Branch `claude/pr8-courses` (PR8, stacked on PR7; **no rules change**) | Grades tab becomes Courses (course list, course detail, grades calculator below); `/grades` still works |
 | Branch `claude/pr9-writing` (PR9, stacked on PR8) | writing space per assignment with Word and PDF export. **Rules change (new `drafts` collection): deploy rules FIRST**; adds the `docx` package |
-| Next to build | PR10 (term vs semester, new-semester archive) |
+| Branch `claude/pr10-semesters` (PR10, the last one, stacked on PR9) | semester/term/trimester wording, "Start a new semester" archive with a review screen, Past semesters. **Rules change: deploy rules FIRST** |
+| Next to build | nothing planned: Round 2 is complete. Derek's list of new findings after testing is next |
 
 ### What is merged AND deployed
 | PR | What it did |
@@ -223,8 +224,22 @@ Reason: the app now writes `ageConfirmed` in the profile; the old rules reject u
 - Tests: `e2e/writing-space.spec.ts` (6: write/format/autosave/reload, reaches the account and HTML stays text, real .docx with the text, print view is black on white and `page.pdf()` works, phone tabs/44px/axe light+dark, Today button + Escape),
   units `markdownEdit`, `exportDocx`, mapper, backup, 4 rules tests.
 
-### Next: PR10 (the last one)
-PR3 to PR9 are done.
+### PR10 (branch `claude/pr10-semesters`, stacked on `claude/pr9-writing`)
+**Deploy order: rules first.** Additive rules: optional `periodLabel` on the user doc; new `users/{uid}/semesters/{id}` (`id`, `name`, `label`, `archivedAt`, `counts {assignments,sessions,grades,notes}`, server `updatedAt`);
+optional `archivedPeriod` (1-60 chars) on assignments, sessions, grades and notes. No backfill is needed: a missing `archivedPeriod` means "current".
+- Model: archived items stay in their own collections with `archivedPeriod` set. The four listeners in `firestoreSync.ts` split what arrives into current (the arrays everything else uses, unchanged) and
+  `archived.{assignments,sessions,grades,notes}` (new store field), so no existing screen needed touching and nothing archived leaks into lists, counts, GPA, the timetable or the .ics export. `periods` holds the semester records.
+- `utils/periods.ts` (`planArchive`, labels, ids): finished work and anything not ticked is archived; unfinished work and notes stay only when ticked; the timetable and courses stay only when chosen. A kept course has its scores cleared and its old
+  copy goes to the archive under id `<id>~<periodId>`. `store.startNewPeriod` applies the plan locally at once, then `commitArchive` writes in batches of 400 (idempotent: whole-document sets, no deletes; the period record goes in last).
+- Screens: `components/NewSemesterDialog.tsx` (name, "Called a" semester/term/trimester, tick lists, keep timetable/courses, live summary, done message) and `components/PastSemestersDialog.tsx` (read-only record), both opened from "Semesters and terms" in Your account.
+  The profile has "Your school calls it a ..." and its fields read "Current term", "Term starts", and so on. Both dialogs render in a portal; Your account lets go of the keyboard while they are open.
+- Backup: `ledger.periods` and the `archivedPeriod` tags are in the file and restored; archived items are part of "Download my data" and the crash-screen download. "Delete all my data" and "Delete my account" remove archived items and semester records too (`ACCOUNT_COLLECTIONS` has `semesters`).
+- **Known limits:** the 500-document list cap per collection counts archived items too (the listeners read everything), so after many semesters a collection could pass 500 and the oldest items stop loading; a fix is querying only current items (needs `archived:false` backfilled) and loading past semesters on demand.
+  "Semester" wording elsewhere (Help text, legal pages, the sample profile default "Current semester") is not yet switched to the chosen word. A guest signing in to an existing account does not carry archives over (same as drafts).
+- Tests: `e2e/new-semester.spec.ts` (4: the whole flow with carry choices, cloud check and reload; keep timetable and courses; phone and axe light/dark; profile word), `account-deletion.spec.ts` now seeds drafts and semesters, units `periods`, mapper, backup, 4 rules tests.
+
+### Round 2 is finished: next is whatever Derek finds when he tests PR3 to PR10
+Merge order: PR4, PR5, PR6, PR7, PR8, PR9, PR10 (all stacked). Rules to deploy first: PR5, PR6, PR9, PR10 (each additive; deploying the final rules file once, before the final app, covers all of them).
 PR9 writing space + Word/PDF export. PR10 term vs semester + "Start a new semester" archive. Every PR that changes synced data touches: `types`, `firestore.rules`, `firestoreMappers.ts`,
 `backupValidator.ts`, rules tests, mapper tests.
 

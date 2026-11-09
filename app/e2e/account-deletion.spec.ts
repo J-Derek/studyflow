@@ -64,6 +64,8 @@ test('deleting the account removes every record, the profile and the sign-in acc
     [`users/${uid}/sessions`, 's1', { id: { stringValue: 's1' }, title: { stringValue: 'Class' }, course: { stringValue: 'TEST 101' }, dayOfWeek: { integerValue: '2' }, startTime: { stringValue: '10:00' }, endTime: { stringValue: '11:00' }, type: { stringValue: 'lecture' } }],
     [`users/${uid}/grades`, 'g1', { id: { stringValue: 'g1' }, courseCode: { stringValue: 'TEST 101' }, courseName: { stringValue: 'Test' }, credits: { integerValue: '3' }, targetLetter: { stringValue: 'A' }, color: { stringValue: '#4F46E5' }, assessments: { arrayValue: {} } }],
     [`users/${uid}/focusSessions`, 'run-9', { durationSeconds: { integerValue: '60' }, mode: { stringValue: 'focus' }, localDate: { stringValue: '2030-01-15' } }],
+    [`users/${uid}/drafts`, 'd1', { id: { stringValue: 'd1' }, body: { stringValue: 'DELETE-ME-DRAFT' }, format: { stringValue: 'markdown' }, editedAt: { stringValue: '2030-01-01T00:00:00.000Z' } }],
+    [`users/${uid}/semesters`, 'p1', { id: { stringValue: 'p1' }, name: { stringValue: 'Old semester' }, label: { stringValue: 'semester' }, archivedAt: { stringValue: '2030-01-01T00:00:00.000Z' }, counts: { mapValue: { fields: { assignments: { integerValue: '1' }, sessions: { integerValue: '0' }, grades: { integerValue: '0' }, notes: { integerValue: '0' } } } } }],
     [`users/${uid}/liveState`, 'timer', { rev: { integerValue: '3' }, status: { stringValue: 'idle' }, mode: { stringValue: 'focus' }, durationSeconds: { integerValue: '1500' } }]
   ] as const) {
     const r = await fetch(`${DOCS}/${path}/${id}`, { method: 'PATCH', headers: { ...H, 'content-type': 'application/json' }, body: JSON.stringify({ fields }) });
@@ -100,7 +102,7 @@ test('deleting the account removes every record, the profile and the sign-in acc
   expect(local).not.toContain(email);
 
   // and nothing is left in the cloud
-  for (const c of ['assignments', 'sessions', 'grades', 'notes', 'focusSessions', 'liveState']) {
+  for (const c of ['assignments', 'sessions', 'grades', 'notes', 'drafts', 'semesters', 'focusSessions', 'liveState']) {
     expect(await listIds(`users/${uid}/${c}`), c).toEqual([]);
   }
   expect((await fetch(`${DOCS}/users/${uid}`, { headers: H })).status).toBe(404);

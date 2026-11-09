@@ -1,4 +1,5 @@
-import type { Assignment, CourseGrade, Draft, Note, StudySession, Subtask, UserPreferences } from '../types';
+import type { Assignment, CourseGrade, Draft, Note, Period, StudySession, Subtask, UserPreferences } from '../types';
+import { isPeriodLabel } from '../utils/periods';
 import { isAssignmentKind } from '../utils/kinds';
 import { sanitizeTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 import type { AgeRecord } from '../utils/ageGate';
@@ -6,6 +7,9 @@ import { clampScore } from '../utils/academicCalculations';
 import { clampWeight } from '../utils/assessments';
 
 type Doc = Record<string, unknown>;
+
+/** The period an item was archived into, as stored: a short text, or nothing for current items. */
+const archivedField = (v: unknown): { archivedPeriod?: string } => (typeof v === 'string' && v.length > 0 ? { archivedPeriod: v.slice(0, 60) } : {});
 
 const TIME_RE = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
 
@@ -27,6 +31,7 @@ export function assignmentToDoc(a: Assignment): Doc {
   if (a.notes) out.notes = a.notes;
   if (a.completedAt) out.completedAt = a.completedAt;
   if (a.sample) out.sample = true;
+  Object.assign(out, archivedField(a.archivedPeriod));
   if (a.subtasks && a.subtasks.length > 0) {
     // A map keyed by subtask id so concurrent edits to different subtasks both survive.
     const map: Record<string, { id: string; title: string; completed: boolean; order: number }> = {};
@@ -70,7 +75,8 @@ export function docToAssignment(id: string, data: Doc): Assignment {
     subtasks,
     createdAt: typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString(),
     completedAt: typeof data.completedAt === 'string' ? data.completedAt : undefined,
-    sample: data.sample === true ? true : undefined
+    sample: data.sample === true ? true : undefined,
+    ...archivedField(data.archivedPeriod)
   };
 }
 
@@ -86,6 +92,7 @@ export function sessionToDoc(s: StudySession): Doc {
   };
   if (s.color) out.color = s.color;
   if (s.sample) out.sample = true;
+  Object.assign(out, archivedField(s.archivedPeriod));
   return out;
 }
 
@@ -100,7 +107,8 @@ export function docToSession(id: string, data: Doc): StudySession {
     endTime: typeof data.endTime === 'string' ? data.endTime : '10:00',
     type: types.find((t) => t === data.type) ?? 'study',
     color: typeof data.color === 'string' ? data.color : undefined,
-    sample: data.sample === true ? true : undefined
+    sample: data.sample === true ? true : undefined,
+    ...archivedField(data.archivedPeriod)
   };
 }
 
@@ -121,6 +129,7 @@ export function gradeToDoc(g: CourseGrade): Doc {
     }))
   };
   if (g.sample) out.sample = true;
+  Object.assign(out, archivedField(g.archivedPeriod));
   return out;
 }
 
@@ -149,7 +158,8 @@ export function docToGrade(id: string, data: Doc): CourseGrade {
         weight: typeof a.weight === 'number' ? clampWeight(a.weight) : 0,
         ...scoreField(a.score)
       })),
-    sample: data.sample === true ? true : undefined
+    sample: data.sample === true ? true : undefined,
+    ...archivedField(data.archivedPeriod)
   };
 }
 
@@ -178,6 +188,7 @@ export function profileToDoc(uid: string, user: UserPreferences, photo: string |
   if (user.semesterEnd && DATE_RE.test(user.semesterEnd)) out.semesterEnd = user.semesterEnd;
   if (user.timeZone) out.timeZone = user.timeZone.slice(0, 64);
   if (validPhoto(photo)) out.photo = photo;
+  if (isPeriodLabel(user.periodLabel)) out.periodLabel = user.periodLabel;
   if (age) out.ageConfirmed = ageToDoc(age);
   return out;
 }
@@ -242,8 +253,26 @@ export function docToProfile(data: Doc): { user: Partial<UserPreferences>; photo
   user.semesterStart = start && DATE_RE.test(start) ? start : undefined;
   user.semesterEnd = end && DATE_RE.test(end) ? end : undefined;
   user.timeZone = zone || undefined;
+  if (isPeriodLabel(data.periodLabel)) user.periodLabel = data.periodLabel;
   const photo = str(data.photo);
   return { user, photo: validPhoto(photo) ? photo : null };
+}
+
+/** A past semester as stored. */
+export function periodToDoc(p: Period): Doc {
+  return { id: p.id, name: p.name.trim().slice(0, 100) || 'Past semester', label: isPeriodLabel(p.label) ? p.label : 'semester', archivedAt: p.archivedAt, counts: { ...p.counts } };
+}
+
+export function docToPeriod(id: string, data: Doc): Period {
+  const c = (data.counts && typeof data.counts === 'object' ? data.counts : {}) as Record<string, unknown>;
+  const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
+  return {
+    id,
+    name: typeof data.name === 'string' && data.name ? data.name : 'Past semester',
+    label: isPeriodLabel(data.label) ? data.label : 'semester',
+    archivedAt: typeof data.archivedAt === 'string' ? data.archivedAt : new Date(0).toISOString(),
+    counts: { assignments: n(c.assignments), sessions: n(c.sessions), grades: n(c.grades), notes: n(c.notes) }
+  };
 }
 
 export const MAX_DRAFT_BODY = 200000;
@@ -274,7 +303,8 @@ export function noteToDoc(n: Note): Doc {
     course: n.course.trim().slice(0, MAX_NOTE_COURSE),
     pinned: n.pinned === true,
     createdAt: n.createdAt,
-    editedAt: n.editedAt
+    editedAt: n.editedAt,
+    ...archivedField(n.archivedPeriod)
   };
 }
 
@@ -288,6 +318,7 @@ export function docToNote(id: string, data: Doc): Note {
     course: str(data.course),
     pinned: data.pinned === true,
     createdAt: created,
-    editedAt: str(data.editedAt, created)
+    editedAt: str(data.editedAt, created),
+    ...archivedField(data.archivedPeriod)
   };
 }

@@ -1,4 +1,16 @@
 export type Priority = 'low' | 'medium' | 'high';
+/** What the student calls a stretch of study. */
+export type PeriodLabel = 'semester' | 'term' | 'trimester';
+
+/** A past semester/term that was archived. Its items carry `archivedPeriod` = this id. */
+export interface Period {
+  id: string;
+  name: string;
+  label: PeriodLabel;
+  archivedAt: string; // ISO
+  counts: { assignments: number; sessions: number; grades: number; notes: number };
+}
+
 export type AssignmentStatus = 'pending' | 'in_progress' | 'completed';
 /** What sort of deadline an item is. Missing means an ordinary assignment. */
 export type AssignmentKind = 'assignment' | 'exam' | 'test' | 'reading' | 'project';
@@ -19,6 +31,8 @@ export interface Assignment {
   status: AssignmentStatus;
   /** Missing means 'assignment'. */
   kind?: AssignmentKind;
+  /** Set when this belongs to a past semester/term (its period id). Missing means current. */
+  archivedPeriod?: string;
   progress: number; // 0 - 100
   notes?: string;
   subtasks?: Subtask[];
@@ -36,6 +50,8 @@ export interface StudySession {
   startTime: string; // HH:mm
   endTime: string; // HH:mm
   type: 'lecture' | 'lab' | 'study' | 'review' | 'exam';
+  /** Set when this belongs to a past semester/term (its period id). Missing means current. */
+  archivedPeriod?: string;
   color?: string;
   sample?: boolean;
 }
@@ -57,6 +73,8 @@ export interface Note {
   pinned: boolean;
   createdAt: string; // ISO
   editedAt: string; // ISO
+  /** Set when this belongs to a past semester/term (its period id). Missing means current. */
+  archivedPeriod?: string;
 }
 
 /** What a student has written for one assignment (the writing space). `id` is the assignment's id; the text is Markdown. */
@@ -75,6 +93,8 @@ export interface CourseGrade {
   color: string;
   assessments: Assessment[];
   sample?: boolean;
+  /** Set when this belongs to a past semester/term (its period id). Missing means current. */
+  archivedPeriod?: string;
 }
 
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
@@ -92,6 +112,8 @@ export interface UserPreferences {
   university: string;
   program: string;
   semester: string;
+  /** The word the student uses: semester, term or trimester. Missing means semester. */
+  periodLabel?: PeriodLabel;
   avatarUrl?: string;
   /** Term dates and zone used by the .ics export. Stored on this device only. */
   semesterStart?: string;

@@ -15,10 +15,10 @@ import {
   type Unsubscribe
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import type { Assignment, CourseGrade, Draft, Note, StudySession } from '../types';
+import type { Assignment, CourseGrade, Draft, Note, Period, StudySession } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
-import { ageToDoc, assignmentToDoc, docToAssignment, docToDraft, draftToDoc, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
+import { ageToDoc, assignmentToDoc, docToAssignment, docToDraft, docToPeriod, draftToDoc, periodToDoc, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
 import { isDefaultTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 import { cleanUpProfile } from '../utils/placeholderProfile';
 import { cleanAgeRecord, readDeviceAge } from '../utils/ageGate';
@@ -90,6 +90,11 @@ function applyStoredTimerPrefs(uid: string, raw: unknown, fromCache: boolean): v
     soundscapeVolume: s.soundscapeVolume
   };
   if (!isDefaultTimerPrefs(local)) syncTimerPrefs(uid).catch((err) => console.warn('Timer settings sync warning:', err));
+}
+
+/** Splits what the cloud sent into the current items and the archived ones (those with an `archivedPeriod`). */
+function splitArchived<T extends { archivedPeriod?: string }>(list: T[]): { current: T[]; archived: T[] } {
+  return { current: list.filter((x) => !x.archivedPeriod), archived: list.filter((x) => !!x.archivedPeriod) };
 }
 
 function isCurrentUser(uid: string): boolean {
@@ -213,7 +218,8 @@ export function initFirestoreSync(uid: string): () => void {
         remote.push(isLegacySeedId('assignment', a.id) ? { ...a, sample: true } : a);
       });
       remote.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-      if (isCurrentUser(uid)) useStudyFlowStore.setState({ assignments: remote });
+      const { current, archived } = splitArchived(remote);
+      if (isCurrentUser(uid)) useStudyFlowStore.setState((st) => ({ assignments: current, archived: { ...st.archived, assignments: archived } }));
     },
     (err) => console.warn('Firestore assignments listener warning (using offline cache):', err.message)
   );
@@ -244,11 +250,42 @@ export function initFirestoreSync(uid: string): () => void {
       const remote: Note[] = [];
       snapshot.forEach((d) => remote.push(docToNote(d.id, d.data())));
       remote.sort((a, b) => b.editedAt.localeCompare(a.editedAt));
-      if (isCurrentUser(uid)) useStudyFlowStore.setState({ notes: remote });
+      const { current, archived } = splitArchived(remote);
+      if (isCurrentUser(uid)) useStudyFlowStore.setState((st) => ({ notes: current, archived: { ...st.archived, notes: archived } }));
     },
     (err) => console.warn('Firestore notes listener warning (using offline cache):', err.message)
   );
   activeUnsubscribes.push(unsubNotes);
+
+  // Past semesters (the names and counts); the archived items themselves arrive with their own collections above.
+  let periodsSeeded = false;
+  const unsubPeriods = onSnapshot(
+    query(collection(db, 'users', uid, 'semesters'), limit(LIST_CAP)),
+    async (snapshot) => {
+      if (!isCurrentUser(uid)) return;
+      trackPending('semesters', snapshot.metadata.hasPendingWrites);
+      if (snapshot.metadata.fromCache && snapshot.empty) return;
+
+      if (snapshot.empty && !periodsSeeded) {
+        periodsSeeded = true;
+        const local = useStudyFlowStore.getState().periods;
+        if (local.length > 0) {
+          const batch = writeBatch(db);
+          for (const p of local.slice(0, LIST_CAP)) batch.set(doc(db, 'users', uid, 'semesters', p.id), { ...periodToDoc(p), updatedAt: serverTimestamp() });
+          await batch.commit().catch((err) => console.warn('Batched semester upload warning:', err));
+        }
+        return;
+      }
+      periodsSeeded = true;
+
+      const remote: Period[] = [];
+      snapshot.forEach((d) => remote.push(docToPeriod(d.id, d.data())));
+      remote.sort((a, b) => b.archivedAt.localeCompare(a.archivedAt));
+      if (isCurrentUser(uid)) useStudyFlowStore.setState({ periods: remote });
+    },
+    (err) => console.warn('Firestore semesters listener warning (using offline cache):', err.message)
+  );
+  activeUnsubscribes.push(unsubPeriods);
 
   // Drafts from the writing space, one per assignment. Same pattern as notes.
   let draftsSeeded = false;
@@ -311,7 +348,8 @@ export function initFirestoreSync(uid: string): () => void {
         const s = docToSession(d.id, d.data());
         remote.push(isLegacySeedId('session', s.id) ? { ...s, sample: true } : s);
       });
-      if (isCurrentUser(uid)) useStudyFlowStore.setState({ sessions: remote });
+      const { current, archived } = splitArchived(remote);
+      if (isCurrentUser(uid)) useStudyFlowStore.setState((st) => ({ sessions: current, archived: { ...st.archived, sessions: archived } }));
     },
     (err) => console.warn('Firestore sessions listener warning (using offline cache):', err.message)
   );
@@ -344,7 +382,8 @@ export function initFirestoreSync(uid: string): () => void {
         const g = docToGrade(d.id, d.data());
         remote.push(isLegacySeedId('grade', g.id) ? { ...g, sample: true } : g);
       });
-      if (isCurrentUser(uid)) useStudyFlowStore.setState({ grades: remote });
+      const { current, archived } = splitArchived(remote);
+      if (isCurrentUser(uid)) useStudyFlowStore.setState((st) => ({ grades: current, archived: { ...st.archived, grades: archived } }));
     },
     (err) => console.warn('Firestore grades listener warning (using offline cache):', err.message)
   );
@@ -562,6 +601,37 @@ export async function syncNoteToFirestore(uid: string, note: Note): Promise<void
 
 export async function deleteNoteFromFirestore(uid: string, noteId: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid, 'notes', noteId));
+}
+
+export async function syncPeriodToFirestore(uid: string, period: Period): Promise<void> {
+  await setDoc(doc(db, 'users', uid, 'semesters', period.id), { ...periodToDoc(period), updatedAt: serverTimestamp() });
+}
+
+/**
+ * Writes an archive to the account in batches of 400 (Firestore allows 500 per batch). Every write sets a whole document, so running it
+ * again after a failure simply writes the same values; nothing is ever deleted here. The period record goes in last, so a half-finished
+ * archive never shows up as a past semester.
+ */
+export async function commitArchive(
+  uid: string,
+  period: Period,
+  items: { assignments: Assignment[]; sessions: StudySession[]; grades: CourseGrade[]; notes: Note[] },
+  keptGrades: CourseGrade[]
+): Promise<void> {
+  const ops: Array<(b: ReturnType<typeof writeBatch>) => void> = [];
+  const stamp = { updatedAt: serverTimestamp() };
+  for (const a of items.assignments) ops.push((b) => b.set(doc(db, 'users', uid, 'assignments', a.id), { ...assignmentToDoc(a), ...stamp }));
+  for (const s of items.sessions) ops.push((b) => b.set(doc(db, 'users', uid, 'sessions', s.id), { ...sessionToDoc(s), ...stamp }));
+  for (const g of items.grades) ops.push((b) => b.set(doc(db, 'users', uid, 'grades', g.id), { ...gradeToDoc(g), ...stamp }));
+  for (const n of items.notes) ops.push((b) => b.set(doc(db, 'users', uid, 'notes', n.id), { ...noteToDoc(n), ...stamp }));
+  // Courses that stay (their scores cleared for the new period)
+  for (const g of keptGrades) ops.push((b) => b.set(doc(db, 'users', uid, 'grades', g.id), { ...gradeToDoc(g), ...stamp }));
+  for (let i = 0; i < ops.length; i += 400) {
+    const batch = writeBatch(db);
+    ops.slice(i, i + 400).forEach((op) => op(batch));
+    await batch.commit();
+  }
+  await syncPeriodToFirestore(uid, period);
 }
 
 export async function syncDraftToFirestore(uid: string, draft: Draft): Promise<void> {

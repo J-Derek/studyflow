@@ -8,6 +8,7 @@ interface Ledger {
   grades: { sample?: boolean }[];
   notes: unknown[];
   drafts?: unknown[];
+  periods?: unknown[];
 }
 
 export const BACKUP_VERSION = 'StudyFlow-v1.2';
@@ -22,7 +23,8 @@ export function buildBackup(state: Ledger, now: Date = new Date()) {
       sessions: state.sessions.filter((x) => !x.sample),
       grades: state.grades.filter((x) => !x.sample),
       notes: state.notes,
-      ...(state.drafts ? { drafts: state.drafts } : {})
+      ...(state.drafts ? { drafts: state.drafts } : {}),
+      ...(state.periods && state.periods.length > 0 ? { periods: state.periods } : {})
     }
   };
 }
@@ -48,8 +50,16 @@ export function backupFromSavedCopy(raw: string | null, now: Date = new Date()) 
     const state = (JSON.parse(raw) as { state?: Partial<Record<keyof Ledger, unknown>> }).state;
     if (!state || typeof state !== 'object') return null;
     const list = (v: unknown) => (Array.isArray(v) ? v.filter((x) => x && typeof x === 'object') : []);
+    const arc = (state as { archived?: Record<string, unknown> }).archived ?? {};
     return buildBackup(
-      { assignments: list(state.assignments), sessions: list(state.sessions), grades: list(state.grades), notes: list(state.notes), drafts: list(state.drafts) },
+      {
+        assignments: [...list(state.assignments), ...list(arc.assignments)],
+        sessions: [...list(state.sessions), ...list(arc.sessions)],
+        grades: [...list(state.grades), ...list(arc.grades)],
+        notes: [...list(state.notes), ...list(arc.notes)],
+        drafts: list(state.drafts),
+        periods: list((state as { periods?: unknown }).periods)
+      },
       now
     );
   } catch {

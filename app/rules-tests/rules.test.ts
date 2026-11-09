@@ -381,6 +381,48 @@ describe('notes', () => {
   });
 });
 
+describe('past semesters (archiving)', () => {
+  const period = (over: Record<string, unknown> = {}) => ({
+    id: 'p-2026-11-09-ab3x', name: 'Semester 2, 2026', label: 'semester', archivedAt: '2026-11-09T10:00:00.000Z',
+    counts: { assignments: 3, sessions: 2, grades: 1, notes: 4 }, updatedAt: serverTimestamp(), ...over
+  });
+  const pref = (db: Db = asAlice(), id = 'p-2026-11-09-ab3x') => doc(db, 'users', ALICE, 'semesters', id);
+  it('lets the owner keep a past semester record, and nobody else see it', async () => {
+    await assertSucceeds(setDoc(pref(), period()));
+    await assertSucceeds(getDoc(pref()));
+    await assertFails(getDoc(pref(asBob())));
+    await assertFails(setDoc(pref(asBob()), period()));
+    await assertFails(getDoc(pref(anon())));
+    await assertSucceeds(deleteDoc(pref()));
+  });
+  it('rejects a bad label, extra keys, odd counts, a wrong id and a client-sent updatedAt', async () => {
+    await assertFails(setDoc(pref(), period({ label: 'year' })));
+    await assertFails(setDoc(pref(), period({ isAdmin: true })));
+    await assertFails(setDoc(pref(), period({ counts: { assignments: -1, sessions: 0, grades: 0, notes: 0 } })));
+    await assertFails(setDoc(pref(), period({ counts: { assignments: 1, sessions: 0, grades: 0 } })));
+    await assertFails(setDoc(pref(), period({ counts: { assignments: 1.5, sessions: 0, grades: 0, notes: 0 } })));
+    await assertFails(setDoc(pref(), period({ id: 'other' })));
+    await assertFails(setDoc(pref(), period({ name: '' })));
+    await assertFails(setDoc(pref(), period({ updatedAt: Timestamp.fromMillis(1) })));
+  });
+  it('lets assignments, classes, courses and notes carry the period they were archived into, and nothing odd', async () => {
+    const id = 'p-2026-11-09-ab3x';
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: id })));
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'sessions', 's1'), ses({ archivedPeriod: id })));
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'grades', 'g1'), { id: 'g1', courseCode: 'C', courseName: 'N', credits: 3, targetLetter: 'A', color: '#000', assessments: [], updatedAt: serverTimestamp(), archivedPeriod: id }));
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'notes', 'n1'), { id: 'n1', title: 'T', body: '', course: '', pinned: false, createdAt: 'z', editedAt: 'z', updatedAt: serverTimestamp(), archivedPeriod: id }));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: 5 })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: '' })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: 'x'.repeat(61) })));
+  });
+  it('accepts a semester, term or trimester label on the profile, and nothing else', async () => {
+    const user = (over: Record<string, unknown> = {}) => ({ uid: ALICE, name: 'A', university: 'U', program: 'P', semester: 'S', updatedAt: serverTimestamp(), ...over });
+    for (const periodLabel of ['semester', 'term', 'trimester']) await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE), user({ periodLabel })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE), user({ periodLabel: 'year' })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE), user({ periodLabel: 5 })));
+  });
+});
+
 describe('drafts (writing space)', () => {
   const draft = (over: Record<string, unknown> = {}) => ({ id: 'a1', body: 'Hello', format: 'markdown', editedAt: '2030-01-01T00:00:00.000Z', updatedAt: serverTimestamp(), ...over });
   const ref = (db: Db = asAlice(), id = 'a1') => doc(db, 'users', ALICE, 'drafts', id);

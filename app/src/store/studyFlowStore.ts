@@ -11,6 +11,8 @@ import type {
   CourseGrade,
   Draft,
   Note,
+  Period,
+  PeriodLabel,
   SoundscapeType,
   Subtask
 } from '../types';
@@ -27,6 +29,8 @@ import {
   deleteNoteFromFirestore,
   syncDraftToFirestore,
   deleteDraftFromFirestore,
+  commitArchive,
+  syncPeriodToFirestore,
   syncGradeToFirestore,
   deleteGradeFromFirestore,
   pushTimerState,
@@ -43,6 +47,7 @@ import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pause
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 import { clampScore } from '../utils/academicCalculations';
 import { afterUncomplete } from '../utils/progress';
+import { newPeriodId, planArchive, type CarryChoice } from '../utils/periods';
 import { MAX_DRAFT_BODY } from '../services/firestoreMappers';
 import { normalizeAssessments } from '../utils/assessments';
 
@@ -105,7 +110,7 @@ interface StudyFlowState {
   loadSampleData: () => void;
   icsExportCount: number;
   bumpIcsExport: () => void;
-  importLedger: (ledger: { assignments: Assignment[]; sessions: StudySession[]; grades: CourseGrade[]; notes?: Note[]; drafts?: Draft[] }) => void;
+  importLedger: (ledger: { assignments: Assignment[]; sessions: StudySession[]; grades: CourseGrade[]; notes?: Note[]; drafts?: Draft[]; periods?: Period[] }) => void;
   clearSampleData: () => void;
   clearAllData: () => void;
 
@@ -130,6 +135,12 @@ interface StudyFlowState {
   /** Puts a just-deleted assignment back (same id), for the Undo button. */
   restoreAssignment: (assignment: Assignment) => void;
   toggleAssignmentComplete: (id: string) => void;
+
+  // Past semesters: what was archived (never deleted), and the periods it belongs to.
+  periods: Period[];
+  archived: { assignments: Assignment[]; sessions: StudySession[]; grades: CourseGrade[]; notes: Note[] };
+  /** Archives everything not carried over, starts the new period with this name and label. Returns the new period's id. */
+  startNewPeriod: (opts: { name: string; label: PeriodLabel; carry: CarryChoice }) => string;
 
   // Writing space: one draft per assignment (id = the assignment's id)
   drafts: Draft[];
@@ -207,6 +218,8 @@ const SYNC_WHAT: Record<string, string> = {
   syncNoteToFirestore: 'your note',
   deleteNoteFromFirestore: 'a note you deleted',
   syncDraftToFirestore: 'your writing',
+  commitArchive: 'the archive of your old semester',
+  syncPeriodToFirestore: 'your semester record',
   deleteDraftFromFirestore: 'writing you deleted',
   syncProfile: 'your profile',
   syncTimerPrefs: 'your timer settings',
@@ -286,6 +299,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           grades: [],
           notes: [],
           drafts: [],
+          archived: { assignments: [], sessions: [], grades: [], notes: [] },
+          periods: [],
           onboardingDismissed: false,
           guestNoticeDismissed: false,
           pomodorosCompleted: 0,
@@ -361,10 +376,23 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const keepA = new Set(ledger.assignments.map((x) => x.id));
         const keepS = new Set(ledger.sessions.map((x) => x.id));
         const keepG = new Set(ledger.grades.map((x) => x.id));
-        const removedG = state.grades.filter((x) => !keepG.has(x.id));
-        const removedA = state.assignments.filter((x) => !keepA.has(x.id));
-        const removedS = state.sessions.filter((x) => !keepS.has(x.id));
-        set({ assignments: ledger.assignments, sessions: ledger.sessions, grades: ledger.grades });
+        // Everything the student has now, current and archived, that the file does not contain is removed, as before.
+        const removedG = [...state.grades, ...state.archived.grades].filter((x) => !keepG.has(x.id));
+        const removedA = [...state.assignments, ...state.archived.assignments].filter((x) => !keepA.has(x.id));
+        const removedS = [...state.sessions, ...state.archived.sessions].filter((x) => !keepS.has(x.id));
+        // Items in the file that belong to a past semester go to the archive, the rest are current.
+        const cur = <T extends { archivedPeriod?: string }>(l: T[]) => l.filter((x) => !x.archivedPeriod);
+        const arc = <T extends { archivedPeriod?: string }>(l: T[]) => l.filter((x) => !!x.archivedPeriod);
+        set({
+          assignments: cur(ledger.assignments),
+          sessions: cur(ledger.sessions),
+          grades: cur(ledger.grades),
+          archived: { assignments: arc(ledger.assignments), sessions: arc(ledger.sessions), grades: arc(ledger.grades), notes: ledger.notes ? arc(ledger.notes) : state.archived.notes }
+        });
+        if (ledger.periods) {
+          set({ periods: ledger.periods });
+          if (uid) ledger.periods.forEach((p) => syncPeriodToFirestore(uid, p).catch(failed('syncPeriodToFirestore', () => syncPeriodToFirestore(uid, p))));
+        }
         if (ledger.drafts) {
           const keepD = new Set(ledger.drafts.map((x) => x.id));
           const removedD = state.drafts.filter((x) => !keepD.has(x.id));
@@ -376,8 +404,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         }
         if (ledger.notes) {
           const keepN = new Set(ledger.notes.map((x) => x.id));
-          const removedN = state.notes.filter((x) => !keepN.has(x.id));
-          set({ notes: ledger.notes });
+          const removedN = [...state.notes, ...state.archived.notes].filter((x) => !keepN.has(x.id));
+          set((st) => ({ notes: cur(ledger.notes ?? []), archived: { ...st.archived, notes: arc(ledger.notes ?? []) } }));
           if (uid) {
             ledger.notes.forEach((x) => syncNoteToFirestore(uid, x).catch(failed('syncNoteToFirestore', () => syncNoteToFirestore(uid, x))));
             removedN.forEach((x) => deleteNoteFromFirestore(uid, x.id).catch(failed('deleteNoteFromFirestore', () => deleteNoteFromFirestore(uid, x.id))));
@@ -421,6 +449,10 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           state.grades.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(failed('deleteGradeFromFirestore', () => deleteGradeFromFirestore(uid, x.id))));
           state.notes.forEach((x) => deleteNoteFromFirestore(uid, x.id).catch(failed('deleteNoteFromFirestore', () => deleteNoteFromFirestore(uid, x.id))));
           state.drafts.forEach((x) => deleteDraftFromFirestore(uid, x.id).catch(failed('deleteDraftFromFirestore', () => deleteDraftFromFirestore(uid, x.id))));
+          state.archived.assignments.forEach((x) => deleteAssignmentFromFirestore(uid, x.id).catch(failed('deleteAssignmentFromFirestore', () => deleteAssignmentFromFirestore(uid, x.id))));
+          state.archived.sessions.forEach((x) => deleteSessionFromFirestore(uid, x.id).catch(failed('deleteSessionFromFirestore', () => deleteSessionFromFirestore(uid, x.id))));
+          state.archived.grades.forEach((x) => deleteGradeFromFirestore(uid, x.id).catch(failed('deleteGradeFromFirestore', () => deleteGradeFromFirestore(uid, x.id))));
+          state.archived.notes.forEach((x) => deleteNoteFromFirestore(uid, x.id).catch(failed('deleteNoteFromFirestore', () => deleteNoteFromFirestore(uid, x.id))));
         }
         set({
           assignments: [],
@@ -428,6 +460,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           grades: [],
           notes: [],
           drafts: [],
+          archived: { assignments: [], sessions: [], grades: [], notes: [] },
+          periods: [],
           pomodorosCompleted: 0,
           focusMinutes: 0
         });
@@ -557,6 +591,46 @@ export const useStudyFlowStore = create<StudyFlowState>()(
             failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, assignment))(err);
           });
         }
+      },
+
+      periods: [],
+      archived: { assignments: [], sessions: [], grades: [], notes: [] },
+      startNewPeriod: ({ name, label, carry }) => {
+        const state = get();
+        const id = newPeriodId();
+        const plan = planArchive({ assignments: state.assignments, sessions: state.sessions, grades: state.grades, notes: state.notes }, carry, id);
+        const tag = <T extends object>(list: T[]): (T & { archivedPeriod: string })[] => list.map((x) => ({ ...x, archivedPeriod: id }));
+        const archivedNow = { assignments: tag(plan.archive.assignments), sessions: tag(plan.archive.sessions), grades: tag(plan.archive.grades), notes: tag(plan.archive.notes) };
+        const period: Period = {
+          id,
+          name: name.trim().slice(0, 100) || state.user.semester || 'Past semester',
+          label,
+          archivedAt: new Date().toISOString(),
+          // What is being archived is named after the period that has just ended, so the name is the OLD period's.
+          counts: { assignments: archivedNow.assignments.length, sessions: archivedNow.sessions.length, grades: archivedNow.grades.length, notes: archivedNow.notes.length }
+        };
+        // The record is named after the period that ended; the new one is named by the student in the dialog.
+        const ended: Period = { ...period, name: (state.user.semester || 'Past semester').trim().slice(0, 100), label: state.user.periodLabel ?? 'semester' };
+        set((st) => ({
+          assignments: plan.keep.assignments,
+          sessions: plan.keep.sessions,
+          grades: plan.keep.grades,
+          notes: plan.keep.notes,
+          archived: {
+            assignments: [...st.archived.assignments, ...archivedNow.assignments],
+            sessions: [...st.archived.sessions, ...archivedNow.sessions],
+            grades: [...st.archived.grades, ...archivedNow.grades],
+            notes: [...st.archived.notes, ...archivedNow.notes]
+          },
+          periods: [ended, ...st.periods],
+          user: { ...st.user, semester: period.name, periodLabel: label, semesterStart: undefined, semesterEnd: undefined }
+        }));
+        const uid = get().userId;
+        if (uid) {
+          commitArchive(uid, ended, archivedNow, plan.keep.grades).catch(failed('commitArchive', () => commitArchive(uid, ended, archivedNow, plan.keep.grades)));
+          syncProfile(uid).catch(failed('syncProfile', () => syncProfile(uid)));
+        }
+        return id;
       },
 
       drafts: [],
@@ -982,6 +1056,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         grades: state.grades,
         notes: state.notes,
         drafts: state.drafts,
+        periods: state.periods,
+        archived: state.archived,
         pomodorosCompleted: state.pomodorosCompleted,
         focusMinutes: state.focusMinutes,
         timer: state.timer,

@@ -6,7 +6,7 @@ import { db } from '../lib/firebase';
  * that are not in a collection we can list. `accountDeletion.test.ts` reads firestore.rules and fails if a collection is
  * added there without being added here, so a new feature cannot quietly leave data behind after "Delete my account".
  */
-export const ACCOUNT_COLLECTIONS = ['assignments', 'sessions', 'grades', 'notes', 'drafts', 'focusSessions'] as const;
+export const ACCOUNT_COLLECTIONS = ['assignments', 'sessions', 'grades', 'notes', 'drafts', 'semesters', 'focusSessions'] as const;
 /** [collection, document id] pairs the rules let us read and delete only by id (no listing). */
 export const ACCOUNT_SINGLE_DOCS = [['liveState', 'timer']] as const;
 

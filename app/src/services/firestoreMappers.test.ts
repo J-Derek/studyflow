@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assignmentToDoc, docToAssignment, draftToDoc, docToDraft, MAX_DRAFT_BODY, docToNote, docToProfile, docToTimerPrefs, timerPrefsToDoc, MAX_NOTE_BODY, MAX_PHOTO_CHARS, noteToDoc, profileToDoc, sessionToDoc, validPhoto } from './firestoreMappers';
+import { assignmentToDoc, docToAssignment, docToSession, docToPeriod, periodToDoc, draftToDoc, docToDraft, MAX_DRAFT_BODY, docToNote, docToProfile, docToTimerPrefs, timerPrefsToDoc, MAX_NOTE_BODY, MAX_PHOTO_CHARS, noteToDoc, profileToDoc, sessionToDoc, validPhoto } from './firestoreMappers';
 import type { Assignment } from '../types';
 
 const base: Assignment = {
@@ -103,6 +103,38 @@ describe('grade mappers', () => {
   it('keeps the sample flag', () => {
     expect(gradeToDoc({ ...g, sample: true }).sample).toBe(true);
     expect(docToGrade('g1', gradeToDoc({ ...g, sample: true })).sample).toBe(true);
+  });
+});
+
+describe('archived items and past semesters', () => {
+  it('stores the period an item was archived into, only when there is one, and reads it back', () => {
+    expect('archivedPeriod' in assignmentToDoc(base)).toBe(false);
+    expect(assignmentToDoc({ ...base, archivedPeriod: 'p1' }).archivedPeriod).toBe('p1');
+    expect(docToAssignment('a1', assignmentToDoc({ ...base, archivedPeriod: 'p1' })).archivedPeriod).toBe('p1');
+    expect(docToAssignment('a1', assignmentToDoc(base)).archivedPeriod).toBeUndefined();
+    expect(docToAssignment('a1', { ...assignmentToDoc(base), archivedPeriod: 5 }).archivedPeriod).toBeUndefined();
+    expect(docToAssignment('a1', { ...assignmentToDoc(base), archivedPeriod: '' }).archivedPeriod).toBeUndefined();
+  });
+  it('does the same for classes, courses and notes', () => {
+    const s = { id: 's', title: 't', course: 'c', dayOfWeek: 1, startTime: '10:00', endTime: '11:00', type: 'lecture' as const, archivedPeriod: 'p1' };
+    expect(docToSession('s', sessionToDoc(s)).archivedPeriod).toBe('p1');
+    const g = { id: 'g', courseCode: 'C', courseName: 'N', credits: 3, targetLetter: 'A', color: '#000', assessments: [], archivedPeriod: 'p1' };
+    expect(docToGrade('g', gradeToDoc(g)).archivedPeriod).toBe('p1');
+    const n = { id: 'n', title: 't', body: '', course: '', pinned: false, createdAt: 'z', editedAt: 'z', archivedPeriod: 'p1' };
+    expect(docToNote('n', noteToDoc(n)).archivedPeriod).toBe('p1');
+    expect(docToNote('n', noteToDoc({ ...n, archivedPeriod: undefined })).archivedPeriod).toBeUndefined();
+  });
+  it('round-trips a past semester record and survives hostile data', () => {
+    const p = { id: 'p1', name: 'Semester 1', label: 'term' as const, archivedAt: '2026-01-01T00:00:00.000Z', counts: { assignments: 3, sessions: 2, grades: 1, notes: 0 } };
+    expect(docToPeriod('p1', periodToDoc(p))).toEqual(p);
+    expect(docToPeriod('p', { name: 5, label: 'year', counts: { assignments: -4, sessions: 'x', grades: 2.9 } })).toMatchObject({ name: 'Past semester', label: 'semester', counts: { assignments: 0, sessions: 0, grades: 2, notes: 0 } });
+  });
+  it('keeps the profile word (semester, term, trimester) and ignores anything else', () => {
+    const u = { name: 'A', university: 'U', program: 'P', semester: 'S' };
+    expect(profileToDoc('uid', { ...u, periodLabel: 'term' }, null).periodLabel).toBe('term');
+    expect('periodLabel' in profileToDoc('uid', u, null)).toBe(false);
+    expect(docToProfile({ name: 'A', periodLabel: 'trimester' }).user.periodLabel).toBe('trimester');
+    expect(docToProfile({ name: 'A', periodLabel: 'year' }).user.periodLabel).toBeUndefined();
   });
 });
 
