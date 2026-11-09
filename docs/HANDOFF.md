@@ -14,9 +14,9 @@ an in-app **writing space** per assignment with **Word and PDF** export; **timer
 | Where | What |
 |---|---|
 | Live (merged, rules + app deployed) | everything up to and including **PR #18 (PR2: timer settings per account)** |
-| Merged by Derek, app deploy pending (no rules change) | **PR #19**: Google name and photo instead of the old sample profile ("Alex Vance") |
-| Branch `claude/pr3-rest` (PR3, part 2, waiting for Derek) | e2e pop-up close race fixed (the CI timeout on #19); signed-in header right after a reload; "Signing you in…" note; refreshed "Your account" dialog |
-| Next to build | PR4 to PR10 (PR3 is complete on `claude/pr3-rest`) |
+| Merged by Derek (#19, #20; app deploy is Derek's step, no rules change) | **PR3 complete**: Google name and photo; signed-in header on reload; "Signing you in…"; refreshed "Your account" dialog |
+| Branch `claude/audit-fixes` (waiting for Derek) | from the Antigravity audit: grades read from the cloud held to 0-100; Content-Security-Policy as **report-only** (see "Audit verdicts") |
+| Next to build | PR4 to PR10 |
 
 ### What is merged AND deployed
 | PR | What it did |
@@ -85,7 +85,7 @@ Read-only check that Google still accepts both addresses (no sign-in needed): ca
 `identitytoolkit.googleapis.com/v1/accounts:createAuthUri?key=<apiKey>` with `continueUri` set to each handler address, fetch
 the returned `authUri`, and look for `redirect_uri_mismatch` in the page.
 
-### PR3 part 2 (branch `claude/pr3-rest`)
+### PR3 part 2 (merged as #20)
 - **CI flake on #19 explained and fixed (tests only).** "credential-already-in-use: the guest records are merged..." timed out because every
   Google sign-in helper in `e2e/` clicked the emulator account and only *then* waited for the pop-up's `close` event; when the pop-up closed
   first, the wait never ended. Reproduced locally with 24 runs, 4 at a time, a fresh account per run: 8 of 24 hung right after the click while
@@ -108,8 +108,28 @@ the returned `authUri`, and look for `redirect_uri_mismatch` in the page.
 - Sign-in speed itself was not measured with real Google (only Derek can do that); the slow part found in code is the existing-account path above.
 - Full e2e on the branch: 209 of 210 passed; `timer-lengths.spec.ts` failed once under the full run and passed 15 of 15 alone (timing flake, untouched code).
 
-### Next: rest of PR3, then PR4 to PR10 (each from the latest `origin/main`, only after Derek merges the one before)
-PR3 is complete on `claude/pr3-rest` (waiting for Derek). PR4 404 + error boundary + offline page + rewrite
+### Audit verdicts (Antigravity ran a functional and a security audit on the live site; each claim checked against the code)
+| Claim | Verdict |
+|---|---|
+| Grades 8585 gives 8837.5% | Real, but not from typing (the store clamps typed scores). A record written straight to the cloud with the student's own token held 8585, and `docToGrade` copied it. Rules cannot check each assessment in a list. **Fixed** on `claude/audit-fixes`: clamp on read (`firestoreMappers.ts`) and when adding up (`academicCalculations.ts`, `Grades.tsx`); `e2e/grades-cloud-clamp.spec.ts` |
+| Notes: click does nothing, no reader, no PDF | Wrong. The card opens the note, "Read full screen" opens the reader, PDFs attach there (`e2e/notes-reader.spec.ts`). Notes are plain text with clickable links on purpose; markdown would be a product decision |
+| Guest header flash after hard refresh | Real, fixed in #20 |
+| Title has no maxlength | Wrong: `maxLength` has been there since PR1 |
+| Timer "0" not clamped on blur | By design (PR2): the form clamps when Apply is pressed |
+| No Content-Security-Policy | Real. Added as `Content-Security-Policy-Report-Only` in `app/vercel.json` (blocks nothing, logs violations in the console) |
+| HSTS missing | Wrong: Vercel already sends `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` |
+| IDOR, schema injection, XSS, .ics injection, file leaks | Blocked, matches the code (strict `hasOnly` rules, React escaping, no `innerHTML`) |
+
+**CSP is report-only on purpose.** Real Google sign-in cannot be tested without Derek, and an enforcing policy that is slightly wrong would
+stop everyone signing in. `e2e-prod/csp.spec.ts` already runs the production build with the same policy **enforced** and finds no violation on
+boot, the dark-theme script, a note with a PDF, emulator sign-in, the account dialog and every page. What is left to confirm by hand: Derek signs
+in with real Google (ad blocker on and off) on the live site with the browser console open (F12) and reports any line starting
+"[Report Only] Refused to ...". When there are none, a small PR renames the header to `Content-Security-Policy` (enforcing). If a violation shows
+up, add the address to the matching directive in `vercel.json`. The theme script in `index.html` is allowed by its hash: `src/utils/csp.test.ts`
+fails if that script is edited without refreshing the two hashes (LF and CRLF forms).
+
+### Next: PR4 to PR10 (each from the latest `origin/main`, only after Derek merges the one before)
+PR3 is merged. PR4 404 + error boundary + offline page + rewrite
 `docs/SECURITY.md` (still describes Supabase) + `security.txt` + `/notes` in the sitemap. PR5 legal pages (privacy, terms, children, storage/cookies, accessibility), age step, delete-my-account;
 **research Kenya DPA 2019, GDPR, COPPA, UK AADC first and mark everything as a draft for a Kenyan lawyer**. PR6 item kinds (exam, test, reading, project), progress from checklists, happy completion
 animation, legends/keys, nudges that students can add exams and readings. PR7 month calendar + deadlines on the timetable + pending items everywhere. PR8 Grades becomes Courses.
