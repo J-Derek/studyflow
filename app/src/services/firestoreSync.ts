@@ -19,6 +19,7 @@ import type { Assignment, CourseGrade, Draft, Note, Period, StudySession } from 
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
 import { ageToDoc, assignmentToDoc, docToAssignment, docToDraft, docToPeriod, draftToDoc, periodToDoc, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
+import { mergeById } from './mergeById';
 import { isDefaultTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 import { cleanUpProfile } from '../utils/placeholderProfile';
 import { cleanAgeRecord, readDeviceAge } from '../utils/ageGate';
@@ -212,14 +213,18 @@ export function initFirestoreSync(uid: string): () => void {
       }
       assignmentsSeeded = true;
 
-      const remote: Assignment[] = [];
+      const remote: { item: Assignment; pendingWrite: boolean }[] = [];
       snapshot.forEach((d) => {
         const a = docToAssignment(d.id, d.data());
-        remote.push(isLegacySeedId('assignment', a.id) ? { ...a, sample: true } : a);
+        remote.push({ item: isLegacySeedId('assignment', a.id) ? { ...a, sample: true } : a, pendingWrite: d.metadata.hasPendingWrites });
       });
-      remote.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-      const { current, archived } = splitArchived(remote);
-      if (isCurrentUser(uid)) useStudyFlowStore.setState((st) => ({ assignments: current, archived: { ...st.archived, assignments: archived } }));
+      if (isCurrentUser(uid)) {
+        useStudyFlowStore.setState((st) => {
+          const merged = mergeById(remote, [...st.assignments, ...st.archived.assignments]).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+          const { current, archived } = splitArchived(merged);
+          return { assignments: current, archived: { ...st.archived, assignments: archived } };
+        });
+      }
     },
     (err) => console.warn('Firestore assignments listener warning (using offline cache):', err.message)
   );
@@ -247,11 +252,15 @@ export function initFirestoreSync(uid: string): () => void {
       }
       notesSeeded = true;
 
-      const remote: Note[] = [];
-      snapshot.forEach((d) => remote.push(docToNote(d.id, d.data())));
-      remote.sort((a, b) => b.editedAt.localeCompare(a.editedAt));
-      const { current, archived } = splitArchived(remote);
-      if (isCurrentUser(uid)) useStudyFlowStore.setState((st) => ({ notes: current, archived: { ...st.archived, notes: archived } }));
+      const remote: { item: Note; pendingWrite: boolean }[] = [];
+      snapshot.forEach((d) => remote.push({ item: docToNote(d.id, d.data()), pendingWrite: d.metadata.hasPendingWrites }));
+      if (isCurrentUser(uid)) {
+        useStudyFlowStore.setState((st) => {
+          const merged = mergeById(remote, [...st.notes, ...st.archived.notes]).sort((a, b) => b.editedAt.localeCompare(a.editedAt));
+          const { current, archived } = splitArchived(merged);
+          return { notes: current, archived: { ...st.archived, notes: archived } };
+        });
+      }
     },
     (err) => console.warn('Firestore notes listener warning (using offline cache):', err.message)
   );
@@ -343,13 +352,17 @@ export function initFirestoreSync(uid: string): () => void {
       }
       sessionsSeeded = true;
 
-      const remote: StudySession[] = [];
+      const remote: { item: StudySession; pendingWrite: boolean }[] = [];
       snapshot.forEach((d) => {
         const s = docToSession(d.id, d.data());
-        remote.push(isLegacySeedId('session', s.id) ? { ...s, sample: true } : s);
+        remote.push({ item: isLegacySeedId('session', s.id) ? { ...s, sample: true } : s, pendingWrite: d.metadata.hasPendingWrites });
       });
-      const { current, archived } = splitArchived(remote);
-      if (isCurrentUser(uid)) useStudyFlowStore.setState((st) => ({ sessions: current, archived: { ...st.archived, sessions: archived } }));
+      if (isCurrentUser(uid)) {
+        useStudyFlowStore.setState((st) => {
+          const { current, archived } = splitArchived(mergeById(remote, [...st.sessions, ...st.archived.sessions]));
+          return { sessions: current, archived: { ...st.archived, sessions: archived } };
+        });
+      }
     },
     (err) => console.warn('Firestore sessions listener warning (using offline cache):', err.message)
   );
@@ -377,13 +390,17 @@ export function initFirestoreSync(uid: string): () => void {
       }
       gradesSeeded = true;
 
-      const remote: CourseGrade[] = [];
+      const remote: { item: CourseGrade; pendingWrite: boolean }[] = [];
       snapshot.forEach((d) => {
         const g = docToGrade(d.id, d.data());
-        remote.push(isLegacySeedId('grade', g.id) ? { ...g, sample: true } : g);
+        remote.push({ item: isLegacySeedId('grade', g.id) ? { ...g, sample: true } : g, pendingWrite: d.metadata.hasPendingWrites });
       });
-      const { current, archived } = splitArchived(remote);
-      if (isCurrentUser(uid)) useStudyFlowStore.setState((st) => ({ grades: current, archived: { ...st.archived, grades: archived } }));
+      if (isCurrentUser(uid)) {
+        useStudyFlowStore.setState((st) => {
+          const { current, archived } = splitArchived(mergeById(remote, [...st.grades, ...st.archived.grades]));
+          return { grades: current, archived: { ...st.archived, grades: archived } };
+        });
+      }
     },
     (err) => console.warn('Firestore grades listener warning (using offline cache):', err.message)
   );

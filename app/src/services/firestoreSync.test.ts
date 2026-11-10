@@ -23,12 +23,12 @@ vi.mock('firebase/firestore', () => ({
 import { initFirestoreSync, planMerge, unsubscribeAllFirestoreSync } from './firestoreSync';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 
-function snapshotOf(docs: Array<{ id: string; data: Record<string, unknown> }>) {
+function snapshotOf(docs: Array<{ id: string; data: Record<string, unknown>; pending?: boolean }>) {
   return {
     empty: docs.length === 0,
     metadata: { fromCache: false, hasPendingWrites: false },
-    forEach: (fn: (d: { id: string; data: () => Record<string, unknown> }) => void) =>
-      docs.forEach((d) => fn({ id: d.id, data: () => d.data }))
+    forEach: (fn: (d: { id: string; data: () => Record<string, unknown>; metadata: { hasPendingWrites: boolean } }) => void) =>
+      docs.forEach((d) => fn({ id: d.id, data: () => d.data, metadata: { hasPendingWrites: !!d.pending } }))
   };
 }
 
@@ -89,6 +89,26 @@ describe('late snapshot race', () => {
     };
     asg.cb(snapshotOf([d]));
     expect(useStudyFlowStore.getState().assignments[0].subtasks?.map((s) => s.title)).toEqual(['first', 'second']);
+  });
+});
+
+describe('stale echo of this device\'s own write', () => {
+  beforeEach(() => {
+    listeners.length = 0;
+    unsubscribeAllFirestoreSync();
+    useStudyFlowStore.getState().resetStore();
+  });
+
+  it('keeps what is on screen for an item with a pending write, but still applies another device\'s change', () => {
+    useStudyFlowStore.getState().setAuthUser('A', false, 'a@x.com', 'A');
+    initFirestoreSync('A');
+    const asg = listeners.find((l) => l.path === 'users/A/assignments')!;
+    asg.cb(snapshotOf([assignmentDoc('first'), { ...assignmentDoc('other'), id: 'x2' }]));
+    // the student edits x1 on screen (a second tick), then the echo of the FIRST write arrives, still pending
+    useStudyFlowStore.setState((st) => ({ assignments: st.assignments.map((a) => (a.id === 'x1' ? { ...a, title: 'second tick' } : a)) }));
+    asg.cb(snapshotOf([{ ...assignmentDoc('first'), pending: true }, { ...assignmentDoc('changed elsewhere'), id: 'x2' }]));
+    const titles = Object.fromEntries(useStudyFlowStore.getState().assignments.map((a) => [a.id, a.title]));
+    expect(titles).toEqual({ x1: 'second tick', x2: 'changed elsewhere' });
   });
 });
 
