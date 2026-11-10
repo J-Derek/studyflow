@@ -280,13 +280,6 @@ export const FocusTimerPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Timer lengths */}
-      <details className="mx-auto w-full max-w-md rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark">
-        <summary className="cursor-pointer select-none px-4 min-h-[44px] flex items-center text-sm font-medium text-zinc-800 dark:text-zinc-200">
-          Change timer lengths
-        </summary>
-        <LengthsForm key={`${timerSettings.focusDuration}/${timerSettings.shortBreakDuration}/${timerSettings.longBreakDuration}`} settings={timerSettings} timerStatus={timer.status} onApply={(lengths, restartCurrent) => updateTimerSettings(lengths, { restartCurrent })} />
-      </details>
 
       {/* Circular Laboratory Gauge Display */}
       <div className="bg-surface-light dark:bg-surface-dark p-8 md:p-10 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex flex-col items-center justify-center relative overflow-hidden transition-colors">
@@ -381,6 +374,14 @@ export const FocusTimerPage: React.FC = () => {
         {/* Tab-inactive Accuracy Badge */}
         
       </div>
+
+      {/* Timer lengths */}
+      <details className="mx-auto w-full max-w-md rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark">
+        <summary className="cursor-pointer select-none px-4 min-h-[44px] flex items-center text-sm font-medium text-zinc-800 dark:text-zinc-200">
+          Change timer lengths
+        </summary>
+        <LengthsForm key={`${timerSettings.focusDuration}/${timerSettings.shortBreakDuration}/${timerSettings.longBreakDuration}`} settings={timerSettings} timerStatus={timer.status} onApply={(lengths, restartCurrent) => updateTimerSettings(lengths, { restartCurrent })} />
+      </details>
 
       {/* AMBIENT SOUNDSCAPES DEEP WORK AUDIO (Web Audio Synthesizer) */}
       <div className="bg-surface-light dark:bg-surface-dark p-5 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs space-y-3.5 transition-colors">

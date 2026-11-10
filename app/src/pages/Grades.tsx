@@ -94,6 +94,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
         )}
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Your courses, and what they add up to.</p>
       </div>
+      {grades.length > 0 && (
       <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-1 md:grid-cols-3 overflow-hidden">
         <div className="p-4 md:p-5 flex flex-col justify-between">
           <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Projected GPA</span>
@@ -136,6 +137,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
           </div>
         </div>
       </div>
+      )}
 
       {/* Main Interactive "What-If" Final Exam Simulator */}
       {selectedCourse && (

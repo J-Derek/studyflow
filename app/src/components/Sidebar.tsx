@@ -113,8 +113,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, o
           {toggle}
         </div>
 
-        {/* Theme */}
-        {collapsed ? (
+        {/* Theme: one switcher. Signed-in students have it in their account menu; guests (no menu) get it here. */}
+        {isAnonymous && (collapsed ? (
           <button
             type="button"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -165,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, o
               <span>Device</span>
             </button>
           </div>
-        )}
+        ))}
 
         {/* Navigation Links */}
         <nav className={cn('pt-1', collapsed ? 'space-y-1 flex flex-col items-center' : 'space-y-0.5')}>
