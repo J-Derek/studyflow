@@ -53,7 +53,7 @@ function holdBackThenApply(key: string, remote: { item: { id: string }; pendingW
       if (generation === syncGeneration) apply();
     }, RECENT_WRITE_MS + 50)
   );
-}
+}
 /** Bumped whenever listeners are torn down, so a list that was waiting to start for an earlier sign-in never attaches late. */
 let syncGeneration = 0;
 
