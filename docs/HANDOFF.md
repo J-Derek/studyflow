@@ -3,6 +3,26 @@
 Read this first. It is the current state of the project and how to work on it. Last updated 2026-11-09 (after PR #18,
 with PR #19 open). The older docs in this folder (PRD, ARCHITECTURE, DESIGN and so on) describe intent; this file describes what is true now.
 
+## 00. ROUND 3 (state on 2026-11-10): sharpen the core loop, six PRs, all pushed, waiting for Derek
+
+Plan: `docs/ROUND3-PLAN.md` (it lives on branch `claude/ux-a-today`). Each PR is its own branch from `main` (not stacked), each fully tested (full e2e, prod suite, vitest, lint, build).
+Round 2 was merged and deployed first. Merge them in any order; the only shared file is `docs/ROUND3-PLAN.md` (A adds it).
+
+| PR | Branch | What it does | Deploy |
+|---|---|---|---|
+| A | `claude/ux-a-today` | Phone-first Today: title and date first, course/kind/priority behind "More options", add card before the sign-in nudge, Getting Started hides after a real assignment, Saved badge quiet on phones | app |
+| B | `claude/ux-b-screens` | Timer shows clock and Start first; empty Timetable shows only the add-a-class card; empty Courses hides GPA boxes; bottom bar says "Assignments"; sidebar theme switcher for guests only (signed-in use the account menu) | app |
+| C | `claude/ux-c-copy` | Less copy; "easy to forget" hint only for the first 3 items; key only on the Timetable; **Next up sorts overdue, date, priority, time**; demo wording only in Help | app |
+| D | `claude/ux-d-motion` | 150 to 200 ms CSS motion (off with reduce motion); Timer and Assignments chunks preloaded at idle | app |
+| E | `claude/ux-e-data` | (1) merge snapshots by id so a quick tick is not lost; (2) the 500 limit counts current work only: `archived` flag, one-time backfill per device, past semesters load on demand | **rules FIRST, then app** |
+| F | `claude/ux-f-install` | Installable (PNG icons, manifest), service worker for offline start, Install button in Help and the account menu | app |
+
+### Notes worth knowing
+- **E**: `mergeById` (services/mergeById.ts) keeps the on-screen version of an item that has a pending write from this device, or was written in the last 750 ms, then re-applies the latest snapshot when the window closes. `ensureArchivedFlags` flags older documents once (localStorage key is a fingerprint, never the user id; sign-out isolation test checks this) and falls back to listing everything if the server cannot be reached. Past semesters, the backup download, restore and "Delete all my data" call `loadArchivedFromCloud` first. Known limit: a record saved by an OLD app tab left open across the deploy has no flag and will not show until it is saved again; two people ticking different items at the same instant is still last-writer-wins (each tick writes the whole assignment).
+- **F**: `src/pwa/sw.template.js` becomes `/sw.js` at build time (plugin in `vite.config.ts`). Pages network-first, assets cache-first, never touches non-GET, other origins or `/__/`. The entry file, `vendor-*` chunks and anything under 400 KB are saved at install; bigger lazy chunks (Word export) are saved on first use. A new version waits for all tabs to close. `e2e-prod/offline-start.spec.ts` has a control test (the same offline reload fails without the service worker). Not testable here: Chrome's real install prompt and iPhone "Add to Home Screen". Push reminders are a separate later decision (needs a server).
+- **Known load flakes (also on `main`)**: under 6 parallel workers `kinds-progress`, `notes` and `timetable-clash` fail about 1 run in 40; alone they pass.
+- Windows line endings: one stray lone CR in a file makes git skip its CRLF to LF conversion and shows a 1500-line diff. Check `git diff --stat` after every scripted edit.
+
 ## 0. ROUND 2: read this first (state on 2026-11-09)
 
 Derek sent a long list after testing the live app. It was planned as **ten small PRs**; the full plan, with files and

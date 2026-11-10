@@ -15,6 +15,7 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
+import { InstallCard } from './InstallCard';
 
 interface HelpMenuModalProps {
   isOpen: boolean;
@@ -278,6 +279,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                   </button>
                 ))}
               </div>
+              <InstallCard />
             </div>
           )}
 

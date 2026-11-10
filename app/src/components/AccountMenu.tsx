@@ -1,10 +1,11 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { Cloud, HelpCircle, LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react';
+import { Cloud, Download, HelpCircle, LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useAccountView } from '../store/useAccountView';
 import { signOutUser } from '../lib/authActions';
 import { cn } from '../utils/formatters';
 import { Avatar } from './Avatar';
+import { useInstallPrompt } from '../lib/installPrompt';
 import { isPlaceholderDetail } from '../utils/placeholderProfile';
 
 interface AccountMenuProps {
@@ -28,6 +29,7 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onOpenProfile, onOpenB
   const { user, customPhotoUrl, themeMode, setThemeMode } = useStudyFlowStore();
   const { email: userEmail, photoUrl: userPhotoUrl } = useAccountView();
   const [open, setOpen] = useState(false);
+  const { canInstall, install } = useInstallPrompt();
   const [signingOut, setSigningOut] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -148,6 +150,12 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onOpenProfile, onOpenB
             ))}
           </div>
 
+          {canInstall && (
+            <button type="button" className={itemClass} onClick={() => { setOpen(false); void install(); }}>
+              <Download className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+              Install app
+            </button>
+          )}
           {onOpenHelp && (
             <button type="button" className={itemClass} onClick={run(onOpenHelp)}>
               <HelpCircle className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
