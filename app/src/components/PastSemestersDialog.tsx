@@ -1,7 +1,8 @@
 import { createPortal } from 'react-dom';
-import React, { useId, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { ArrowLeft, X } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
+import { loadArchivedFromCloud } from '../services/firestoreSync';
 import { useDialog } from '../lib/useDialog';
 import { periodWord } from '../utils/periods';
 import { calculateCoursePercentage } from '../utils/academicCalculations';
@@ -13,7 +14,20 @@ const DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', '
 
 /** Everything archived, grouped by the semester or term it belonged to. Read-only: this is a record, not a place to edit. */
 export const PastSemestersDialog: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const { periods, archived, user } = useStudyFlowStore();
+  const { periods, archived, user, userId } = useStudyFlowStore();
+  // Past semesters are not kept in memory (that is what keeps the 500-item limit about current work); fetch them when this opens.
+  const [loading, setLoading] = useState(!!userId);
+  const [loadFailed, setLoadFailed] = useState(false);
+  useEffect(() => {
+    if (!userId) return;
+    let live = true;
+    loadArchivedFromCloud(userId)
+      .catch(() => live && setLoadFailed(true))
+      .finally(() => live && setLoading(false));
+    return () => {
+      live = false;
+    };
+  }, [userId]);
   const titleId = useId();
   const dialogRef = useDialog(true, onClose);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -45,6 +59,12 @@ export const PastSemestersDialog: React.FC<{ onClose: () => void }> = ({ onClose
             <X className="h-4 w-4" />
           </button>
         </div>
+
+        {(loading || loadFailed) && (
+          <p role="status" className="text-xs text-zinc-600 dark:text-zinc-400">
+            {loadFailed ? 'Could not load everything from your account. What is shown may be incomplete; check your connection and reopen this.' : 'Loading your past work…'}
+          </p>
+        )}
 
         {open ? (
           <div className="space-y-4">

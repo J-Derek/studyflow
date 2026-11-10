@@ -32,6 +32,7 @@ export function assignmentToDoc(a: Assignment): Doc {
   if (a.completedAt) out.completedAt = a.completedAt;
   if (a.sample) out.sample = true;
   Object.assign(out, archivedField(a.archivedPeriod));
+  out.archived = !!out.archivedPeriod; // lets the app load current items only (rules: bool)
   if (a.subtasks && a.subtasks.length > 0) {
     // A map keyed by subtask id so concurrent edits to different subtasks both survive.
     const map: Record<string, { id: string; title: string; completed: boolean; order: number }> = {};
@@ -93,6 +94,7 @@ export function sessionToDoc(s: StudySession): Doc {
   if (s.color) out.color = s.color;
   if (s.sample) out.sample = true;
   Object.assign(out, archivedField(s.archivedPeriod));
+  out.archived = !!out.archivedPeriod; // lets the app load current items only (rules: bool)
   return out;
 }
 
@@ -130,6 +132,7 @@ export function gradeToDoc(g: CourseGrade): Doc {
   };
   if (g.sample) out.sample = true;
   Object.assign(out, archivedField(g.archivedPeriod));
+  out.archived = !!out.archivedPeriod; // lets the app load current items only (rules: bool)
   return out;
 }
 
@@ -304,7 +307,8 @@ export function noteToDoc(n: Note): Doc {
     pinned: n.pinned === true,
     createdAt: n.createdAt,
     editedAt: n.editedAt,
-    ...archivedField(n.archivedPeriod)
+    ...archivedField(n.archivedPeriod),
+    archived: !!n.archivedPeriod // lets the app load current items only (rules: bool)
   };
 }
 

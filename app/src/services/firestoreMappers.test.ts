@@ -10,7 +10,13 @@ describe('assignmentToDoc', () => {
   it('never emits undefined (Firestore rejects it) or unknown keys', () => {
     const doc = assignmentToDoc({ ...base, dueTime: undefined, notes: undefined, completedAt: undefined });
     expect(Object.values(doc).some((v) => v === undefined)).toBe(false);
-    expect(Object.keys(doc).sort()).toEqual(['course', 'createdAt', 'dueDate', 'id', 'priority', 'progress', 'status', 'title']);
+    expect(Object.keys(doc).sort()).toEqual(['archived', 'course', 'createdAt', 'dueDate', 'id', 'priority', 'progress', 'status', 'title']);
+  });
+  it('marks current items archived:false and archived items archived:true, for all four kinds of record', () => {
+    expect(assignmentToDoc(base).archived).toBe(false);
+    expect(assignmentToDoc({ ...base, archivedPeriod: 'p1' }).archived).toBe(true);
+    expect(noteToDoc({ id: 'n', title: 'T', body: '', course: '', pinned: false, createdAt: 'z', editedAt: 'z' }).archived).toBe(false);
+    expect(noteToDoc({ id: 'n', title: 'T', body: '', course: '', pinned: false, createdAt: 'z', editedAt: 'z', archivedPeriod: 'p1' }).archived).toBe(true);
   });
   it('drops an invalid dueTime and replaces NaN progress', () => {
     const doc = assignmentToDoc({ ...base, dueTime: '5pm', progress: NaN });
@@ -217,7 +223,7 @@ describe('note documents', () => {
   });
 
   it('emits only the keys the rules allow', () => {
-    expect(Object.keys(noteToDoc(note)).sort()).toEqual(['body', 'course', 'createdAt', 'editedAt', 'id', 'pinned', 'title']);
+    expect(Object.keys(noteToDoc(note)).sort()).toEqual(['archived', 'body', 'course', 'createdAt', 'editedAt', 'id', 'pinned', 'title']);
   });
 
   it('never stores an empty title, and stays within the rules limits', () => {

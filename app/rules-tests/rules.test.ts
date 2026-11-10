@@ -19,6 +19,7 @@ import {
   serverTimestamp,
   setDoc,
   Timestamp,
+  where,
   updateDoc,
   writeBatch
 } from 'firebase/firestore';
@@ -414,6 +415,26 @@ describe('past semesters (archiving)', () => {
     await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: 5 })));
     await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: '' })));
     await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: 'x'.repeat(61) })));
+  });
+  it('accepts the archived flag (true or false) on assignments, classes, courses and notes, and nothing but a boolean', async () => {
+    const grade = (over: Record<string, unknown> = {}) => ({ id: 'g1', courseCode: 'C', courseName: 'N', credits: 3, targetLetter: 'A', color: '#000', assessments: [], updatedAt: serverTimestamp(), ...over });
+    const note = (over: Record<string, unknown> = {}) => ({ id: 'n1', title: 'T', body: '', course: '', pinned: false, createdAt: 'z', editedAt: 'z', updatedAt: serverTimestamp(), ...over });
+    for (const archived of [true, false]) {
+      await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archived })));
+      await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'sessions', 's1'), ses({ archived })));
+      await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'grades', 'g1'), grade({ archived })));
+      await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'notes', 'n1'), note({ archived })));
+    }
+    for (const bad of ['yes', 1, null]) {
+      await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archived: bad })));
+      await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'notes', 'n1'), note({ archived: bad })));
+    }
+    // documents written by an older app version (no flag) are still accepted, and can be given the flag later by an update
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'old'), asg({ id: 'old' })));
+    await assertSucceeds(updateDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'old'), { archived: false, updatedAt: serverTimestamp() }));
+    // listing current items only is allowed (with a limit), as is listing the archived ones
+    await assertSucceeds(getDocs(query(collection(asAlice(), 'users', ALICE, 'assignments'), where('archived', '==', false), limit(500))));
+    await assertSucceeds(getDocs(query(collection(asAlice(), 'users', ALICE, 'assignments'), where('archived', '==', true), limit(500))));
   });
   it('accepts a semester, term or trimester label on the profile, and nothing else', async () => {
     const user = (over: Record<string, unknown> = {}) => ({ uid: ALICE, name: 'A', university: 'U', program: 'P', semester: 'S', updatedAt: serverTimestamp(), ...over });

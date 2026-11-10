@@ -7,6 +7,7 @@ import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useAccountView } from '../store/useAccountView';
 import { deleteMyAccount, friendlyAuthMessage, signInOrLinkWithGoogle, signOutUser, warmUpGoogleSignIn } from '../lib/authActions';
 import { useSyncErrors } from '../lib/syncErrors';
+import { loadArchivedFromCloud } from '../services/firestoreSync';
 import { MAX_BACKUP_BYTES, validateBackupJson } from '../utils/backupValidator';
 import { inAppBrowser } from '../utils/inAppBrowser';
 import { buildBackup, downloadBackup } from '../utils/exportBackup';
@@ -42,7 +43,7 @@ const secondaryButton =
  * PR5 adds a "Delete my account" section at the bottom of the signed-in view.
  */
 export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpenProfile }) => {
-  const { assignments, sessions, grades, notes, drafts, archived, periods, customPhotoUrl, user, isSyncing, userId } = useStudyFlowStore();
+  const { assignments, sessions, grades, notes, periods, customPhotoUrl, user, isSyncing, userId } = useStudyFlowStore();
   const account = useAccountView();
   const isAnonymous = !account.signedIn;
   const errors = useSyncErrors();
@@ -75,16 +76,21 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
     notes
   };
 
-  const handleExportJSON = () => downloadBackup(
+  // Past semesters are not kept in memory until needed, so fetch them first: a backup must hold everything.
+  const handleExportJSON = async () => {
+    if (userId) await loadArchivedFromCloud(userId).catch((err) => console.warn('Could not load past semesters for the backup:', err));
+    const s = useStudyFlowStore.getState();
+    downloadBackup(
       buildBackup({
-        assignments: [...assignments, ...archived.assignments],
-        sessions: [...sessions, ...archived.sessions],
-        grades: [...grades, ...archived.grades],
-        notes: [...notes, ...archived.notes],
-        drafts,
-        periods
+        assignments: [...s.assignments, ...s.archived.assignments],
+        sessions: [...s.sessions, ...s.archived.sessions],
+        grades: [...s.grades, ...s.archived.grades],
+        notes: [...s.notes, ...s.archived.notes],
+        drafts: s.drafts,
+        periods: s.periods
       })
     );
+  };
 
   const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -96,7 +102,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
     }
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const rawText = event.target?.result as string;
       const validation = validateBackupJson(rawText);
 
@@ -105,6 +111,8 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
         return;
       }
 
+      // A restore replaces everything, past semesters included, so the ones not in memory are fetched first.
+      if (userId) await loadArchivedFromCloud(userId).catch((err) => console.warn('Could not load past semesters before restoring:', err));
       useStudyFlowStore.getState().importLedger(validation.data.ledger);
 
       setImportStatus({ ok: true, text: 'Restored. Your plan now includes everything in that file.' });
