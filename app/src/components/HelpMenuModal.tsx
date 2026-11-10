@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { loadArchivedFromCloud } from '../services/firestoreSync';
+import { InstallCard } from './InstallCard';
 
 interface HelpMenuModalProps {
   isOpen: boolean;
@@ -282,6 +283,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                   </button>
                 ))}
               </div>
+              <InstallCard />
             </div>
           )}
 

@@ -7,6 +7,7 @@ import App from './App.tsx'
 import { useStudyFlowStore } from './store/studyFlowStore'
 import { startTimerScheduler } from './lib/timerScheduler'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { initInstallPrompt } from './lib/installPrompt'
 
 if (typeof window !== 'undefined') {
   startTimerScheduler();
@@ -17,6 +18,14 @@ if (typeof window !== 'undefined') {
       (window as unknown as Record<string, unknown>).__auth = m;
     });
   }
+
+  // Offline start and "install": the service worker keeps a copy of the app itself (never the student's data). Production builds only.
+  if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+    });
+  }
+  initInstallPrompt();
 
   // Auto-recover from stale chunk 404s after new deployments. Only for genuine "file did not load"
   // errors: anything else (a blocked sign-in pop-up, for example) must reach its caller, not reload.
