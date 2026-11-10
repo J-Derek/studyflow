@@ -41,14 +41,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [writing, setWriting] = useState<Assignment | null>(null);
   // If the assignment is deleted elsewhere while its dialog is open, close the dialog rather than recreate it.
   const editingStillExists = !editing || assignments.some((a) => a.id === editing.id);
-  // Right after the very first assignment is saved, say what happened and where to change it.
+  // Right after the student saves their very first assignment, say what happened and where to change it. The list also goes from empty
+  // to full when their saved plan arrives after signing in or reloading; that is not a save, so only an assignment made in the last few
+  // seconds counts (older ones carry an older createdAt).
   const [justSaved, setJustSaved] = useState<string | null>(null);
   const previousCount = useRef(assignments.length);
   useEffect(() => {
     if (previousCount.current === 0 && assignments.length > 0) {
-      setJustSaved(assignments[0]!.title);
-      const t = window.setTimeout(() => setJustSaved(null), 10000);
+      const newest = [...assignments].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]!;
+      const madeJustNow = Date.now() - Date.parse(newest.createdAt) < 8000;
       previousCount.current = assignments.length;
+      if (!madeJustNow) return;
+      setJustSaved(newest.title);
+      const t = window.setTimeout(() => setJustSaved(null), 10000);
       return () => window.clearTimeout(t);
     }
     previousCount.current = assignments.length;
