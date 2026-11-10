@@ -1,6 +1,10 @@
 import React, { useId } from 'react';
 import type { AssignmentKind } from '../types';
 import { ASSIGNMENT_KINDS, KIND_META } from '../utils/kinds';
+import { useStudyFlowStore } from '../store/studyFlowStore';
+
+/** The "easy to forget" nudge is for a student's first few items only; after that it is noise. */
+const NUDGE_UNTIL = 3;
 
 /**
  * "What is it?" Choose assignment, exam, test, reading or project. The line under the choices says what the chosen one is for, and
@@ -8,6 +12,7 @@ import { ASSIGNMENT_KINDS, KIND_META } from '../utils/kinds';
  */
 export const KindPicker: React.FC<{ value: AssignmentKind; onChange: (kind: AssignmentKind) => void }> = ({ value, onChange }) => {
   const name = useId();
+  const itemCount = useStudyFlowStore((s) => s.assignments.length);
   return (
     <fieldset>
       <legend className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">What is it?</legend>
@@ -23,7 +28,8 @@ export const KindPicker: React.FC<{ value: AssignmentKind; onChange: (kind: Assi
         ))}
       </div>
       <p className="mt-1.5 text-xs text-zinc-600 dark:text-zinc-400">
-        {KIND_META[value].hint} Exams, tests and readings are easy to forget: add them here too.
+        {KIND_META[value].hint}
+        {itemCount < NUDGE_UNTIL && ' Exams, tests and readings are easy to forget: add them here too.'}
       </p>
     </fieldset>
   );

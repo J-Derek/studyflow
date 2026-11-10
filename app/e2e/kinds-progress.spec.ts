@@ -142,11 +142,8 @@ test('marking work done celebrates: a message that is read out, and confetti unl
 test('the keys: kinds on Assignments, class colours on the Timetable, each class type has its own edge colour', async ({ page }) => {
   await ready(page, '/assignments');
   await seed(page, [{ title: 'An exam', kind: 'exam' }, { title: 'A reading', kind: 'reading' }]);
-  const legend = page.getByTestId('legend');
-  await legend.getByText('What do the labels mean?').click();
-  for (const label of ['Assignment', 'Exam', 'Test', 'Reading', 'Project']) await expect(legend).toContainText(label);
-  await expect(legend).toContainText('worked out from the items you tick');
-  expect((await legend.getByText('What do the labels mean?').boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await expect(page.getByTestId('legend')).toHaveCount(0); // the key lives on the Timetable only
+  await expect(page.getByText('An exam').first()).toBeVisible();
 
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);

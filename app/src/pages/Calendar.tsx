@@ -248,7 +248,7 @@ export const CalendarPage: React.FC = () => {
                 Your weekly class schedule is empty
               </h3>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-                Add your lectures, labs, and study blocks to organize your week, or load demo courses from the Help menu (?).
+                Add your lectures, labs and study blocks to organize your week.
               </p>
             </div>
           </div>

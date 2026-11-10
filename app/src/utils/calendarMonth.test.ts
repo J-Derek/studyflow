@@ -99,4 +99,15 @@ describe('deadlines', () => {
     expect(selectPendingDeadlines(list).map((a) => a.id)).toEqual(['overdue', 'soon', 'late']);
     expect(selectPendingDeadlines([])).toEqual([]);
   });
+
+  it('selectPendingDeadlines sorts by date, then priority (high first), then time, with overdue still leading',()=>{
+    const list = [
+      asg({ id: 'low', dueDate: '2026-11-20', priority: 'low' }),
+      asg({ id: 'high-late', dueDate: '2026-11-20', priority: 'high', dueTime: '18:00' }),
+      asg({ id: 'high-early', dueDate: '2026-11-20', priority: 'high', dueTime: '09:00' }),
+      asg({ id: 'medium', dueDate: '2026-11-20', priority: 'medium' }),
+      asg({ id: 'overdue-low', dueDate: '2026-11-01', priority: 'low' }),
+    ];
+    expect(selectPendingDeadlines(list).map((x) => x.id)).toEqual(['overdue-low', 'high-early', 'high-late', 'medium', 'low']);
+  });
 });
