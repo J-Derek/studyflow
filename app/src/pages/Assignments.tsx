@@ -212,7 +212,7 @@ export const AssignmentsPage: React.FC = () => {
             return (
               <div
                 key={asg.id}
-                className={`p-3.5 transition-colors hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 flex flex-col gap-2.5 ${
+                className={`p-3.5 transition-[opacity,background-color] duration-200 motion-reduce:transition-none hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 flex flex-col gap-2.5 ${
                   isCompleted ? 'opacity-70 bg-zinc-50/30 dark:bg-zinc-900/30' : ''
                 }`}
               >
@@ -229,7 +229,7 @@ export const AssignmentsPage: React.FC = () => {
                       aria-label={isCompleted ? `Mark "${asg.title}" incomplete` : `Mark "${asg.title}" complete`}
                     >
                       {isCompleted ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <CheckCircle2 className="sf-enter h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                       ) : (
                         <Circle className="h-4 w-4" />
                       )}
@@ -448,7 +448,7 @@ export const AssignmentsPage: React.FC = () => {
       {justDeleted && (
         <div
           role="status"
-          className="fixed left-1/2 -translate-x-1/2 bottom-20 md:bottom-6 z-40 flex items-center gap-4 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2.5 text-sm shadow-lg max-w-[calc(100vw-2rem)]"
+          className="sf-enter fixed left-1/2 -translate-x-1/2 bottom-20 md:bottom-6 z-40 flex items-center gap-4 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2.5 text-sm shadow-lg max-w-[calc(100vw-2rem)]"
         >
           <span className="truncate">Deleted “{justDeleted.title}”</span>
           <button
