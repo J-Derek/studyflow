@@ -28,9 +28,25 @@ const CalendarPage = lazy(() => import('./pages/Calendar').then((m) => ({ defaul
 const FocusTimerPage = lazy(() => import('./pages/FocusTimer').then((m) => ({ default: m.FocusTimerPage })));
 const CoursesPage = lazy(() => import('./pages/Courses').then((m) => ({ default: m.CoursesPage })));
 const NotesPage = lazy(() => import('./pages/Notes').then((m) => ({ default: m.NotesPage })));
+// After the first paint, fetch the two pages students open most so the grey "Loading" flash does not show on the first tap.
+// Idle time only, and a failure is harmless: the normal lazy import will try again when the page is opened.
+const preloadPages = () => {
+  void import('./pages/FocusTimer').catch(() => undefined);
+  void import('./pages/Assignments').catch(() => undefined);
+};
+
 const LegalPage = lazy(() => import('./pages/LegalPage').then((m) => ({ default: m.LegalPage })));
 
 export function App() {
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(preloadPages, { timeout: 3000 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const t = window.setTimeout(preloadPages, 1500);
+    return () => window.clearTimeout(t);
+  }, []);
   const { activeTab, theme, themeMode, setThemeMode } = useStudyFlowStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);

@@ -29,7 +29,7 @@ export const DaySheet: React.FC<DaySheetProps> = ({ date, classes, deadlines, on
   const row = 'w-full min-h-[44px] flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+    <div className="sf-fade motion-reduce:animate-none fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
       <div
         ref={dialogRef}
         role="dialog"
@@ -37,7 +37,7 @@ export const DaySheet: React.FC<DaySheetProps> = ({ date, classes, deadlines, on
         aria-labelledby={titleId}
         data-testid="day-sheet"
         onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-md max-h-[85dvh] overflow-y-auto bg-surface-light dark:bg-surface-dark border border-zinc-200 dark:border-zinc-800 rounded-t-2xl sm:rounded-xl shadow-2xl p-4 space-y-4"
+        className="sf-sheet w-full sm:max-w-md max-h-[85dvh] overflow-y-auto bg-surface-light dark:bg-surface-dark border border-zinc-200 dark:border-zinc-800 rounded-t-2xl sm:rounded-xl shadow-2xl p-4 space-y-4"
       >
         <div className="flex items-start justify-between gap-3">
           <h2 id={titleId} className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{spokenDate(date)}</h2>
