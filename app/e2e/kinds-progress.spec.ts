@@ -59,6 +59,7 @@ test('the first-deadline card on an empty Today asks what it is too', async ({ p
   await ready(page, '/');
   const card = page.getByRole('heading', { name: 'What is your next deadline?' }).locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]');
   await card.getByPlaceholder(/Problem Set 2/).fill('CAT 1');
+  await card.getByRole('button', { name: 'More options' }).click();
   await card.getByPlaceholder('e.g. CS 101 or Physics').fill('ACS 443');
   await card.locator('label').filter({ hasText: /^Test$/ }).click();
   await expect(card.locator('input[type=radio][value="test"]')).toBeChecked();

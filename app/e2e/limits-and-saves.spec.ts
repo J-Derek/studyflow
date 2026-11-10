@@ -42,6 +42,7 @@ test.describe('limits on what can be typed', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await open(page, '/');
     await expect(page.getByPlaceholder(/Problem Set 2 or Chapter 4/)).toHaveAttribute('maxlength', '250');
+    await page.getByRole('button', { name: 'More options' }).click();
     await expect(page.getByPlaceholder(/CS 101 or Physics/).first()).toHaveAttribute('maxlength', '200');
     await expect(page.getByLabel('Due date').first()).toHaveAttribute('max', '2100-12-31');
   });
@@ -141,14 +142,18 @@ test.describe('a save the cloud refuses is no longer silent', () => {
     await expect(badge).not.toHaveAttribute('data-state', 'error');
   });
 
-  test('the "Saved" badge is on a phone too, as a dot with words for screen readers', async ({ page }) => {
+  test('on a phone the badge stays out of the way when saved, and shows (as a dot with words) when something is wrong', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 });
     await open(page, '/');
     const badge = page.getByTestId('save-badge');
     await expect(badge).toHaveAttribute('data-state', /saved|saving|device/);
+    await expect(badge).toBeHidden({ timeout: 15_000 });
+    await page.context().setOffline(true);
+    await expect(badge).toHaveAttribute('data-state', 'offline');
     await expect(badge).toBeVisible();
     const box = (await badge.boundingBox())!;
     expect(box.x + box.width).toBeLessThanOrEqual(375);
-    expect(await badge.getAttribute('title')).toMatch(/saved|saving|account|device/i);
+    expect(await badge.getAttribute('title')).toBeTruthy();
+    await page.context().setOffline(false);
   });
 });
