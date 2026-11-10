@@ -59,6 +59,7 @@ test('the first-deadline card on an empty Today asks what it is too', async ({ p
   await ready(page, '/');
   const card = page.getByRole('heading', { name: 'What is your next deadline?' }).locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]');
   await card.getByPlaceholder(/Problem Set 2/).fill('CAT 1');
+  await card.getByRole('button', { name: 'More options' }).click();
   await card.getByPlaceholder('e.g. CS 101 or Physics').fill('ACS 443');
   await card.locator('label').filter({ hasText: /^Test$/ }).click();
   await expect(card.locator('input[type=radio][value="test"]')).toBeChecked();
@@ -142,11 +143,8 @@ test('marking work done celebrates: a message that is read out, and confetti unl
 test('the keys: kinds on Assignments, class colours on the Timetable, each class type has its own edge colour', async ({ page }) => {
   await ready(page, '/assignments');
   await seed(page, [{ title: 'An exam', kind: 'exam' }, { title: 'A reading', kind: 'reading' }]);
-  const legend = page.getByTestId('legend');
-  await legend.getByText('What do the labels mean?').click();
-  for (const label of ['Assignment', 'Exam', 'Test', 'Reading', 'Project']) await expect(legend).toContainText(label);
-  await expect(legend).toContainText('worked out from the items you tick');
-  expect((await legend.getByText('What do the labels mean?').boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await expect(page.getByTestId('legend')).toHaveCount(0); // the key lives on the Timetable only
+  await expect(page.getByText('An exam').first()).toBeVisible();
 
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);

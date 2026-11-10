@@ -122,6 +122,7 @@ test('on a phone: day buttons are at least 44px, the day sheet fits, and there a
 
   await page.locator('[aria-current="date"]').click();
   const sheet = page.getByTestId('day-sheet');
+  await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished))); // measure after it has slid in
   const box = (await sheet.boundingBox())!;
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(375);

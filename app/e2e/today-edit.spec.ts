@@ -13,6 +13,7 @@ for (const [name, width, height] of [['phone', 375, 760], ['desktop', 1280, 800]
 
     // 1) add the first assignment with the quick card
     await page.getByPlaceholder(/Problem Set 2/).fill('Essay on Kenyan law');
+    await page.getByRole('button', { name: 'More options' }).click();
     await page.getByPlaceholder(/CS 101/).first().fill('LAW 101');
     await page.getByRole('button', { name: /Save deadline/ }).click();
 
@@ -42,6 +43,7 @@ test('a short note can be added to an assignment and is shown afterwards', async
   await page.goto('/');
   await page.waitForFunction(() => !!(window as unknown as { __store?: { getState: () => { userId: string | null } } }).__store?.getState().userId);
   await page.getByPlaceholder(/Problem Set 2/).fill('Lab report');
+  await page.getByRole('button', { name: 'More options' }).click();
   await page.getByPlaceholder(/CS 101/).first().fill('PHY 210');
   await page.getByRole('button', { name: /Save deadline/ }).click();
 

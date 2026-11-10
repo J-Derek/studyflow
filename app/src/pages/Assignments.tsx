@@ -17,7 +17,6 @@ import { LIMITS } from '../utils/limits';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { WritingSpace } from '../components/WritingSpace';
 import { KindBadge } from '../components/KindBadge';
-import { Legend } from '../components/Legend';
 import { celebrate } from '../components/CelebrateBurst';
 import { kindOf } from '../utils/kinds';
 import { progressInfo } from '../utils/progress';
@@ -174,8 +173,6 @@ export const AssignmentsPage: React.FC = () => {
         </div>
       </div>
 
-      <Legend show={['kinds', 'priority', 'progress']} />
-
       {/* Linear-Tier Unified Issue Matrix Container */}
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark overflow-hidden divide-y divide-zinc-200/70 dark:divide-zinc-800/70 shadow-2xs">
         {filteredAssignments.length === 0 ? (
@@ -190,7 +187,7 @@ export const AssignmentsPage: React.FC = () => {
             </h2>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mt-0.5">
               {assignments.length === 0 
-                ? 'Add your first problem set, paper, or lab report, and your exams, tests and readings too, to start tracking your deadlines.' 
+                ? 'Add a problem set, paper, exam or reading to start tracking deadlines.' 
                 : 'Adjust your search filters or click "New Assignment" to add an assignments milestone.'}
             </p>
             {assignments.length === 0 && (
@@ -215,7 +212,7 @@ export const AssignmentsPage: React.FC = () => {
             return (
               <div
                 key={asg.id}
-                className={`p-3.5 transition-colors hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 flex flex-col gap-2.5 ${
+                className={`p-3.5 transition-[opacity,background-color] duration-200 motion-reduce:transition-none hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 flex flex-col gap-2.5 ${
                   isCompleted ? 'opacity-70 bg-zinc-50/30 dark:bg-zinc-900/30' : ''
                 }`}
               >
@@ -232,7 +229,7 @@ export const AssignmentsPage: React.FC = () => {
                       aria-label={isCompleted ? `Mark "${asg.title}" incomplete` : `Mark "${asg.title}" complete`}
                     >
                       {isCompleted ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <CheckCircle2 className="sf-enter h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                       ) : (
                         <Circle className="h-4 w-4" />
                       )}
@@ -451,7 +448,7 @@ export const AssignmentsPage: React.FC = () => {
       {justDeleted && (
         <div
           role="status"
-          className="fixed left-1/2 -translate-x-1/2 bottom-20 md:bottom-6 z-40 flex items-center gap-4 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2.5 text-sm shadow-lg max-w-[calc(100vw-2rem)]"
+          className="sf-enter fixed left-1/2 -translate-x-1/2 bottom-20 md:bottom-6 z-40 flex items-center gap-4 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2.5 text-sm shadow-lg max-w-[calc(100vw-2rem)]"
         >
           <span className="truncate">Deleted “{justDeleted.title}”</span>
           <button

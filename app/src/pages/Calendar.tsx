@@ -248,7 +248,7 @@ export const CalendarPage: React.FC = () => {
                 Your weekly class schedule is empty
               </h3>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-                Add your lectures, labs, and study blocks to organize your week, or load demo courses from the Help menu (?).
+                Add your lectures, labs and study blocks to organize your week.
               </p>
             </div>
           </div>
@@ -277,14 +277,14 @@ export const CalendarPage: React.FC = () => {
         </section>
       )}
 
-      <Legend show={view === 'month' ? ['month', 'classTypes', 'kinds'] : ['classTypes', 'kinds']} />
+      {(view === 'month' || sessions.length > 0) && <Legend show={view === 'month' ? ['month', 'classTypes', 'kinds'] : ['classTypes', 'kinds']} />}
 
       {view === 'month' && (
         <MonthGrid year={monthCursor.year} month={monthCursor.month} sessions={sessions} deadlines={deadlines} today={todayISO} onSelectDay={setSelectedDate} />
       )}
 
       {/* Unified 7-Day Continuous Calendar Grid (Cron / Notion Calendar Architecture) */}
-      {view === 'week' && (
+      {view === 'week' && sessions.length > 0 && (
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark shadow-2xs overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 min-h-[500px]">
           {weekDays.map((day) => {

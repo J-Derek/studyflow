@@ -21,6 +21,8 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
   const [course, setCourse] = useState('');
   const [priority, setPriority] = useState<Priority>('high');
   const [kind, setKind] = useState<AssignmentKind>('assignment');
+  // Course, kind and priority stay out of the way until asked for.
+  const [more, setMore] = useState(false);
   const [dueDate, setDueDate] = useState<string>('');
   const [activeChip, setActiveChip] = useState<'today' | 'tomorrow' | 'friday' | 'nextWeek' | 'custom'>('tomorrow');
   
@@ -67,12 +69,12 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !course.trim() || !isDateInRange(dueDate)) return;
+    if (!title.trim() || !isDateInRange(dueDate)) return;
 
     const finalDate = dueDate || getCalculatedDate('tomorrow');
     addAssignment({
       title: title.trim(),
-      course: course.trim(),
+      course: course.trim() || 'General',
       dueDate: finalDate,
       dueTime: '23:59',
       priority,
@@ -155,45 +157,26 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
           What is your next deadline?
         </h2>
         <p className="text-xs text-zinc-600 dark:text-zinc-400">
-          Add an exam, paper or homework. StudyFlow shows how many days are left.
+          A title and a date is enough. StudyFlow shows how many days are left.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="md:col-span-2">
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Assignment title
-            </label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={LIMITS.assignmentTitle}
-              placeholder="e.g. Problem Set 2 or Chapter 4 Summary"
-              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Course
-            </label>
-            <input
-              type="text"
-              required
-              value={course}
-              onChange={(e) => setCourse(e.target.value)}
-              maxLength={LIMITS.assignmentCourse}
-              list="course-suggestions"
-              placeholder="e.g. CS 101 or Physics"
-              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
-            />
-          </div>
+        <div>
+          <label htmlFor="first-deadline-title" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            What is due?
+          </label>
+          <input
+            id="first-deadline-title"
+            type="text"
+            required
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={LIMITS.assignmentTitle}
+            placeholder="e.g. Problem Set 2 or Chapter 4 Summary"
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
+          />
         </div>
-
-        <KindPicker value={kind} onChange={setKind} />
 
         {/* Date Quick Chips */}
         <div>
@@ -264,25 +247,55 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
           </div>
         </div>
 
-        {/* Priority & Submit */}
-        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-zinc-100 dark:border-zinc-800/80">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Priority:</span>
-            {(['low', 'medium', 'high'] as Priority[]).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPriority(p)}
-                className={`text-xs tabular-nums px-2.5 py-1 min-h-[44px] rounded capitalize transition cursor-pointer ${
-                  priority === p
-                    ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
-                }`}
-              >
-                {p}
-              </button>
-            ))}
+        {/* The rest is optional: most people just want a title and a date */}
+        {more && (
+          <div data-testid="more-options" className="space-y-4 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 p-3">
+            <div>
+              <label htmlFor="first-deadline-course" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                Course (optional)
+              </label>
+              <input
+                id="first-deadline-course"
+                type="text"
+                value={course}
+                onChange={(e) => setCourse(e.target.value)}
+                maxLength={LIMITS.assignmentCourse}
+                list="course-suggestions"
+                placeholder="e.g. CS 101 or Physics"
+                className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
+              />
+            </div>
+            <KindPicker value={kind} onChange={setKind} />
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Priority:</span>
+              {(['low', 'medium', 'high'] as Priority[]).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPriority(p)}
+                  aria-pressed={priority === p}
+                  className={`text-xs tabular-nums px-2.5 py-1 min-h-[44px] rounded capitalize transition cursor-pointer ${
+                    priority === p
+                      ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
           </div>
+        )}
+
+        <div className="pt-2 flex items-center justify-between gap-3 border-t border-zinc-100 dark:border-zinc-800/80">
+          <button
+            type="button"
+            onClick={() => setMore((v) => !v)}
+            aria-expanded={more}
+            className="inline-flex items-center min-h-[44px] px-2 text-xs font-medium text-zinc-700 dark:text-zinc-300 underline underline-offset-2 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer"
+          >
+            {more ? 'Fewer options' : 'More options'}
+          </button>
 
           <button
             type="submit"

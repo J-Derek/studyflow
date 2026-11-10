@@ -90,14 +90,23 @@ export function deadlinesByDate(assignments: Assignment[], opts: { withoutSample
   return out;
 }
 
+const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
 /**
- * The deadlines that are still to do, soonest first (overdue ones lead). One shared rule used by Today, the Timetable and, later, Courses,
- * so a "pending" item means the same thing everywhere.
+ * The deadlines that are still to do, in the order a student should look at them: overdue first (an earlier date), then by date, then by
+ * priority (high, medium, low), then by time, then by title. One shared rule used by Today, the Timetable and Courses, so a "pending" item
+ * means the same thing everywhere.
  */
 export function selectPendingDeadlines(assignments: Assignment[]): Assignment[] {
   return assignments
     .filter((a) => a.status !== 'completed')
-    .sort((x, y) => x.dueDate.localeCompare(y.dueDate) || (x.dueTime ?? '23:59').localeCompare(y.dueTime ?? '23:59') || x.title.localeCompare(y.title));
+    .sort(
+      (x, y) =>
+        x.dueDate.localeCompare(y.dueDate) ||
+        (PRIORITY_RANK[x.priority] ?? 1) - (PRIORITY_RANK[y.priority] ?? 1) ||
+        (x.dueTime ?? '23:59').localeCompare(y.dueTime ?? '23:59') ||
+        x.title.localeCompare(y.title)
+    );
 }
 
 /** "November 2026" */

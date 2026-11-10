@@ -57,6 +57,15 @@ summary:focus-visible,
   @apply bg-zinc-600;
 }
 
+/* Short, calm motion for state changes (150 to 200 ms): a finished item, an Undo bar, a sheet opening. CSS only, and switched
+   off when the device asks for reduced motion (see the block below). */
+@keyframes sf-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes sf-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sf-sheet { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.sf-enter { animation: sf-enter 180ms ease-out both; }
+.sf-fade { animation: sf-fade 150ms ease-out both; }
+.sf-sheet { animation: sf-sheet 200ms ease-out both; }
+
 /* Gentle, looping empty-state illustrations (components/EmptyIllustration.tsx). Pure CSS: nothing to download.
    With "reduce motion" switched on, everything stands still in its finished pose. */
 @keyframes sf-draw {
@@ -100,6 +109,7 @@ summary:focus-visible,
 .sf-float { animation: sf-float 3.6s ease-out infinite; animation-delay: var(--d, 0s); }
 @media (prefers-reduced-motion: reduce) {
   .sf-draw, .sf-grow, .sf-pop, .sf-bob, .sf-rise, .sf-pulse, .sf-float { animation: none !important; }
+  .sf-enter, .sf-fade, .sf-sheet { animation: none !important; }
   .sf-float { opacity: 0; }
 }
 

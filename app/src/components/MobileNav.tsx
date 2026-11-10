@@ -7,10 +7,9 @@ export const MobileNav: React.FC = () => {
   const { activeTab, setActiveTab, assignments } = useStudyFlowStore();
   const pendingCount = assignments.filter((a) => a.status !== 'completed').length;
 
-  const items = [
+  const items: { id: 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'courses' | 'notes'; label: string; icon: React.ElementType; badge?: number }[] = [
     { id: 'dashboard' as const, label: 'Today', icon: LayoutDashboard },
-    // Six items share a narrow row, so "Assignments" is shown as "Tasks" here (its full name is still read out).
-    { id: 'assignments' as const, label: 'Tasks', fullName: 'assignments', icon: CheckSquare, badge: pendingCount },
+    { id: 'assignments' as const, label: 'Assignments', icon: CheckSquare, badge: pendingCount },
     { id: 'calendar' as const, label: 'Timetable', icon: CalendarIcon },
     { id: 'timer' as const, label: 'Timer', icon: Timer },
     { id: 'courses' as const, label: 'Courses', icon: Award },
@@ -50,8 +49,7 @@ export const MobileNav: React.FC = () => {
                 </span>
               )}
             </div>
-            <span className="text-[11px] leading-tight mt-0.5 tracking-tight whitespace-nowrap">{item.label}</span>
-            {'fullName' in item && <span className="sr-only"> ({item.fullName})</span>}
+            <span className="text-[9px] min-[340px]:text-[10px] min-[400px]:text-[11px] leading-tight mt-0.5 tracking-tighter whitespace-nowrap">{item.label}</span>
             {item.badge !== undefined && item.badge > 0 && <span className="sr-only">, {item.badge} to do</span>}
           </a>
         );

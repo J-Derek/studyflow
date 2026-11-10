@@ -9,6 +9,8 @@ vi.mock('firebase/firestore', () => ({
   doc: (_db: unknown, ...segs: string[]) => ({ path: segs.join('/') }),
   query: (ref: { path: string }) => ref,
   limit: () => ({}),
+  where: () => ({}),
+  startAfter: () => ({}),
   serverTimestamp: () => 'SERVER_TS',
   setDoc: vi.fn(async () => undefined),
   deleteDoc: vi.fn(async () => undefined),
@@ -23,12 +25,15 @@ vi.mock('firebase/firestore', () => ({
 import { initFirestoreSync, planMerge, unsubscribeAllFirestoreSync } from './firestoreSync';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 
-function snapshotOf(docs: Array<{ id: string; data: Record<string, unknown> }>) {
+/** The four lists start once the account's older documents have been checked for the `archived` flag (a moment, in the mock). */
+const listenersReady = () => vi.waitFor(() => expect(listeners.some((l) => l.path.endsWith('/grades'))).toBe(true));
+
+function snapshotOf(docs: Array<{ id: string; data: Record<string, unknown>; pending?: boolean }>) {
   return {
     empty: docs.length === 0,
     metadata: { fromCache: false, hasPendingWrites: false },
-    forEach: (fn: (d: { id: string; data: () => Record<string, unknown> }) => void) =>
-      docs.forEach((d) => fn({ id: d.id, data: () => d.data }))
+    forEach: (fn: (d: { id: string; data: () => Record<string, unknown>; metadata: { hasPendingWrites: boolean } }) => void) =>
+      docs.forEach((d) => fn({ id: d.id, data: () => d.data, metadata: { hasPendingWrites: !!d.pending } }))
   };
 }
 
@@ -44,17 +49,19 @@ describe('late snapshot race', () => {
     useStudyFlowStore.getState().resetStore();
   });
 
-  it('applies a snapshot for the active user', () => {
+  it('applies a snapshot for the active user', async () => {
     useStudyFlowStore.getState().setAuthUser('A', false, 'a@x.com', 'A');
     initFirestoreSync('A');
+    await listenersReady();
     const asg = listeners.find((l) => l.path === 'users/A/assignments')!;
     asg.cb(snapshotOf([assignmentDoc('A-PRIVATE')]));
     expect(useStudyFlowStore.getState().assignments.map((a) => a.title)).toEqual(['A-PRIVATE']);
   });
 
-  it('ignores a late snapshot from user A after the store has switched to user B', () => {
+  it('ignores a late snapshot from user A after the store has switched to user B', async () => {
     useStudyFlowStore.getState().setAuthUser('A', false, 'a@x.com', 'A');
     initFirestoreSync('A');
+    await listenersReady();
     const asg = listeners.find((l) => l.path === 'users/A/assignments')!;
     const ses = listeners.find((l) => l.path === 'users/A/sessions')!;
 
@@ -69,18 +76,20 @@ describe('late snapshot race', () => {
     expect(s.sessions).toEqual([]);
   });
 
-  it('ignores a late snapshot after sign-out (userId null)', () => {
+  it('ignores a late snapshot after sign-out (userId null)', async () => {
     useStudyFlowStore.getState().setAuthUser('A', false, 'a@x.com', 'A');
     initFirestoreSync('A');
+    await listenersReady();
     const asg = listeners.find((l) => l.path === 'users/A/assignments')!;
     useStudyFlowStore.getState().resetStore();
     asg.cb(snapshotOf([assignmentDoc('A-PRIVATE')]));
     expect(useStudyFlowStore.getState().assignments).toEqual([]);
   });
 
-  it('reads subtasks back from a map (they used to be dropped on every snapshot)', () => {
+  it('reads subtasks back from a map (they used to be dropped on every snapshot)', async () => {
     useStudyFlowStore.getState().setAuthUser('A', false, 'a@x.com', 'A');
     initFirestoreSync('A');
+    await listenersReady();
     const asg = listeners.find((l) => l.path === 'users/A/assignments')!;
     const d = assignmentDoc('With subtasks');
     (d.data as Record<string, unknown>).subtasks = {
@@ -89,6 +98,27 @@ describe('late snapshot race', () => {
     };
     asg.cb(snapshotOf([d]));
     expect(useStudyFlowStore.getState().assignments[0].subtasks?.map((s) => s.title)).toEqual(['first', 'second']);
+  });
+});
+
+describe('stale echo of this device\'s own write', () => {
+  beforeEach(() => {
+    listeners.length = 0;
+    unsubscribeAllFirestoreSync();
+    useStudyFlowStore.getState().resetStore();
+  });
+
+  it('keeps what is on screen for an item with a pending write, but still applies another device\'s change', async () => {
+    useStudyFlowStore.getState().setAuthUser('A', false, 'a@x.com', 'A');
+    initFirestoreSync('A');
+    await listenersReady();
+    const asg = listeners.find((l) => l.path === 'users/A/assignments')!;
+    asg.cb(snapshotOf([assignmentDoc('first'), { ...assignmentDoc('other'), id: 'x2' }]));
+    // the student edits x1 on screen (a second tick), then the echo of the FIRST write arrives, still pending
+    useStudyFlowStore.setState((st) => ({ assignments: st.assignments.map((a) => (a.id === 'x1' ? { ...a, title: 'second tick' } : a)) }));
+    asg.cb(snapshotOf([{ ...assignmentDoc('first'), pending: true }, { ...assignmentDoc('changed elsewhere'), id: 'x2' }]));
+    const titles = Object.fromEntries(useStudyFlowStore.getState().assignments.map((a) => [a.id, a.title]));
+    expect(titles).toEqual({ x1: 'second tick', x2: 'changed elsewhere' });
   });
 });
 

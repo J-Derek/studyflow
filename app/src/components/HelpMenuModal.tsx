@@ -15,6 +15,8 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
+import { loadArchivedFromCloud } from '../services/firestoreSync';
+import { InstallCard } from './InstallCard';
 
 interface HelpMenuModalProps {
   isOpen: boolean;
@@ -112,8 +114,11 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
     setTimeout(() => setIsSandboxSuccess(null), 3000);
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (window.confirm('Delete ALL your assignments, timetable and grades? This cannot be undone. Make a backup first if you might want them back.')) {
+      // Past semesters are loaded on demand, so fetch them first or they would be left behind in the account.
+      const uid = useStudyFlowStore.getState().userId;
+      if (uid) await loadArchivedFromCloud(uid).catch((err) => console.warn('Could not load past semesters before clearing:', err));
       clearAllData();
       void deleteAllFiles();
       setIsSandboxSuccess('All data deleted.');
@@ -278,6 +283,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                   </button>
                 ))}
               </div>
+              <InstallCard />
             </div>
           )}
 

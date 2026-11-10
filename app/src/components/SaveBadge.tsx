@@ -32,7 +32,7 @@ export const SaveBadge: React.FC = () => {
       data-testid="save-badge"
       data-state={state}
       title={copy.detail}
-      className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs tabular-nums transition-colors ${style.box}`}
+      className={`${state === 'saved' || state === 'device' ? 'hidden sm:flex' : 'flex'} items-center gap-1.5 px-2 py-1 rounded-md border text-xs tabular-nums transition-colors ${style.box}`}
     >
       <span className="relative flex h-2 w-2" aria-hidden="true">
         {state === 'saving' && <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />}

@@ -50,6 +50,7 @@ test('a score of 8585 written straight to the cloud shows as 100, and the course
             ]
           }
         },
+        archived: { booleanValue: false }, // as the current app writes it
         updatedAt: { timestampValue: new Date().toISOString() }
       }
     })

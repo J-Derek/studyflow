@@ -117,6 +117,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       )}
 
+      {/* Zero State Activation Hero: Quick First Deadline Input */}
+      {assignments.length === 0 && (
+        <FirstDeadlineCard />
+      )}
+
       {/* First visit: make signing in obvious for students who already use StudyFlow elsewhere */}
       <div
         data-testid="signin-banner"
@@ -131,11 +136,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <SignInButton />
         </div>
       </div>
-
-      {/* Zero State Activation Hero: Quick First Deadline Input */}
-      {assignments.length === 0 && (
-        <FirstDeadlineCard />
-      )}
 
       {/* One dominant thing first: what is due next. Everything else is quiet. */}
       {justSaved && (
@@ -208,7 +208,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </dl>
 
-      {assignments.length > 0 && <GettingStartedChecklist
+      {assignments.length > 0 && !assignments.some((a) => !a.sample && a.status === 'completed') && <GettingStartedChecklist
         onOpenAddModal={onOpenAddModal || (() => setIsModalOpen(true))}
         onOpenBackup={onOpenBackup}
       />}
