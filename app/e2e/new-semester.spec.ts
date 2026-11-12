@@ -150,12 +150,20 @@ test('start a new semester: ticked work and notes carry over, the rest is archiv
   await expect(past).toContainText('cannot be edited');
   await past.getByRole('button', { name: 'Close' }).click();
 
-  // it all survives a reload (from this device and from the account)
+  // it all survives a reload. The current work and the record come back straight away; the archived work stays in the account
+  // (a signed-in device no longer keeps past semesters in its own storage) and loads when it is needed.
   await page.reload();
   await page.waitForFunction(() => !!(window as unknown as Partial<W>).__store?.getState().userId);
   await expect
-    .poll(() => page.evaluate(() => { const s = (window as unknown as W).__store.getState(); return `${s.assignments.length}/${s.archived.assignments.length}/${s.periods.length}`; }), { timeout: 15_000 })
-    .toBe('1/2/1');
+    .poll(() => page.evaluate(() => { const s = (window as unknown as W).__store.getState(); return `${s.assignments.length}/${s.periods.length}`; }), { timeout: 15_000 })
+    .toBe('1/1');
+  const archivedAfterLoad = await page.evaluate(async () => {
+    const s = (window as unknown as W).__store.getState();
+    const mod = await import(/* @vite-ignore */ '/src/services/firestoreSync.ts');
+    await mod.loadArchivedFromCloud(s.userId!);
+    return (window as unknown as W).__store.getState().archived.assignments.length;
+  });
+  expect(archivedAfterLoad).toBe(2);
 });
 
 test('keeping the timetable and the courses carries them over, with the old scores cleared and kept in the archive', async ({ page }) => {

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { createSafeStorage } from './safeStorage';
 import { cleanSignedInHint, type SignedInHint } from '../utils/accountView';
 import type {
   Assignment,
@@ -231,6 +232,16 @@ const failed = (fn: string, retry?: () => Promise<unknown>) => (err: unknown) =>
   reportSyncError(SYNC_WHAT[fn] ?? 'your changes', err, retry);
 
 const defaultSettings: TimerSettings = DEFAULT_TIMER_SETTINGS;
+
+// Writing removed together with its assignment, kept until the page closes so Undo can bring it back too.
+const removedDrafts = new Map<string, Draft>();
+
+// The saved copy on this device. It never throws (a full storage used to stop the cloud save that follows every change),
+// and a failure is told to the student once, in the same place as a failed cloud save.
+const deviceStorage = createSafeStorage(
+  () => (typeof window !== 'undefined' ? window.localStorage : undefined),
+  (err) => reportSyncError('your plan on this device', err)
+);
 
 // Timer lengths and sound choices belong to the signed-in account (they sync through the user document),
 // so a new person on this device starts from the defaults and never inherits the last person's choices.
@@ -566,18 +577,30 @@ export const useStudyFlowStore = create<StudyFlowState>()(
 
       deleteAssignment: (id) => {
         const removed = get().assignments.find((a) => a.id === id);
+        // Its writing goes with it (it used to be left behind in the cloud, in backups and on this device).
+        const draft = get().drafts.find((d) => d.id === id);
+        if (draft) removedDrafts.set(id, draft);
         set((state) => ({
-          assignments: state.assignments.filter((a) => a.id !== id)
+          assignments: state.assignments.filter((a) => a.id !== id),
+          drafts: draft ? state.drafts.filter((d) => d.id !== id) : state.drafts
         }));
         const uid = get().userId;
         if (uid) {
-          deleteAssignmentFromFirestore(uid, id).catch((err) => {
-            failed('deleteAssignmentFromFirestore')(err);
-            // Put back only this assignment, so anything done since is not undone.
-            if (removed) {
-              set((state) => (state.assignments.some((a) => a.id === id) ? state : { assignments: [removed, ...state.assignments] }));
-            }
-          });
+          deleteAssignmentFromFirestore(uid, id)
+            // The writing is removed only once the assignment is gone, so a refused delete leaves both in place.
+            // Removing it even when this device has no copy also clears writing left behind by older versions.
+            .then(() => deleteDraftFromFirestore(uid, id).catch(failed('deleteDraftFromFirestore', () => deleteDraftFromFirestore(uid, id))))
+            .catch((err) => {
+              failed('deleteAssignmentFromFirestore')(err);
+              // Put back only this assignment (and its writing), so anything done since is not undone.
+              if (removed) {
+                set((state) => (state.assignments.some((a) => a.id === id) ? state : { assignments: [removed, ...state.assignments] }));
+              }
+              if (draft) {
+                removedDrafts.delete(id);
+                set((state) => (state.drafts.some((d) => d.id === id) ? state : { drafts: [draft, ...state.drafts] }));
+              }
+            });
         }
       },
 
@@ -585,11 +608,17 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         set((state) =>
           state.assignments.some((a) => a.id === assignment.id) ? state : { assignments: [assignment, ...state.assignments] }
         );
+        const draft = removedDrafts.get(assignment.id);
+        if (draft) {
+          removedDrafts.delete(assignment.id);
+          set((state) => (state.drafts.some((d) => d.id === draft.id) ? state : { drafts: [draft, ...state.drafts] }));
+        }
         const uid = get().userId;
         if (uid) {
           syncAssignmentToFirestore(uid, assignment).catch((err) => {
             failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, assignment))(err);
           });
+          if (draft) syncDraftToFirestore(uid, draft).catch(failed('syncDraftToFirestore', () => syncDraftToFirestore(uid, draft)));
         }
       },
 
@@ -844,13 +873,14 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (uid) {
           syncSessionToFirestore(uid, updated).catch((err) => {
             failed('syncSessionToFirestore')(err);
-            set({ sessions: previousSessions });
+            // Undo only this class, and only if nothing has changed it since (other edits made meanwhile stay).
+            set((state) => ({ sessions: state.sessions.map((s) => (s.id === id && s === updated ? current : s)) }));
           });
         }
       },
 
       deleteSession: (id) => {
-        const previousSessions = get().sessions;
+        const removed = get().sessions.find((s) => s.id === id);
         set((state) => ({
           sessions: state.sessions.filter((s) => s.id !== id)
         }));
@@ -858,7 +888,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (uid) {
           deleteSessionFromFirestore(uid, id).catch((err) => {
             failed('deleteSessionFromFirestore')(err);
-            set({ sessions: previousSessions });
+            // Put back only this class, so classes added or changed since are not undone.
+            if (removed) set((state) => (state.sessions.some((s) => s.id === id) ? state : { sessions: [...state.sessions, removed] }));
           });
         }
       },
@@ -1043,6 +1074,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
     }),
     {
       name: 'studyflow_storage_v1',
+      storage: createJSONStorage(() => deviceStorage),
       partialize: (state) => ({
         dataOwnerUid: state.dataOwnerUid,
         signedInHint: state.signedInHint,
@@ -1055,9 +1087,11 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         sessions: state.sessions,
         grades: state.grades,
         notes: state.notes,
-        drafts: state.drafts,
         periods: state.periods,
-        archived: state.archived,
+        // A signed-in account keeps its writing and its past semesters in the cloud (Firestore also keeps its own offline
+        // copy), so they are not copied into this device's small storage too: they are the parts that grow without limit.
+        // A guest has no account copy, so a guest's are kept here.
+        ...(state.isAnonymous ? { drafts: state.drafts, archived: state.archived } : {}),
         pomodorosCompleted: state.pomodorosCompleted,
         focusMinutes: state.focusMinutes,
         timer: state.timer,
