@@ -14,6 +14,7 @@ import { MonthGrid } from '../components/MonthGrid';
 import { DaySheet } from '../components/DaySheet';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { KindBadge } from '../components/KindBadge';
+import { BusyWeekNotice } from '../components/BusyWeekNotice';
 import { classesOn, deadlinesByDate, monthLabel, selectPendingDeadlines } from '../utils/calendarMonth';
 import { kindOf } from '../utils/kinds';
 
@@ -261,6 +262,8 @@ export const CalendarPage: React.FC = () => {
           </button>
         </div>
       )}
+
+      <BusyWeekNotice assignments={assignments} />
 
       {dueSoon.length > 0 && (
         <section aria-label="Due soon" data-testid="due-soon" className="rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark px-3 py-2 text-xs">

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Assignment, StudySession } from '../types';
-import { addDays, classesOn, dayOfWeekOf, deadlinesByDate, isoDate, mondayOf, monthGrid, monthLabel, occurrencesInRange, selectPendingDeadlines } from './calendarMonth';
+import { addDays, classesOn, dayOfWeekOf, deadlinesByDate, isoDate, mondayOf, monthGrid, monthLabel, occurrencesInRange, selectPendingDeadlines, findBusyWeek } from './calendarMonth';
 
 const asg = (over: Partial<Assignment>): Assignment => ({
   id: 'a', title: 'T', course: 'C', dueDate: '2026-11-20', priority: 'medium', status: 'pending', progress: 0, createdAt: 'z', ...over
@@ -109,5 +109,38 @@ describe('deadlines', () => {
       asg({ id: 'overdue-low', dueDate: '2026-11-01', priority: 'low' }),
     ];
     expect(selectPendingDeadlines(list).map((x) => x.id)).toEqual(['overdue-low', 'high-early', 'high-late', 'medium', 'low']);
+  });
+});
+
+describe('findBusyWeek', () => {
+  const heavy = (id: string, kind: Assignment['kind'], dueDate: string, over: Partial<Assignment> = {}) => asg({ id, kind, dueDate, ...over });
+  it('warns when 3 exams, tests or projects fall within 7 days', () => {
+    const w = findBusyWeek([heavy('1', 'exam', '2026-11-18'), heavy('2', 'test', '2026-11-20'), heavy('3', 'project', '2026-11-22')], '2026-11-13');
+    expect(w).not.toBeNull();
+    expect(w!.count).toBe(3);
+    expect(w!.from).toBe('2026-11-18');
+    expect(w!.to).toBe('2026-11-22');
+    expect(w!.label).toBe('Busy week: 1 exam, 1 test, 1 project, 18 to 22 Nov');
+  });
+  it('does not warn for two, for ordinary assignments, or when the third is 7 days later', () => {
+    expect(findBusyWeek([heavy('1', 'exam', '2026-11-18'), heavy('2', 'exam', '2026-11-19')], '2026-11-13')).toBeNull();
+    expect(findBusyWeek([heavy('1', 'exam', '2026-11-18'), heavy('2', 'exam', '2026-11-19'), heavy('3', 'assignment', '2026-11-20'), heavy('4', 'reading', '2026-11-20')], '2026-11-13')).toBeNull();
+    expect(findBusyWeek([heavy('1', 'exam', '2026-11-18'), heavy('2', 'exam', '2026-11-19'), heavy('3', 'exam', '2026-11-25')], '2026-11-13')).toBeNull();
+    expect(findBusyWeek([heavy('1', 'exam', '2026-11-18'), heavy('2', 'exam', '2026-11-19'), heavy('3', 'exam', '2026-11-24')], '2026-11-13')?.count).toBe(3);
+  });
+  it('ignores finished, overdue and sample items and picks the first busy window', () => {
+    const items = [
+      heavy('1', 'exam', '2026-11-10'), heavy('2', 'exam', '2026-11-11'), heavy('3', 'exam', '2026-11-12'),
+      heavy('4', 'exam', '2026-11-18', { status: 'completed' }), heavy('5', 'exam', '2026-11-19', { sample: true }), heavy('6', 'exam', '2026-11-20')
+    ];
+    expect(findBusyWeek(items, '2026-11-13')).toBeNull();
+    const later = [...items, heavy('7', 'exam', '2026-12-01'), heavy('8', 'test', '2026-12-02'), heavy('9', 'test', '2026-12-04')];
+    const w = findBusyWeek(later, '2026-11-13');
+    expect(w?.from).toBe('2026-12-01');
+    expect(w?.label).toBe('Busy week: 1 exam, 2 tests, 1 to 4 Dec');
+  });
+  it('labels a window that crosses a month', () => {
+    const w = findBusyWeek([heavy('1', 'exam', '2026-11-28'), heavy('2', 'exam', '2026-12-01'), heavy('3', 'exam', '2026-12-03')], '2026-11-13');
+    expect(w?.label).toBe('Busy week: 3 exams, 28 Nov to 3 Dec');
   });
 });
