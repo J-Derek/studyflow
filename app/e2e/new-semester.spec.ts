@@ -130,6 +130,8 @@ test('start a new semester: ticked work and notes carry over, the rest is archiv
   expect((await list('assignments')).filter((d) => !d.fields.archivedPeriod).map((d) => d.fields.title?.stringValue)).toEqual(['Open one']);
   expect((await list('sessions')).every((d) => d.fields.archivedPeriod?.stringValue === periodId)).toBe(true);
   expect((await list('notes')).filter((d) => d.fields.archivedPeriod?.stringValue === periodId)).toHaveLength(1);
+  // the period record is written last, after the archived documents, so on a slow machine it can arrive a moment later
+  await expect.poll(async () => (await list('semesters')).length, { timeout: 15_000 }).toBe(1);
   const sem = await list('semesters');
   expect(sem).toHaveLength(1);
   expect(JSON.stringify(sem[0])).toContain('Current semester'); // the period that ended keeps its name

@@ -251,6 +251,15 @@ export function generateICalendarFeed(allSessions: StudySession[], options: IcsO
       'END:VALARM'
     ];
     const head = ['BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${dtstamp}`, `SEQUENCE:${sequence}`];
+    // A weekly repeat goes to the calendar as one repeating event: to its end date, or for a year when it has none.
+    const stop = a.repeat?.until ? parseYmd(a.repeat.until) : null;
+    const rrule = !a.repeat
+      ? []
+      : !stop
+        ? ['RRULE:FREQ=WEEKLY;COUNT=52']
+        : t
+          ? [`RRULE:FREQ=WEEKLY;UNTIL=${utcStamp(zonedWallToInstant(stop.y, stop.m, stop.d, 23, 59, zone) + 59_000)}`]
+          : [`RRULE:FREQ=WEEKLY;UNTIL=${stop.y}${pad(stop.m)}${pad(stop.d)}`];
     const tail = [
       `SUMMARY:${summary}`,
       `DESCRIPTION:${escapeIcsText(`StudyFlow deadline for ${a.course || 'your course'}.`)}`,
@@ -263,6 +272,7 @@ export function generateICalendarFeed(allSessions: StudySession[], options: IcsO
         ...head,
         `DTSTART;TZID=${zone}:${day}T${pad(t.h)}${pad(t.m)}00`,
         `DTEND;TZID=${zone}:${day}T${pad(Math.floor(endMin / 60))}${pad(endMin % 60)}00`,
+        ...rrule,
         ...tail,
         ...alarm('-P1D', `Due tomorrow: ${a.title}`),
         ...alarm('-PT1H', `Due in 1 hour: ${a.title}`),
@@ -275,6 +285,7 @@ export function generateICalendarFeed(allSessions: StudySession[], options: IcsO
         `DTSTART;VALUE=DATE:${day}`,
         `DTEND;VALUE=DATE:${next.y}${pad(next.m)}${pad(next.d)}`,
         'TRANSP:TRANSPARENT',
+        ...rrule,
         ...tail,
         // 09:00 the day before, and 08:00 on the day itself (all-day events start at 00:00).
         ...alarm('-PT15H', `Due tomorrow: ${a.title}`),

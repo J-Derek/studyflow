@@ -12,7 +12,7 @@ service cloud.firestore {
     //
     // /users/{userId}/assignments/{id}
     //   id, title, course, dueDate (YYYY-MM-DD), dueTime? (HH:mm), priority,
-    //   status, kind? ('assignment'|'exam'|'test'|'reading'|'project'; missing = assignment), progress (0..100), createdAt (client ISO string, immutable),
+    //   status, repeat? ({every: 'week', until? date}), repeatOf? (series id), kind? ('assignment'|'exam'|'test'|'reading'|'project'; missing = assignment), progress (0..100), createdAt (client ISO string, immutable),
     //   updatedAt (server time), notes?, completedAt?, sample? (bool),
     //   subtasks? (map keyed by subtask id, or legacy list; max 100)
     //
@@ -126,11 +126,21 @@ service cloud.firestore {
              p.soundscapeVolume is number && p.soundscapeVolume >= 0 && p.soundscapeVolume <= 1;
     }
 
+    // A weekly repeating deadline: repeat = {every: 'week', until?: 'YYYY-MM-DD'}.
+    function isValidRepeat(data) {
+      return !('repeat' in data) ||
+             (data.repeat is map &&
+              data.repeat.keys().hasAll(['every']) &&
+              data.repeat.keys().hasOnly(['every', 'until']) &&
+              data.repeat.every == 'week' &&
+              (!('until' in data.repeat) || validDate(data.repeat.until)));
+    }
+
     function isValidAssignment(data) {
       return data.keys().hasAll(['id', 'title', 'course', 'dueDate', 'priority', 'status', 'progress', 'createdAt', 'updatedAt']) &&
              data.keys().hasOnly([
                'id', 'title', 'course', 'dueDate', 'dueTime', 'priority', 'status',
-               'progress', 'notes', 'subtasks', 'createdAt', 'completedAt', 'updatedAt', 'sample', 'kind', 'archivedPeriod', 'archived'
+               'progress', 'notes', 'subtasks', 'createdAt', 'completedAt', 'updatedAt', 'sample', 'kind', 'archivedPeriod', 'archived', 'repeat', 'repeatOf'
              ]) &&
              optionalString(data, 'archivedPeriod', 1, 60) &&
              (!('archived' in data) || data.archived is bool) &&
@@ -145,6 +155,8 @@ service cloud.firestore {
              data.progress is number && data.progress >= 0 && data.progress <= 100 &&
              (data.status != 'completed' || data.progress == 100) &&
              optionalString(data, 'notes', 0, 5000) &&
+             isValidRepeat(data) &&
+             optionalString(data, 'repeatOf', 1, 100) &&
              (!('subtasks' in data) ||
                (data.subtasks is map && data.subtasks.size() <= 100) ||
                (data.subtasks is list && data.subtasks.size() <= 100)) &&

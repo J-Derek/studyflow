@@ -255,6 +255,21 @@ describe('assignments: shape', () => {
     await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ kind: 5, updatedAt: serverTimestamp() })));
     await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ kind: ['exam'], updatedAt: serverTimestamp() })));
   });
+  it('accepts a weekly repeat with an optional end date and a series id, and rejects anything else', async () => {
+    const put = (over: Record<string, unknown>) => setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ ...over, updatedAt: serverTimestamp() }));
+    await assertSucceeds(put({ repeat: { every: 'week' } }));
+    await assertSucceeds(put({ repeat: { every: 'week', until: '2027-01-31' }, repeatOf: 'a0' }));
+    await assertSucceeds(put({ repeatOf: 'a0' }));
+    await assertFails(put({ repeat: { every: 'day' } }));
+    await assertFails(put({ repeat: {} }));
+    await assertFails(put({ repeat: 'weekly' }));
+    await assertFails(put({ repeat: { every: 'week', until: 'soon' } }));
+    await assertFails(put({ repeat: { every: 'week', until: 5 } }));
+    await assertFails(put({ repeat: { every: 'week', extra: 1 } }));
+    await assertFails(put({ repeatOf: 5 }));
+    await assertFails(put({ repeatOf: '' }));
+    await assertFails(put({ repeatOf: 'x'.repeat(101) }));
+  });
   it('still accepts an assignment with no kind (everything made before kinds existed)', async () => {
     await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ updatedAt: serverTimestamp() })));
   });

@@ -97,6 +97,12 @@ function isValidAssignment(item: unknown): item is Assignment {
   if (!VALID_PRIORITIES.has(a.priority as Priority)) return false;
   if (!VALID_STATUSES.has(a.status as AssignmentStatus)) return false;
   if (a.kind !== undefined && !isAssignmentKind(a.kind)) return false;
+  if (a.repeat !== undefined) {
+    const r = a.repeat as Record<string, unknown> | null;
+    if (!r || typeof r !== 'object' || Array.isArray(r) || r.every !== 'week') return false;
+    if (r.until !== undefined && (typeof r.until !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(r.until))) return false;
+  }
+  if (a.repeatOf !== undefined && (typeof a.repeatOf !== 'string' || a.repeatOf.length === 0 || a.repeatOf.length > 100)) return false;
   if (typeof a.progress !== 'number' || a.progress < 0 || a.progress > 100 || Number.isNaN(a.progress)) return false;
   if (a.status === 'completed' && a.progress !== 100) return false;
   if (a.notes !== undefined && (typeof a.notes !== 'string' || a.notes.length > 5000)) return false;
@@ -179,6 +185,8 @@ function cleanAssignment(a: Assignment): Assignment {
     ...(isAssignmentKind(a.kind) && a.kind !== 'assignment' ? { kind: a.kind } : {}),
     progress: a.progress,
     ...(a.notes !== undefined ? { notes: a.notes } : {}),
+    ...(a.repeat ? { repeat: { every: 'week' as const, ...(a.repeat.until ? { until: a.repeat.until } : {}) } } : {}),
+    ...(a.repeatOf ? { repeatOf: a.repeatOf } : {}),
     ...(a.subtasks !== undefined
       ? { subtasks: a.subtasks.map((t) => ({ id: t.id, title: t.title.trim().slice(0, LIMITS.subtaskTitle), completed: t.completed })) }
       : {}),

@@ -38,7 +38,7 @@ import {
   completeFocusSession
 } from '../services/cloud';
 import { calculateSubtaskProgress } from '../utils/subtasks';
-import { LIMITS, clampText } from '../utils/limits';
+import { LIMITS, clampText, localDateISO } from '../utils/limits';
 import { syncThemeColor } from '../utils/themeColor';
 import { readSavedMode, resolveTheme, saveMode, systemPrefersDark, type ThemeMode } from '../utils/themePreference';
 import { isPlaceholderName } from '../utils/placeholderProfile';
@@ -48,6 +48,7 @@ import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pause
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 import { clampScore } from '../utils/academicCalculations';
 import { afterUncomplete } from '../utils/progress';
+import { rollRepeats } from '../utils/repeat';
 import { newPeriodId, planArchive, type CarryChoice } from '../utils/periods';
 import { MAX_DRAFT_BODY } from '../services/firestoreMappers';
 import { normalizeAssessments } from '../utils/assessments';
@@ -136,6 +137,8 @@ interface StudyFlowState {
   /** Puts a just-deleted assignment back (same id), for the Undo button. */
   restoreAssignment: (assignment: Assignment) => void;
   toggleAssignmentComplete: (id: string) => void;
+  /** Creates the next item of every weekly repeating deadline that is done or past its date (and stops the old one repeating). Safe to call any time. */
+  rollWeeklyRepeats: () => void;
 
   // Past semesters: what was archived (never deleted), and the periods it belongs to.
   periods: Period[];
@@ -573,6 +576,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
             return a;
           })
         }));
+        get().rollWeeklyRepeats();
       },
 
       deleteAssignment: (id) => {
@@ -738,6 +742,18 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         if (uid) syncNoteToFirestore(uid, note).catch(failed('syncNoteToFirestore', () => syncNoteToFirestore(uid, note)));
       },
 
+      rollWeeklyRepeats: () => {
+        const { spawned, updated } = rollRepeats(get().assignments, localDateISO());
+        if (spawned.length === 0 && updated.length === 0) return;
+        set((state) => ({ assignments: [...spawned, ...state.assignments.map((a) => updated.find((u) => u.id === a.id) ?? a)] }));
+        const uid = get().userId;
+        if (uid) {
+          for (const a of [...updated, ...spawned]) {
+            syncAssignmentToFirestore(uid, a).catch(failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, a)));
+          }
+        }
+      },
+
       toggleAssignmentComplete: (id) => {
         set((state) => ({
           assignments: state.assignments.map((a) => {
@@ -762,6 +778,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
             return a;
           })
         }));
+        get().rollWeeklyRepeats();
       },
 
       toggleSubtask: (assignmentId, subtaskId) => {
@@ -787,6 +804,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
             return a;
           })
         }));
+        get().rollWeeklyRepeats();
       },
 
       addSubtask: (assignmentId, title) => {
