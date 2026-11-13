@@ -1,5 +1,5 @@
 import { useDialog } from '../lib/useDialog';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, User, Building2, BookOpen, Calendar, Check, Camera, Sun, Moon, Monitor, HelpCircle } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { Avatar } from './Avatar';
@@ -31,8 +31,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
   );
   const [saved, setSaved] = useState(false);
 
+  // Fill the form from the saved profile when the dialog OPENS, not every time the profile object changes: a profile
+  // update from the cloud (another device, the timer settings, the photo) used to reset what the student was typing.
+  const wasOpen = useRef(false);
   useEffect(() => {
-    if (isOpen) {
+    const justOpened = isOpen && !wasOpen.current;
+    wasOpen.current = isOpen;
+    if (justOpened) {
       setName(user.name);
       setUniversity(user.university);
       setProgram(user.program);
