@@ -28,7 +28,11 @@ const emit = () => {
 
 /** Turns a Firestore error into a short reason a student can act on. */
 export function explainSyncError(err: unknown): string {
-  const code = (err as { code?: string } | null)?.code ?? '';
+  const name = (err as { name?: string } | null)?.name ?? '';
+  if (name === 'QuotaExceededError' || name === 'NS_ERROR_DOM_QUOTA_REACHED')
+    return "This device's storage is full, so its saved copy is out of date. Changes still go to your account when you are signed in.";
+  const raw = (err as { code?: unknown } | null)?.code;
+  const code = typeof raw === 'string' ? raw : '';
   if (code.includes('permission-denied')) return 'The cloud refused it. A title or note may be too long, or you may need to sign in again.';
   if (code.includes('invalid-argument')) return 'Something in it is not in a form the cloud accepts.';
   if (code.includes('resource-exhausted')) return 'The cloud is busy or a limit was reached. Try again in a moment.';
