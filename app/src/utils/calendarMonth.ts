@@ -1,4 +1,5 @@
 import type { Assignment, StudySession } from '../types';
+import { kindOf, KIND_META } from './kinds';
 
 /**
  * The maths behind the month and week calendar. Dates are plain "YYYY-MM-DD" text in the student's own calendar (no time zones involved),
@@ -107,6 +108,54 @@ export function selectPendingDeadlines(assignments: Assignment[]): Assignment[] 
         (x.dueTime ?? '23:59').localeCompare(y.dueTime ?? '23:59') ||
         x.title.localeCompare(y.title)
     );
+}
+
+export interface BusyWeek {
+  /** How many exams, tests and projects fall in the window. */
+  count: number;
+  /** First and last due date inside the window ("YYYY-MM-DD"). */
+  from: string;
+  to: string;
+  /** "Busy week: 2 exams, 1 test, 18 to 22 Nov" */
+  label: string;
+}
+
+/** Number of heavy items (exam, test, project) within one 7-day window that makes a week "busy". */
+export const BUSY_WEEK_COUNT = 3;
+const HEAVY_KINDS = ['exam', 'test', 'project'];
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function shortRange(from: string, to: string): string {
+  const [, fm, fd] = from.split('-').map(Number);
+  const [, tm, td] = to.split('-').map(Number);
+  if (from === to) return `${fd} ${SHORT_MONTHS[fm - 1]}`;
+  if (fm === tm) return `${fd} to ${td} ${SHORT_MONTHS[tm - 1]}`;
+  return `${fd} ${SHORT_MONTHS[fm - 1]} to ${td} ${SHORT_MONTHS[tm - 1]}`;
+}
+
+/**
+ * The first stretch of 7 days (from `today` on) that holds 3 or more unfinished exams, tests or projects, or null. Overdue, finished and
+ * sample items do not count. A window starts on the due date of one of the items, so "18 to 22 Nov" is exactly the dates of the pile-up.
+ */
+export function findBusyWeek(assignments: Assignment[], today: string): BusyWeek | null {
+  const heavy = assignments
+    .filter((a) => a.status !== 'completed' && !a.sample && a.dueDate >= today && HEAVY_KINDS.includes(kindOf(a)))
+    .sort((x, y) => x.dueDate.localeCompare(y.dueDate));
+  for (let i = 0; i < heavy.length; i++) {
+    const end = addDays(heavy[i].dueDate, 6);
+    const inWindow = heavy.slice(i).filter((a) => a.dueDate <= end);
+    if (inWindow.length < BUSY_WEEK_COUNT) continue;
+    const from = inWindow[0].dueDate;
+    const to = inWindow[inWindow.length - 1].dueDate;
+    const counts = new Map<string, number>();
+    for (const a of inWindow) counts.set(kindOf(a), (counts.get(kindOf(a)) ?? 0) + 1);
+    const parts = HEAVY_KINDS.filter((k) => counts.has(k)).map((k) => {
+      const n = counts.get(k)!;
+      return `${n} ${KIND_META[k as keyof typeof KIND_META].label.toLowerCase()}${n === 1 ? '' : 's'}`;
+    });
+    return { count: inWindow.length, from, to, label: `Busy week: ${parts.join(', ')}, ${shortRange(from, to)}` };
+  }
+  return null;
 }
 
 /** "November 2026" */
