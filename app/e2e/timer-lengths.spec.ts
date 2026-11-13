@@ -52,7 +52,8 @@ test('while a block runs, the student chooses: next block or restart now', async
 
   // keep the running block: it carries on from 25 minutes
   await page.getByRole('button', { name: 'Apply to the next block' }).click();
-  expect((await page.getByRole('timer').innerText()).startsWith('24:')).toBe(true);
+  // still the 25-minute block it started as (24:5x, or 25:00 if the clock has not ticked yet on a slow machine), not the new 90
+  await expect(page.getByRole('timer')).toHaveText(/^2[45]:/);
   await expect(page.getByLabel('Focus', { exact: true })).toHaveValue('90');
 
   // restart with the new length
