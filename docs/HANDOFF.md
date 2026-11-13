@@ -1,9 +1,79 @@
 # StudyFlow: handoff for a new chat
 
-Read this first. It is the current state of the project and how to work on it. Last updated 2026-11-09 (after PR #18,
-with PR #19 open). The older docs in this folder (PRD, ARCHITECTURE, DESIGN and so on) describe intent; this file describes what is true now.
+Read this first. It is the current state of the project and how to work on it. Last updated 2026-11-13 (after PR #25; section 000 is the current state). The older docs in this folder (PRD, ARCHITECTURE, DESIGN and so on) describe intent; this file describes what is true now.
 
-## 00. ROUND 3 (state on 2026-11-10): sharpen the core loop, six PRs, all pushed, waiting for Derek
+## 000. START HERE (state on 2026-11-13): Round 3 and the audit fixes are live; what is left, and how to do it
+
+### What is true right now
+- `main` = `fc2d9bc` (merge of PR #25). **Live** on https://app-beta-lilac-23.vercel.app: Round 3 (PR #23, sections A to F below),
+  the Saved-banner fix (PR #24) and audit fixes F1, F4, F5, F13 (PR #25). Firestore rules with the `archived` flag are deployed.
+- **Deploys are now automatic from Git.** The Vercel project `app` is linked to `J-Derek/studyflow`, production branch `main`,
+  root directory `app`. Merging to `main` deploys; every pushed branch gets a preview URL. Do NOT run `npx vercel --prod` any more.
+  The first Git-triggered production build has not happened yet: watch it on the next merge (a failed build does not replace the live site).
+- **Rules still deploy by hand**: the CI job "Deploy Firestore rules and indexes" fails on every merge to `main` because the
+  `FIREBASE_SERVICE_ACCOUNT` secret is not set (harmless red X). Until Derek adds it, a rules change ships with
+  `npx firebase deploy --config ../firebase.json --only firestore:rules --project studyflow-app-8f038` from `app/`, **before** merging the app change.
+- **Open PR #26** (`claude/app-check`): App Check code, off until `VITE_RECAPTCHA_ENTERPRISE_SITE_KEY` is set; owner steps in `docs/APP-CHECK.md`.
+  Safe to merge at any time (does nothing without the key).
+- **Independent audit** (13 findings, verdicts, roadmap, verification plan): https://claude.ai/artifact/Ajvh1nbyzJvnUax2U4N9H3 (a Claude Doc).
+  Round 3 summary doc: https://claude.ai/artifact/6oepDTxvgy6xC1L1usgPxo. Treat both as leads; the code is the truth.
+- Not ours, leave alone: modified files under `scripts/` and the untracked `promo-video/` folder (made by a separate video session).
+
+### Waiting on Derek (accounts and decisions; an agent cannot do these)
+1. **App Check (audit F2):** follow `docs/APP-CHECK.md` (create the reCAPTCHA Enterprise key, register it, set the Vercel variable,
+   watch a day of traffic, then enforce), and merge PR #26.
+2. **Budget alert** in Google Cloud Billing (for example 10 USD a month, email alerts).
+3. **Rules auto-deploy (audit F3, second half):** create a service-account key with the Firebase Rules Admin role and add it to GitHub as
+   `FIREBASE_SERVICE_ACCOUNT` (`gh secret set FIREBASE_SERVICE_ACCOUNT < key.json`, then delete the file). An agent should not create
+   or hold this key.
+4. **Decisions needed before reminders (F8):** move the Firebase project to the Blaze (pay as you go) plan for Cloud Functions, and pick
+   push notifications, email, or both.
+5. **One manual check before enforcing the CSP (F11):** sign in with real Google (popup and same-page, ad blocker on and off) on the live site
+   with the console open, and report any line starting "[Report Only] Refused".
+
+### Remaining engineering work, in the order to do it (one PR each, branch from the latest `origin/main`)
+Effort is focused developer days. Every PR: write the failing test first, then the fix; run the checks in "Verification" below.
+
+| # | Item (audit id) | Effort | What to build | Notes and risks |
+|---|---|---|---|---|
+| 1 | **DONE on branch `claude/rules-require-archived` (PR open; after merge deploy the rules by hand)**: Require the `archived` flag in rules (F7) | 0.5 | In `firestore.rules`, the four `isValid*` for assignments, sessions, grades, notes: change `(!('archived' in data) \|\| data.archived is bool)` to `data.archived is bool`; rules tests that a write without it is refused. | The app already writes the flag (since Round 3) and the backfill uses `batch.update` (merged doc keeps the flag). Deploy rules AFTER confirming the live app writes it (it does). A tab still on a pre-Round-3 bundle will then get a visible "couldn't save" with Retry instead of an invisible record. |
+| 2 | Week workload view | 1 to 2 | On Today and the Timetable, warn when 3 or more exams/tests/projects fall within 7 days ("Busy week: 3 exams 18 to 22 Nov"). Pure function in `utils/calendarMonth.ts` (next to `selectPendingDeadlines`), unit tested. | No data change. |
+| 3 | Recurring deadlines | 3 to 5 | Optional `repeat: { every: 'week', until?: 'YYYY-MM-DD' }` on an assignment. When one is completed or its due date passes, create the next one (new id, same title/course/kind/checklist unticked, due + 7 days) once; a `repeatOf` id stops duplicates across devices. UI: "Repeats weekly" toggle under More options and in the edit dialog. | Additive rules change (`repeat`, `repeatOf`), so rules first. Mappers, backup validator, `.ics` export (RRULE or separate events) all need it: see the checklist in section 0 (every PR that changes synced data touches types, rules, mappers, backup, tests). |
+| 4 | Grading-scale choice (F9) | 3 to 4 | Profile field `gradingScale`: `us4` (today), `pct` (percentage only), `uk` (First, 2:1, 2:2, Third), `ke` (Kenyan classes: First Class Honours 70+, Second Upper 60 to 69, Second Lower 50 to 59, Pass 40 to 49). One mapping module replaces the fixed scale in `utils/academicCalculations.ts:3-11` and the honours bands at line 124; Courses, Today's GPA tile and Past semesters read it. | Additive rules change on the user document (rules first). Confirm the Kenyan bands with Derek before shipping. |
+| 5 | Field-level writes, then remove the timing heuristics (F6) | 4 to 5 | Replace whole-document `setDoc` for checklist ticks, status, progress and completedAt with `updateDoc` on field paths (`subtasks.<id>.completed`, `status`, `progress`, `completedAt`, `updatedAt`); keep `setDoc` for create and full edits. Then delete `createRecentWrites`, `RECENT_WRITE_MS` and `holdBackThenApply` in `services/firestoreSync.ts` and `services/mergeById.ts` (keep the pending-write rule). | Rules validate the merged document, so partial updates pass the same checks; add rules tests for an update that changes one subtask. Proof: the two-tab test ticking DIFFERENT items at the same instant passes 20 of 20 (today it is last-writer-wins). |
+| 6 | Error reporting | 0.5 to 1 | Sentry (free tier) or similar: init in `main.tsx` for production only, report `ErrorBoundary` crashes and `reportSyncError` failures, no student content in events (titles, notes, emails stripped). Add the host to the CSP `connect-src`. A line in Help's privacy note. | Needs Derek to create the account (the DSN is public). |
+| 7 | Safari in the tests | 1 | A `webkit` project in `playwright.config.ts` running a smoke subset (today, add deadline, timetable, timer, sign-in with the emulator). | Needs `npx playwright install webkit` (ask before installing). |
+| 8 | Reminders (F8), the biggest product gap | 7 to 10 | Daily digest at 07:00 in the student's profile time zone: a scheduled Cloud Function reads tomorrow's and overdue deadlines per user and sends a Web Push (Firebase Cloud Messaging through the existing service worker, token stored at `users/{uid}/devices/{id}`) and/or an email. A "Reminders" switch in the account menu; no reminders for guests. | Blocked on Derek's decisions (Blaze plan, push vs email). New server code: a `functions/` folder, its own tests, rules for `devices`, account deletion must delete `devices` (`ACCOUNT_COLLECTIONS` test enforces it). |
+| 9 | Enforce the CSP (F11) | 0.5 | Rename `Content-Security-Policy-Report-Only` to `Content-Security-Policy` in `app/vercel.json`. | Only after Derek's manual check (owner item 5) and after App Check (its reCAPTCHA hosts are already allowed). |
+| 10 | First-load size (F12) | 1 to 2 | First measure: Lighthouse, slow 4G, mobile. `dist/index.html` modulepreloads `vendor-firebase` (643 KB raw) although the store uses lazy wrappers (`services/cloud.ts`); find the static import that pulls Firebase into the entry graph (start with `lib/syncErrors.ts`, `lib/authActions.ts`, `components/SignInButton.tsx`). | Only if the measurement says it matters. |
+| 11 | Focus history (F10) | 1 | Either show a cross-device focus history (last 7 days, from `focusSessions`, with a `localDate` index) or stop writing it. Ask Derek which. | |
+
+Later, only after reminders exist: "start this now" suggestions, exam revision plans from checklists, a semester review screen,
+a read-only calendar feed. Not to build (see the audit): social features, an AI chat assistant, streaks/badges, two-way Google Calendar sync, a native app.
+
+### Verification for every PR (unchanged from Round 3, plus what was learned)
+- From `app/`: `npx tsc -p tsconfig.app.json --noEmit`, `npx vitest run`, `npm run lint` (0 errors), `npm run build`,
+  full e2e `npx firebase emulators:exec --config ../firebase.json --only auth,firestore --project studyflow-e2e "npx playwright test"` (about 12 to 15 minutes; run it in the background),
+  prod suite (copy `playwright.prod.config.ts`, change 5198 to 5197, run with `-c`, delete the copy), and `npm run test:rules` when rules change.
+- Prove each new test fails on the old code (swap the old file in with `git show origin/main:<path> > <path>`, run, copy yours back, check `git diff --stat`).
+- Known flaky specs (also flaky on unmodified `main`; re-run before suspecting your change): `kinds-progress` (checklist), `notes`, `timetable-clash`,
+  `timer-lengths`, `new-semester` keep-timetable, the two-tab `sync-stress`, and an axe contrast check in `today-compact` during a theme change on slow CI.
+  If CI fails on one of these and it passes locally, re-run the failed job (`gh run rerun <id> --failed`) rather than merging over a red X.
+
+### Practical lessons from this session (save the next agent an hour)
+- `gh` is at `C:\Program Files\GitHub CLI\gh.exe` (call it by full path from Git Bash). If `gh auth status` says the token is invalid,
+  ask Derek to run `gh auth login`. Git Bash cannot open the credential prompt; push with
+  `git -c credential.helper= -c 'credential.helper=!"/c/Program Files/GitHub CLI/gh.exe" auth git-credential' push -u origin <branch>`.
+- `npx vercel api /v9/...` from Git Bash needs `MSYS_NO_PATHCONV=1`, or the path is rewritten into a Windows path.
+- Never edit with `sed -i` from Git Bash on these CRLF files (it rewrote all of `ProfileModal.tsx`); use a small Python script that keeps the line
+  ending, and check `git diff --stat`. A stray lone `\r` makes git skip line-ending conversion and shows a whole-file diff.
+- A completely full localStorage also breaks the Firebase SDK (it keeps counters there), so keep the store's persisted footprint small:
+  signed-in accounts no longer persist `drafts` and `archived` (they live in the account; past semesters load on demand via `loadArchivedFromCloud`).
+- Graphify is installed (`graphify update .`, then `graphify query|explain|affected "<name>"`); its output folder is gitignored.
+- Derek's standing orders: fix bugs without waiting, test properly, stage only your own files, check `git branch --show-current` before every commit,
+  confirm every push with `git ls-remote`. Merge or deploy only when Derek says so in chat.
+
+## 00. ROUND 3 (state on 2026-11-10; MERGED as PR #23 and LIVE since 2026-11-10): sharpen the core loop
 
 Plan: `docs/ROUND3-PLAN.md` (it lives on branch `claude/ux-a-today`). Each PR is its own branch from `main` (not stacked), each fully tested (full e2e, prod suite, vitest, lint, build).
 Round 2 was merged and deployed first. Merge them in any order; the only shared file is `docs/ROUND3-PLAN.md` (A adds it).

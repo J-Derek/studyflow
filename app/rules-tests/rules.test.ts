@@ -60,6 +60,7 @@ const asg = (over: Record<string, unknown> = {}) => ({
   status: 'pending',
   progress: 0,
   createdAt: '2026-11-01T10:00:00.000Z',
+  archived: false,
   updatedAt: serverTimestamp(),
   ...over
 });
@@ -71,6 +72,7 @@ const ses = (over: Record<string, unknown> = {}) => ({
   startTime: '09:00',
   endTime: '10:30',
   type: 'lecture',
+  archived: false,
   updatedAt: serverTimestamp(),
   ...over
 });
@@ -335,6 +337,7 @@ describe('notes', () => {
     pinned: false,
     createdAt: '2026-11-01T08:00:00.000Z',
     editedAt: '2026-11-01T08:00:00.000Z',
+    archived: false,
     updatedAt: serverTimestamp(),
     ...over
   });
@@ -410,8 +413,8 @@ describe('past semesters (archiving)', () => {
     const id = 'p-2026-11-09-ab3x';
     await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: id })));
     await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'sessions', 's1'), ses({ archivedPeriod: id })));
-    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'grades', 'g1'), { id: 'g1', courseCode: 'C', courseName: 'N', credits: 3, targetLetter: 'A', color: '#000', assessments: [], updatedAt: serverTimestamp(), archivedPeriod: id }));
-    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'notes', 'n1'), { id: 'n1', title: 'T', body: '', course: '', pinned: false, createdAt: 'z', editedAt: 'z', updatedAt: serverTimestamp(), archivedPeriod: id }));
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'grades', 'g1'), { id: 'g1', courseCode: 'C', courseName: 'N', credits: 3, targetLetter: 'A', color: '#000', assessments: [], updatedAt: serverTimestamp(), archivedPeriod: id, archived: true }));
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'notes', 'n1'), { id: 'n1', title: 'T', body: '', course: '', pinned: false, createdAt: 'z', editedAt: 'z', updatedAt: serverTimestamp(), archivedPeriod: id, archived: true }));
     await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: 5 })));
     await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: '' })));
     await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archivedPeriod: 'x'.repeat(61) })));
@@ -429,9 +432,19 @@ describe('past semesters (archiving)', () => {
       await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'a1'), asg({ archived: bad })));
       await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'notes', 'n1'), note({ archived: bad })));
     }
-    // documents written by an older app version (no flag) are still accepted, and can be given the flag later by an update
-    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'old'), asg({ id: 'old' })));
-    await assertSucceeds(updateDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'old'), { archived: false, updatedAt: serverTimestamp() }));
+    // the flag is required (audit F7): a write without it, as an old app version would send, is refused, so it shows as
+    // "couldn't save" instead of becoming a record the current-items lists never return
+    const { archived: _a, ...noFlag } = asg({ id: 'old' });
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'old'), noFlag));
+    const { archived: _s, ...sessionNoFlag } = ses({ id: 's-old' });
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'sessions', 's-old'), sessionNoFlag));
+    // a document stored before the flag existed can still be given it (the app's one-time backfill does exactly this)
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ALICE, 'assignments', 'legacy'), noFlag);
+    });
+    await assertSucceeds(updateDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'legacy'), { archived: false, updatedAt: serverTimestamp() }));
+    // but an update that keeps it flagless is refused
+    await assertFails(updateDoc(doc(asAlice(), 'users', ALICE, 'assignments', 'legacy'), { title: 'Edited without the flag' }));
     // listing current items only is allowed (with a limit), as is listing the archived ones
     await assertSucceeds(getDocs(query(collection(asAlice(), 'users', ALICE, 'assignments'), where('archived', '==', false), limit(500))));
     await assertSucceeds(getDocs(query(collection(asAlice(), 'users', ALICE, 'assignments'), where('archived', '==', true), limit(500))));
@@ -488,7 +501,7 @@ describe('grades', () => {
   const grade = (over: Record<string, unknown> = {}) => ({
     id: 'g1', courseCode: 'CS 301', courseName: 'Algorithms', credits: 3, targetLetter: 'A', color: '#6366F1',
     assessments: [{ id: 'x1', name: 'Midterm', weight: 40, score: 82 }, { id: 'x2', name: 'Final exam', weight: 60 }],
-    updatedAt: serverTimestamp(), ...over
+    archived: false, updatedAt: serverTimestamp(), ...over
   });
   const gDoc = (db: Db, id = 'g1') => doc(db, 'users', ALICE, 'grades', id);
   it('accepts a valid course and its owner can read it back', async () => {
