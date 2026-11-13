@@ -6,8 +6,9 @@ import {
   Plus
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import type { Priority, AssignmentKind } from '../types';
+import type { Priority, AssignmentKind, Repeat } from '../types';
 import { KindPicker } from './KindPicker';
+import { RepeatToggle } from './RepeatToggle';
 import { DATE_MAX, DATE_MIN, LIMITS, isDateInRange, localDateISO } from '../utils/limits';
 
 interface FirstDeadlineCardProps {
@@ -21,6 +22,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
   const [course, setCourse] = useState('');
   const [priority, setPriority] = useState<Priority>('high');
   const [kind, setKind] = useState<AssignmentKind>('assignment');
+  const [repeat, setRepeat] = useState<Repeat | undefined>(undefined);
   // Course, kind and priority stay out of the way until asked for.
   const [more, setMore] = useState(false);
   const [dueDate, setDueDate] = useState<string>('');
@@ -79,6 +81,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
       dueTime: '23:59',
       priority,
       kind,
+      ...(repeat ? { repeat } : {}),
       status: 'pending',
       progress: 0,
       subtasks: [
@@ -266,6 +269,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               />
             </div>
             <KindPicker value={kind} onChange={setKind} />
+            <RepeatToggle value={repeat} onChange={setRepeat} />
             <div className="flex items-center gap-2">
               <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Priority:</span>
               {(['low', 'medium', 'high'] as Priority[]).map((p) => (

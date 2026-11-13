@@ -449,6 +449,8 @@ export function initFirestoreSync(uid: string): () => void {
         };
         apply();
         holdBackThenApply('assignments', remote, apply, syncGeneration);
+        // The account's own data is here now, so a repeating deadline that is done or past its date can safely make its next one.
+        if (!snapshot.metadata.fromCache || filtered) useStudyFlowStore.getState().rollWeeklyRepeats();
       },
       (err) => console.warn('Firestore assignments listener warning (using offline cache):', err.message)
     );

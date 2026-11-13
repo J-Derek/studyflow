@@ -51,6 +51,23 @@ describe('assignmentToDoc', () => {
     }
     expect(docToAssignment('a1', assignmentToDoc(base)).kind).toBeUndefined();
   });
+  it('stores the weekly repeat and its series id, and reads them back', () => {
+    expect('repeat' in assignmentToDoc(base)).toBe(false);
+    expect('repeatOf' in assignmentToDoc(base)).toBe(false);
+    const doc = assignmentToDoc({ ...base, repeat: { every: 'week', until: '2027-01-31' }, repeatOf: 'a0' });
+    expect(doc.repeat).toEqual({ every: 'week', until: '2027-01-31' });
+    expect(doc.repeatOf).toBe('a0');
+    const back = docToAssignment('a1', doc);
+    expect(back.repeat).toEqual({ every: 'week', until: '2027-01-31' });
+    expect(back.repeatOf).toBe('a0');
+    expect(assignmentToDoc({ ...base, repeat: { every: 'week' } }).repeat).toEqual({ every: 'week' });
+  });
+  it('ignores an odd repeat from the cloud', () => {
+    expect(docToAssignment('a1', { ...assignmentToDoc(base), repeat: { every: 'day' } }).repeat).toBeUndefined();
+    expect(docToAssignment('a1', { ...assignmentToDoc(base), repeat: 'weekly' }).repeat).toBeUndefined();
+    expect(docToAssignment('a1', { ...assignmentToDoc(base), repeat: { every: 'week', until: 'soon' } }).repeat).toEqual({ every: 'week' });
+    expect(docToAssignment('a1', { ...assignmentToDoc(base), repeatOf: 5 }).repeatOf).toBeUndefined();
+  });
   it('treats an unknown or odd kind from the cloud as no kind', () => {
     expect(docToAssignment('a1', { ...assignmentToDoc(base), kind: 'homework' }).kind).toBeUndefined();
     expect(docToAssignment('a1', { ...assignmentToDoc(base), kind: 5 }).kind).toBeUndefined();

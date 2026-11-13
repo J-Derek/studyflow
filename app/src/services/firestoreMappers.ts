@@ -29,6 +29,8 @@ export function assignmentToDoc(a: Assignment): Doc {
   // 'assignment' is what a missing kind means, so only the other kinds are stored (older app versions never see an unknown key).
   if (isAssignmentKind(a.kind) && a.kind !== 'assignment') out.kind = a.kind;
   if (a.notes) out.notes = a.notes;
+  if (a.repeat?.every === 'week') out.repeat = { every: 'week', ...(a.repeat.until && DATE_RE.test(a.repeat.until) ? { until: a.repeat.until } : {}) };
+  if (a.repeatOf) out.repeatOf = a.repeatOf.slice(0, 100);
   if (a.completedAt) out.completedAt = a.completedAt;
   if (a.sample) out.sample = true;
   Object.assign(out, archivedField(a.archivedPeriod));
@@ -60,6 +62,16 @@ function readSubtasks(raw: unknown): Subtask[] | undefined {
   return undefined;
 }
 
+function readRepeat(raw: unknown, repeatOf: unknown): Pick<Assignment, 'repeat' | 'repeatOf'> {
+  const out: Pick<Assignment, 'repeat' | 'repeatOf'> = {};
+  if (raw && typeof raw === 'object' && (raw as { every?: unknown }).every === 'week') {
+    const until = (raw as { until?: unknown }).until;
+    out.repeat = { every: 'week', ...(typeof until === 'string' && DATE_RE.test(until) ? { until } : {}) };
+  }
+  if (typeof repeatOf === 'string' && repeatOf.length > 0 && repeatOf.length <= 100) out.repeatOf = repeatOf;
+  return out;
+}
+
 export function docToAssignment(id: string, data: Doc): Assignment {
   const subtasks = readSubtasks(data.subtasks);
   return {
@@ -74,6 +86,7 @@ export function docToAssignment(id: string, data: Doc): Assignment {
     progress: typeof data.progress === 'number' && Number.isFinite(data.progress) ? data.progress : 0,
     notes: typeof data.notes === 'string' ? data.notes : undefined,
     subtasks,
+    ...readRepeat(data.repeat, data.repeatOf),
     createdAt: typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString(),
     completedAt: typeof data.completedAt === 'string' ? data.completedAt : undefined,
     sample: data.sample === true ? true : undefined,
