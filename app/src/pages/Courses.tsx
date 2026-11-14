@@ -2,6 +2,7 @@ import React, { lazy, Suspense, useMemo, useState } from 'react';
 import { ArrowLeft, BookOpen, Clock, NotebookPen } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { courseSummary } from '../utils/courses';
+import { gradeLabel, targetLabel } from '../utils/gradingScale';
 import { getDaysRemaining } from '../utils/formatters';
 import { kindOf, CLASS_TYPE_META } from '../utils/kinds';
 import { KindBadge } from '../components/KindBadge';
@@ -20,6 +21,7 @@ function useSummaries(courses: CourseGrade[]) {
 /** Everything for one course on one screen: work that is still to do, work done, this course's classes, its notes and its grade. */
 const CourseDetail: React.FC<{ course: CourseGrade; onBack: () => void }> = ({ course, onBack }) => {
   const summary = useSummaries([course]).get(course.id)!;
+  const scale = useStudyFlowStore((s) => s.user.gradingScale) ?? 'us4';
   const setActiveTab = useStudyFlowStore((s) => s.setActiveTab);
   return (
     <div data-testid="course-detail" className="space-y-5">
@@ -35,7 +37,7 @@ const CourseDetail: React.FC<{ course: CourseGrade; onBack: () => void }> = ({ c
           {course.courseCode} <span className="font-normal text-zinc-700 dark:text-zinc-300">{course.courseName}</span>
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 tabular-nums">
-          {course.credits} credits · target {course.targetLetter} · {summary.gradePct === null ? 'no grades yet' : `${summary.gradePct}% so far`}
+          {course.credits} credits · target {targetLabel(scale, course.targetLetter)} · {summary.gradePct === null ? 'no grades yet' : `${summary.gradePct}% so far${scale === 'uk' || scale === 'ke' ? `, ${gradeLabel(scale, summary.gradePct)}` : ''}`}
         </p>
       </div>
 

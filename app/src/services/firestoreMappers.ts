@@ -1,6 +1,7 @@
 import type { Assignment, CourseGrade, Draft, Note, Period, StudySession, Subtask, UserPreferences } from '../types';
 import { isPeriodLabel } from '../utils/periods';
 import { isAssignmentKind } from '../utils/kinds';
+import { isGradingScale } from '../utils/gradingScale';
 import { sanitizeTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 import type { AgeRecord } from '../utils/ageGate';
 import { clampScore } from '../utils/academicCalculations';
@@ -192,6 +193,7 @@ export function profileToDoc(uid: string, user: UserPreferences, photo: string |
   if (user.timeZone) out.timeZone = user.timeZone.slice(0, 64);
   if (validPhoto(photo)) out.photo = photo;
   if (isPeriodLabel(user.periodLabel)) out.periodLabel = user.periodLabel;
+  if (isGradingScale(user.gradingScale)) out.gradingScale = user.gradingScale;
   if (age) out.ageConfirmed = ageToDoc(age);
   return out;
 }
@@ -257,6 +259,7 @@ export function docToProfile(data: Doc): { user: Partial<UserPreferences>; photo
   user.semesterEnd = end && DATE_RE.test(end) ? end : undefined;
   user.timeZone = zone || undefined;
   if (isPeriodLabel(data.periodLabel)) user.periodLabel = data.periodLabel;
+  if (isGradingScale(data.gradingScale)) user.gradingScale = data.gradingScale;
   const photo = str(data.photo);
   return { user, photo: validPhoto(photo) ? photo : null };
 }

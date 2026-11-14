@@ -6,7 +6,8 @@ import { Avatar } from './Avatar';
 import { resizeImageToDataUrl } from '../utils/imageResize';
 import { LIMITS } from '../utils/limits';
 import { PERIOD_LABELS, periodWord, periodWordCapital } from '../utils/periods';
-import type { PeriodLabel } from '../types';
+import type { PeriodLabel, GradingScale } from '../types';
+import { GRADING_SCALES, SCALE_LABEL } from '../utils/gradingScale';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
   const [program, setProgram] = useState(user.program);
   const [semester, setSemester] = useState(user.semester);
   const [periodLabel, setPeriodLabel] = useState<PeriodLabel>(user.periodLabel ?? 'semester');
+  const [gradingScale, setGradingScale] = useState<GradingScale>(user.gradingScale ?? 'us4');
   const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const [semesterStart, setSemesterStart] = useState(user.semesterStart ?? '');
   const [semesterEnd, setSemesterEnd] = useState(user.semesterEnd ?? '');
@@ -43,6 +45,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
       setProgram(user.program);
       setSemester(user.semester === 'Current Term' ? 'Current semester' : user.semester);
       setPeriodLabel(user.periodLabel ?? 'semester');
+      setGradingScale(user.gradingScale ?? 'us4');
       setSemesterStart(user.semesterStart ?? '');
       setSemesterEnd(user.semesterEnd ?? '');
       setTimeZone(user.timeZone ?? deviceZone);
@@ -62,6 +65,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
       program: program.trim() || 'My programme',
       semester: semester.trim() || `Current ${periodWord(periodLabel)}`,
       periodLabel,
+      gradingScale,
       semesterStart: semesterStart || undefined,
       semesterEnd: semesterEnd && semesterEnd >= semesterStart ? semesterEnd : undefined,
       timeZone
@@ -253,6 +257,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
               </select>
             </label>
           </div>
+
+          <label className="block text-xs text-zinc-600 dark:text-zinc-400">
+            How your university grades
+            <select
+              value={gradingScale}
+              onChange={(e) => setGradingScale(e.target.value as GradingScale)}
+              className="mt-1 w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              {GRADING_SCALES.map((s) => (
+                <option key={s} value={s}>{SCALE_LABEL[s]}</option>
+              ))}
+            </select>
+          </label>
 
           <fieldset className="space-y-2 pt-1">
             <legend className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Calendar export</legend>

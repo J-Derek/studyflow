@@ -6,6 +6,7 @@ import { loadArchivedFromCloud } from '../services/firestoreSync';
 import { useDialog } from '../lib/useDialog';
 import { periodWord } from '../utils/periods';
 import { calculateCoursePercentage } from '../utils/academicCalculations';
+import { gradeLabel } from '../utils/gradingScale';
 import { kindOf, CLASS_TYPE_META } from '../utils/kinds';
 import { KindBadge } from './KindBadge';
 import type { Period } from '../types';
@@ -98,7 +99,7 @@ export const PastSemestersDialog: React.FC<{ onClose: () => void }> = ({ onClose
                           const { currentPct, gradedWeight } = calculateCoursePercentage(g);
                           return (
                             <li key={g.id} className="text-sm text-zinc-800 dark:text-zinc-200">
-                              {g.courseCode} {g.courseName} <span className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">· {g.credits} credits · {gradedWeight > 0 ? `${Math.round(currentPct * 10) / 10}%` : 'no grades'}</span>
+                              {g.courseCode} {g.courseName} <span className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">· {g.credits} credits · {gradedWeight > 0 ? `${Math.round(currentPct * 10) / 10}%${user.gradingScale === 'uk' || user.gradingScale === 'ke' ? ` (${gradeLabel(user.gradingScale, currentPct)})` : ''}` : 'no grades'}</span>
                             </li>
                           );
                         })}
