@@ -1,10 +1,11 @@
-import type { Assignment, CourseGrade, Draft, Note, Period, StudySession, Subtask, UserPreferences } from '../types';
+import type { Assignment, AssignmentStatus, CourseGrade, Draft, Note, Period, StudySession, Subtask, UserPreferences } from '../types';
 import { isPeriodLabel } from '../utils/periods';
 import { isAssignmentKind } from '../utils/kinds';
 import { sanitizeTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 import type { AgeRecord } from '../utils/ageGate';
 import { clampScore } from '../utils/academicCalculations';
 import { clampWeight } from '../utils/assessments';
+import { LIMITS, clampText } from '../utils/limits';
 
 type Doc = Record<string, unknown>;
 
@@ -41,6 +42,49 @@ export function assignmentToDoc(a: Assignment): Doc {
     });
     out.subtasks = map;
   }
+  return out;
+}
+
+/** Marks a field to be deleted from the stored document (the caller turns it into Firestore's deleteField()). */
+export const REMOVE_FIELD = Symbol('remove-field');
+
+/**
+ * A small change to one assignment: a tick, finishing it, adding or removing one checklist step. Written as field updates (not the
+ * whole document) so two devices changing DIFFERENT fields, or different steps of the same checklist, both keep their change.
+ */
+export interface AssignmentFieldChanges {
+  tickSubtask?: { id: string; completed: boolean };
+  addSubtask?: { id: string; title: string; completed: boolean; order: number };
+  removeSubtask?: string;
+  status?: AssignmentStatus;
+  progress?: number;
+  /** null removes it. */
+  completedAt?: string | null;
+}
+
+export interface FieldUpdate {
+  path: string[];
+  value: unknown;
+}
+
+const STATUSES: AssignmentStatus[] = ['pending', 'in_progress', 'completed'];
+
+/** The field paths and values that apply a change. Values are kept inside what the rules accept; nothing is ever undefined. */
+export function assignmentChangesToUpdates(c: AssignmentFieldChanges): FieldUpdate[] {
+  const out: FieldUpdate[] = [];
+  if (c.tickSubtask) out.push({ path: ['subtasks', c.tickSubtask.id, 'completed'], value: c.tickSubtask.completed === true });
+  if (c.addSubtask) {
+    const s = c.addSubtask;
+    out.push({
+      path: ['subtasks', s.id],
+      value: { id: s.id, title: clampText(s.title, LIMITS.subtaskTitle), completed: s.completed === true, order: Math.max(0, Math.floor(s.order) || 0) }
+    });
+  }
+  if (c.removeSubtask) out.push({ path: ['subtasks', c.removeSubtask], value: REMOVE_FIELD });
+  if (c.status && STATUSES.includes(c.status)) out.push({ path: ['status'], value: c.status });
+  if (typeof c.progress === 'number' && Number.isFinite(c.progress)) out.push({ path: ['progress'], value: Math.min(100, Math.max(0, c.progress)) });
+  if (c.completedAt === null) out.push({ path: ['completedAt'], value: REMOVE_FIELD });
+  else if (typeof c.completedAt === 'string' && c.completedAt) out.push({ path: ['completedAt'], value: c.completedAt.slice(0, 50) });
   return out;
 }
 
