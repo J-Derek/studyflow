@@ -1,6 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { Loader2 } from 'lucide-react';
 import { GoogleIcon } from './GoogleIcon';
 import { friendlyAuthMessage, signInOrLinkWithGoogle, warmUpGoogleSignIn } from '../lib/authActions';
+import { isFinishingSignIn, subscribeFinishingSignIn } from '../lib/signInProgress';
+
+/** If a finished sign-in somehow leaves this button on screen, it comes back after this long. */
+const STAY_BUSY_MS = 20_000;
 
 let warmedUp = false;
 /** Gets Google's sign-in ready once the page is idle, so the pop-up opens instantly when clicked. */
@@ -23,11 +28,16 @@ interface SignInButtonProps {
 
 /** The one obvious "Sign in with Google" button. Opens Google's window directly. */
 export const SignInButton: React.FC<SignInButtonProps> = ({ variant = 'block', errorPlacement = 'below', className = '' }) => {
-  const [busy, setBusy] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  // After the sign-in reload the page starts as a guest page again until the account has loaded: stay busy through that too.
+  const finishing = useSyncExternalStore(subscribeFinishingSignIn, isFinishingSignIn, () => false);
+  const busy = pressed || finishing;
   const [error, setError] = useState<string | null>(null);
+  const releaseTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     warmUpWhenIdle();
+    return () => window.clearTimeout(releaseTimer.current);
   }, []);
 
   useEffect(() => {
@@ -38,13 +48,15 @@ export const SignInButton: React.FC<SignInButtonProps> = ({ variant = 'block', e
 
   const start = async () => {
     setError(null);
-    setBusy(true);
+    setPressed(true);
     try {
       await signInOrLinkWithGoogle();
+      // Google has answered, but the app is still moving work into the account and reloading. Staying busy hides that wait:
+      // the button used to flip back to "Sign in with Google" for a few seconds before the page changed.
+      releaseTimer.current = window.setTimeout(() => setPressed(false), STAY_BUSY_MS);
     } catch (err) {
       setError(friendlyAuthMessage(err));
-    } finally {
-      setBusy(false);
+      setPressed(false);
     }
   };
 
@@ -59,14 +71,18 @@ export const SignInButton: React.FC<SignInButtonProps> = ({ variant = 'block', e
           variant === 'header' ? 'min-h-[44px] px-3 text-sm' : 'w-full min-h-[44px] px-3.5 text-sm'
         } ${className}`}
       >
-        <GoogleIcon className="h-[18px] w-[18px] shrink-0" />
+        {busy ? (
+          <Loader2 className="h-[18px] w-[18px] shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+        ) : (
+          <GoogleIcon className="h-[18px] w-[18px] shrink-0" />
+        )}
         {variant === 'header' ? (
           <>
-            <span className="xl:hidden">{busy ? 'Opening…' : 'Sign in'}</span>
-            <span className="hidden xl:inline">{busy ? 'Opening Google…' : 'Sign in with Google'}</span>
+            <span className="xl:hidden">{busy ? 'Signing in…' : 'Sign in'}</span>
+            <span className="hidden xl:inline">{busy ? 'Signing in…' : 'Sign in with Google'}</span>
           </>
         ) : (
-          <span>{busy ? 'Opening Google…' : 'Sign in with Google'}</span>
+          <span>{busy ? 'Signing in…' : 'Sign in with Google'}</span>
         )}
       </button>
       {error && (

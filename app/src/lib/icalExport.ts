@@ -11,6 +11,8 @@ export interface IcsOptions {
   /** Deadlines to export as events with reminders. Completed and sample ones are skipped. */
   assignments?: Assignment[];
   now?: Date;
+  /** Name of the downloaded file. */
+  fileName?: string;
 }
 
 const DAY_CODES = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
@@ -288,6 +290,23 @@ export function generateICalendarFeed(allSessions: StudySession[], options: IcsO
   return lines.flatMap(foldLine).join('\r\n') + '\r\n';
 }
 
+/**
+ * The options for a calendar file of ONE month: classes repeat only between its first and last day, only deadlines due in it are listed,
+ * and the file is named after it. Finished and sample work is skipped by the generator, as in the full export.
+ */
+export function monthIcsOptions(year: number, month: number, base: IcsOptions): IcsOptions {
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const from = `${year}-${pad2(month)}-01`;
+  const to = `${year}-${pad2(month)}-${pad2(new Date(Date.UTC(year, month, 0)).getUTCDate())}`;
+  return {
+    ...base,
+    semesterStart: from,
+    semesterEnd: to,
+    assignments: (base.assignments ?? []).filter((a) => a.dueDate >= from && a.dueDate <= to),
+    fileName: `StudyFlow_${year}-${pad2(month)}.ics`
+  };
+}
+
 /** Triggers a browser download of the .ics calendar file */
 export function downloadICalendarFile(sessions: StudySession[], options: IcsOptions = {}): void {
   const icsData = generateICalendarFeed(sessions, options);
@@ -295,7 +314,7 @@ export function downloadICalendarFile(sessions: StudySession[], options: IcsOpti
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.setAttribute('download', 'StudyFlow_Schedule.ics');
+  link.setAttribute('download', options.fileName || 'StudyFlow_Schedule.ics');
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
