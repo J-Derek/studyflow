@@ -436,6 +436,14 @@ describe('past semesters (archiving)', () => {
     await assertSucceeds(getDocs(query(collection(asAlice(), 'users', ALICE, 'assignments'), where('archived', '==', false), limit(500))));
     await assertSucceeds(getDocs(query(collection(asAlice(), 'users', ALICE, 'assignments'), where('archived', '==', true), limit(500))));
   });
+  it('accepts one of the four grading scales on the profile, and nothing else', async () => {
+    const user = (over: Record<string, unknown> = {}) => ({ uid: ALICE, name: 'A', university: 'U', program: 'P', semester: 'S', updatedAt: serverTimestamp(), ...over });
+    for (const gradingScale of ['us4', 'pct', 'uk', 'ke']) await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE), user({ gradingScale })));
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE), user()));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE), user({ gradingScale: 'gpa5' })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE), user({ gradingScale: 4 })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE), user({ gradingScale: ['uk'] })));
+  });
   it('accepts a semester, term or trimester label on the profile, and nothing else', async () => {
     const user = (over: Record<string, unknown> = {}) => ({ uid: ALICE, name: 'A', university: 'U', program: 'P', semester: 'S', updatedAt: serverTimestamp(), ...over });
     for (const periodLabel of ['semester', 'term', 'trimester']) await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE), user({ periodLabel })));

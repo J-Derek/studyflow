@@ -107,6 +107,8 @@ export interface TimerSettings {
   autoStartFocus: boolean;
 }
 
+export type GradingScale = 'us4' | 'pct' | 'uk' | 'ke';
+
 export interface UserPreferences {
   name: string;
   university: string;
@@ -114,6 +116,8 @@ export interface UserPreferences {
   semester: string;
   /** The word the student uses: semester, term or trimester. Missing means semester. */
   periodLabel?: PeriodLabel;
+  /** How grades are shown: letters and GPA (the default), percentages, UK classes or Kenyan classes. Missing means 'us4'. */
+  gradingScale?: GradingScale;
   avatarUrl?: string;
   /** Term dates and zone used by the .ics export. Stored on this device only. */
   semesterStart?: string;

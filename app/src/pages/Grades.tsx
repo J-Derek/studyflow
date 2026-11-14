@@ -11,17 +11,11 @@ import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Assessment } from '../types';
 import { GradingEditor } from '../components/GradingEditor';
 import { LIMITS } from '../utils/limits';
-import {
-  percentageToGpa,
-  percentageToLetter,
-  calculateCoursePercentage,
-  calculateCumulativeGpa,
-  clampScore,
-  getAcademicStanding
-} from '../utils/academicCalculations';
+import { percentageToGpa, calculateCoursePercentage, clampScore } from '../utils/academicCalculations';
+import { gradeLabel, overallResult, targetLabel, targetOptions } from '../utils/gradingScale';
 
 export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
-  const { grades, updateAssessmentScore, setCourseAssessments, addCourseGrade, deleteCourseGrade } = useStudyFlowStore();
+  const { grades, user, updateAssessmentScore, setCourseAssessments, addCourseGrade, deleteCourseGrade } = useStudyFlowStore();
   // The course whose weights are being edited (one at a time).
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string>(grades[0]?.id || '');
@@ -32,11 +26,15 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
   const [newCode, setNewCode] = useState('');
   const [newName, setNewName] = useState('');
   const [newCredits, setNewCredits] = useState(4);
-  const [newTarget, setNewTarget] = useState('A');
+  const [newTarget, setNewTarget] = useState('');
+  const scale = user.gradingScale ?? 'us4';
+  const targets = targetOptions(scale);
+  // A choice made on another scale is not on this list: fall back to the first (the best) one.
+  const targetChoice = targets.some((o) => o.value === newTarget) ? newTarget : targets[0].value;
 
   // Compute overall Term GPA using unified utility
-  const { gpaString: termGpa, gpa: numericGpa, totalCredits, hasData: hasGpa } = calculateCumulativeGpa(grades);
-  const standing = getAcademicStanding(numericGpa);
+  const overall = overallResult(grades, scale);
+  const { value: termGpa, totalCredits, hasData: hasGpa } = overall;
   const selectedCourse = grades.find((c) => c.id === selectedCourseId) || grades[0];
 
   // Simulation calculations for selected course
@@ -70,7 +68,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
       courseCode: newCode.trim().toUpperCase().slice(0, LIMITS.courseCode),
       courseName: newName.trim().slice(0, LIMITS.courseName),
       credits: Number(newCredits) || 3,
-      targetLetter: newTarget,
+      targetLetter: targetChoice,
       color: '#4F46E5',
       assessments: [
         { id: `a-${Date.now()}-1`, name: 'Midterm exam', weight: 30, score: undefined },
@@ -97,12 +95,12 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
       {grades.length > 0 && (
       <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-1 md:grid-cols-3 overflow-hidden">
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Projected GPA</span>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{scale === 'us4' ? 'Projected GPA' : 'Average so far'}</span>
           <div className="my-2.5 flex items-baseline gap-2">
             <span className="text-3xl md:text-4xl tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
               {hasGpa ? termGpa : '—'}
             </span>
-            {hasGpa && <span className="text-xs text-zinc-600 dark:text-zinc-400">out of 4.00</span>}
+            {hasGpa && <span className="text-xs text-zinc-600 dark:text-zinc-400">{overall.unit}</span>}
           </div>
           <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-600 dark:text-zinc-400">
             {hasGpa ? 'Based on the grades you have entered so far.' : 'Enter a score for any assessment to see it.'}
@@ -118,7 +116,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
             <span className="text-3xl md:text-4xl tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
               {totalCredits}
             </span>
-            <span className="text-xs text-zinc-600 dark:text-zinc-400">counted in GPA</span>
+            <span className="text-xs text-zinc-600 dark:text-zinc-400">{scale === 'us4' ? 'counted in GPA' : 'counted in your average'}</span>
           </div>
           <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-600 dark:text-zinc-400">
             {grades.length} {grades.length === 1 ? 'course' : 'courses'} added
@@ -129,11 +127,11 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
           <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Your standing</span>
           <div className="my-2.5">
             <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              {hasGpa ? standing.standing.replace('Projected: ', '') : '—'}
+              {hasGpa && overall.standing ? overall.standing.replace('Projected: ', '') : '—'}
             </span>
           </div>
           <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-600 dark:text-zinc-400">
-            Cut-offs are a common default (3.8, 3.5, 3.0). Your university may differ.
+            {hasGpa ? overall.standingNote : 'Cut-offs depend on the grading scale in your profile.'}
           </div>
         </div>
       </div>
@@ -223,11 +221,11 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                   {simCoursePct.toFixed(1)}%
                 </span>
                 <span className="text-sm tabular-nums font-semibold px-2 py-0.5 rounded bg-blue-600 text-white">
-                  {percentageToLetter(simCoursePct)}
+                  {gradeLabel(scale, simCoursePct)}
                 </span>
               </div>
               <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
-                Grade points at this score: {percentageToGpa(simCoursePct).toFixed(1)} · Your target: {selectedCourse.targetLetter}
+                {scale === 'us4' ? `Grade points at this score: ${percentageToGpa(simCoursePct).toFixed(1)} · ` : ''}Your target: {targetLabel(scale, selectedCourse.targetLetter)}
               </p>
             </div>
           </div>
@@ -274,7 +272,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {grades.map((course) => {
               const { currentPct, gradedWeight } = calculateCoursePercentage(course);
-              const letter = percentageToLetter(currentPct);
+              const letter = gradeLabel(scale, currentPct);
 
               return (
                 <div
@@ -463,14 +461,13 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                   <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Target Grade</label>
                   <select
                     aria-label="Target grade"
-                    value={newTarget}
+                    value={targetChoice}
                     onChange={(e) => setNewTarget(e.target.value)}
                     className="mt-1 w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
-                    <option value="A">A (4.0)</option>
-                    <option value="A-">A- (3.7)</option>
-                    <option value="B+">B+ (3.3)</option>
-                    <option value="B">B (3.0)</option>
+                    {targets.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
