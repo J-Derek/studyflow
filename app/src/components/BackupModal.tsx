@@ -249,7 +249,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
                   className="w-full min-h-[44px] flex items-center justify-center gap-2.5 py-2 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-surface-light dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-100 text-sm font-medium shadow-2xs transition disabled:opacity-60 cursor-pointer"
                 >
                   <GoogleIcon className="h-[18px] w-[18px]" />
-                  <span>{isLinking ? 'Opening Google…' : 'Continue with Google'}</span>
+                  <span>{isLinking ? 'Signing in…' : 'Continue with Google'}</span>
                 </button>
               )}
               {authError && (

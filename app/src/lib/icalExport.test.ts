@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import ICAL from 'ical.js';
-import { escapeIcsText, foldLine, generateICalendarFeed } from './icalExport';
+import { escapeIcsText, foldLine, generateICalendarFeed, monthIcsOptions } from './icalExport';
 import type { Assignment, StudySession } from '../types';
 
 const lecture = (over: Partial<StudySession> = {}): StudySession => ({
@@ -147,5 +147,32 @@ describe('deadline reminders', () => {
     expect(ics).toContain('BEGIN:VTIMEZONE');
     for (const l of ics.split('\r\n')) expect(new TextEncoder().encode(l).length).toBeLessThanOrEqual(75);
     expect(parse(ics).events).toHaveLength(1);
+  });
+});
+
+describe('one month for the calendar', () => {
+  const NOVEMBER = { timeZone: 'Africa/Nairobi', now: NOW, assignments: [
+    deadline({ id: 'in', dueDate: '2026-11-18', title: 'Inside' }),
+    deadline({ id: 'before', dueDate: '2026-10-30', title: 'Before' }),
+    deadline({ id: 'after', dueDate: '2026-12-02', title: 'After' }),
+    deadline({ id: 'done', dueDate: '2026-11-10', title: 'Done', status: 'completed' })
+  ] };
+  it('keeps only the deadlines due in that month, runs classes between its first and last day, and names the file after the month', () => {
+    const opts = monthIcsOptions(2026, 11, NOVEMBER);
+    expect(opts.semesterStart).toBe('2026-11-01');
+    expect(opts.semesterEnd).toBe('2026-11-30');
+    expect(opts.fileName).toBe('StudyFlow_2026-11.ics');
+    expect(opts.assignments?.map((a) => a.id).sort()).toEqual(['done', 'in']);
+    const ics = generateICalendarFeed([lecture()], opts);
+    expect(ics).toContain('SUMMARY:Due: Inside (ENG 101)');
+    expect(ics).not.toContain('Before');
+    expect(ics).not.toContain('After');
+    expect(ics).not.toContain('Done'); // finished work is never exported
+    const { events } = parse(ics);
+    const it = events.find((e) => e.isRecurring())!.iterator();
+    const dates: string[] = [];
+    for (let t = it.next(); t && dates.length < 20; t = it.next()) dates.push(t.toString().slice(0, 10));
+    expect(dates.every((d) => d >= '2026-11-01' && d <= '2026-11-30')).toBe(true);
+    expect(dates.length).toBeGreaterThanOrEqual(4);
   });
 });

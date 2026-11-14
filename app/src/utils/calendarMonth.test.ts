@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Assignment, StudySession } from '../types';
-import { addDays, classesOn, dayOfWeekOf, deadlinesByDate, isoDate, mondayOf, monthGrid, monthLabel, occurrencesInRange, selectPendingDeadlines } from './calendarMonth';
+import { addDays, classesOn, dayOfWeekOf, deadlinesByDate, isoDate, mondayOf, monthGrid, monthLabel, occurrencesInRange, selectPendingDeadlines, monthSummary, monthRange } from './calendarMonth';
 
 const asg = (over: Partial<Assignment>): Assignment => ({
   id: 'a', title: 'T', course: 'C', dueDate: '2026-11-20', priority: 'medium', status: 'pending', progress: 0, createdAt: 'z', ...over
@@ -109,5 +109,38 @@ describe('deadlines', () => {
       asg({ id: 'overdue-low', dueDate: '2026-11-01', priority: 'low' }),
     ];
     expect(selectPendingDeadlines(list).map((x) => x.id)).toEqual(['overdue-low', 'high-early', 'high-late', 'medium', 'low']);
+  });
+});
+
+describe('monthSummary', () => {
+  const list = (items: Assignment[]) => deadlinesByDate(items);
+  it('counts what is due in the month, what is still to do, and the busiest day', () => {
+    const m = monthSummary(list([
+      asg({ id: '1', dueDate: '2026-11-05', kind: 'exam' }),
+      asg({ id: '2', dueDate: '2026-11-19', kind: 'exam' }),
+      asg({ id: '3', dueDate: '2026-11-19', kind: 'test' }),
+      asg({ id: '4', dueDate: '2026-11-19' }),
+      asg({ id: '5', dueDate: '2026-11-20', status: 'completed', progress: 100 }),
+      asg({ id: '6', dueDate: '2026-12-01', kind: 'exam' }),
+      asg({ id: '7', dueDate: '2026-10-31', kind: 'exam' })
+    ]), 2026, 11);
+    expect(m).toEqual({ total: 5, pending: 4, done: 1, exams: 2, tests: 1, projects: 0, busiest: { date: '2026-11-19', count: 3 } });
+  });
+  it('has no busiest day unless two or more are due on it, and takes the earliest on a tie', () => {
+    expect(monthSummary(list([asg({ id: '1', dueDate: '2026-11-05' }), asg({ id: '2', dueDate: '2026-11-06' })]), 2026, 11).busiest).toBeNull();
+    const tie = monthSummary(list([asg({ id: '1', dueDate: '2026-11-09' }), asg({ id: '2', dueDate: '2026-11-09' }), asg({ id: '3', dueDate: '2026-11-03' }), asg({ id: '4', dueDate: '2026-11-03' })]), 2026, 11);
+    expect(tie.busiest).toEqual({ date: '2026-11-03', count: 2 });
+  });
+  it('is empty for a month with nothing', () => {
+    expect(monthSummary(new Map(), 2026, 11)).toEqual({ total: 0, pending: 0, done: 0, exams: 0, tests: 0, projects: 0, busiest: null });
+  });
+});
+
+describe('monthRange', () => {
+  it('gives the first and last day of a month, leap years and December included', () => {
+    expect(monthRange(2026, 11)).toEqual({ from: '2026-11-01', to: '2026-11-30' });
+    expect(monthRange(2028, 2)).toEqual({ from: '2028-02-01', to: '2028-02-29' });
+    expect(monthRange(2027, 2)).toEqual({ from: '2027-02-01', to: '2027-02-28' });
+    expect(monthRange(2026, 12)).toEqual({ from: '2026-12-01', to: '2026-12-31' });
   });
 });
