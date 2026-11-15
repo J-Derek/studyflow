@@ -11,16 +11,55 @@ export interface EditResult {
   end: number;
 }
 
+/** How many `*` sit right before `at` (going left) or right after it (going right). */
+const starsBefore = (text: string, at: number) => {
+  let n = 0;
+  while (at - n - 1 >= 0 && text[at - n - 1] === '*') n++;
+  return n;
+};
+const starsAfter = (text: string, at: number) => {
+  let n = 0;
+  while (text[at + n] === '*') n++;
+  return n;
+};
+
+/**
+ * Whether a run of `n` stars carries this button's mark: bold is two of them (a run of 2, or 3 with italic), italic is one (a run of 1,
+ * or 3 with bold). So the italic button never mistakes one of the stars of a bold word for its own.
+ */
+const carries = (n: number, mark: string) => (mark === '**' ? n >= 2 : n % 2 === 1);
+
 const wrap = (text: string, start: number, end: number, mark: string, placeholder: string): EditResult => {
   const chosen = text.slice(start, end);
-  // Pressing it again on text that is already wrapped takes the marks off.
-  if (chosen.startsWith(mark) && chosen.endsWith(mark) && chosen.length >= mark.length * 2 + 1) {
-    const inner = chosen.slice(mark.length, chosen.length - mark.length);
+  const len = mark.length;
+
+  // Pressing it again on text that is already wrapped (marks selected too) takes the marks off.
+  if (chosen.length >= len * 2 + 1 && carries(starsAfter(chosen, 0), mark) && carries(starsBefore(chosen, chosen.length), mark)) {
+    const inner = chosen.slice(len, chosen.length - len);
     return { text: text.slice(0, start) + inner + text.slice(end), start, end: start + inner.length };
   }
+
+  // The marks sit just outside the selection (that is how the button leaves it), or around an empty cursor: take them off.
+  if (carries(starsBefore(text, start), mark) && carries(starsAfter(text, end), mark)) {
+    const from = start - len;
+    // A placeholder nobody typed over goes with its marks, so pressing twice leaves the text as it was.
+    if (chosen === placeholder || chosen === '') {
+      return { text: text.slice(0, from) + text.slice(end + len), start: from, end: from };
+    }
+    return { text: text.slice(0, from) + chosen + text.slice(end + len), start: from, end: from + chosen.length };
+  }
+
+  // At the end of bold (or italic) words just typed, the cursor sits before the closing marks: pressing again steps out of them, so the
+  // next words are plain, as in a word processor.
+  const lineBefore = text.slice(text.lastIndexOf('\n', start - 1) + 1, start);
+  const open = mark === '**' ? /\*\*(?=[^*\s])[^*]*$/ : /(?:^|[^*])\*(?=[^*\s])[^*]*$/;
+  if (chosen === '' && carries(starsAfter(text, start), mark) && open.test(lineBefore)) {
+    return { text, start: start + len, end: start + len };
+  }
+
   const inner = chosen || placeholder;
   const out = text.slice(0, start) + mark + inner + mark + text.slice(end);
-  return { text: out, start: start + mark.length, end: start + mark.length + inner.length };
+  return { text: out, start: start + len, end: start + len + inner.length };
 };
 
 /** The lines (from the start of the first to the end of the last) that the selection touches. */

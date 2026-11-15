@@ -1,22 +1,14 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Bold, FileDown, Heading2, Italic, List, ListOrdered, Loader2, Printer, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { Assignment } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useDialog } from '../lib/useDialog';
-import { applyFormat, type FormatKind } from '../utils/markdownEdit';
 import { MAX_DRAFT_BODY } from '../services/firestoreMappers';
 import { MiniMarkdown } from './MiniMarkdown';
+import { FormatButtons, useFormatting } from './FormatToolbar';
+import { ExportButtons } from './ExportButtons';
 
 const AUTOSAVE_MS = 1000;
-
-const TOOLS: { kind: FormatKind; label: string; Icon: typeof Bold }[] = [
-  { kind: 'heading', label: 'Heading', Icon: Heading2 },
-  { kind: 'bold', label: 'Bold', Icon: Bold },
-  { kind: 'italic', label: 'Italic', Icon: Italic },
-  { kind: 'bullet', label: 'Bulleted list', Icon: List },
-  { kind: 'numbered', label: 'Numbered list', Icon: ListOrdered }
-];
 
 /**
  * The writing space for one assignment: a plain text box with a few formatting buttons, a preview, automatic saving (one second after the
@@ -29,8 +21,6 @@ export const WritingSpace: React.FC<{ assignment: Assignment; onClose: () => voi
   const [text, setText] = useState(stored);
   const [status, setStatus] = useState<'saved' | 'saving'>('saved');
   const [mobileTab, setMobileTab] = useState<'write' | 'preview'>('write');
-  const [exporting, setExporting] = useState(false);
-  const [exportError, setExportError] = useState<string | null>(null);
   const areaRef = useRef<HTMLTextAreaElement>(null);
   const textRef = useRef(text);
   const savedRef = useRef(stored);
@@ -71,37 +61,7 @@ export const WritingSpace: React.FC<{ assignment: Assignment; onClose: () => voi
   };
   const dialogRef = useDialog(true, close);
 
-  const format = (kind: FormatKind) => {
-    const el = areaRef.current;
-    if (!el) return;
-    const out = applyFormat(text, el.selectionStart, el.selectionEnd, kind);
-    change(out.text);
-    // put the cursor back after React has drawn the new text
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(out.start, out.end);
-    });
-  };
-
-  const exportWord = async () => {
-    setExportError(null);
-    setExporting(true);
-    try {
-      flush();
-      const m = await import('../lib/exportDocx');
-      await m.downloadDocx(assignment.title, text);
-    } catch {
-      setExportError('Could not make the Word file. Try again, or use PDF.');
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const exportPdf = () => {
-    flush();
-    // The page prints its own copy of the text (#print-root, see index.css); the browser's print dialog has "Save as PDF".
-    window.print();
-  };
+  const format = useFormatting(areaRef, text, change);
 
   const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
 
@@ -127,38 +87,10 @@ export const WritingSpace: React.FC<{ assignment: Assignment; onClose: () => voi
           </div>
 
           <div role="toolbar" aria-label="Formatting and export" className="flex flex-wrap items-center gap-1 px-3 md:px-5 py-1.5 border-b border-zinc-200 dark:border-zinc-800">
-            {TOOLS.map(({ kind, label, Icon }) => (
-              <button
-                key={kind}
-                type="button"
-                onClick={() => format(kind)}
-                aria-label={label}
-                title={label}
-                className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-md text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
-              >
-                <Icon className="h-4 w-4" aria-hidden="true" />
-              </button>
-            ))}
+            <FormatButtons onFormat={format} />
             <span className="flex-1" />
-            <button
-              type="button"
-              onClick={exportWord}
-              disabled={exporting}
-              className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-md border border-zinc-300 dark:border-zinc-600 text-sm font-medium text-zinc-800 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-60 cursor-pointer"
-            >
-              {exporting ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <FileDown className="h-4 w-4" aria-hidden="true" />}
-              Word
-            </button>
-            <button
-              type="button"
-              onClick={exportPdf}
-              className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-md border border-zinc-300 dark:border-zinc-600 text-sm font-medium text-zinc-800 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer"
-            >
-              <Printer className="h-4 w-4" aria-hidden="true" />
-              PDF
-            </button>
+            <ExportButtons title={assignment.title} text={text} onBeforeExport={flush} />
           </div>
-          <div aria-live="polite">{exportError && <p role="alert" className="px-5 py-1 text-xs text-red-700 dark:text-red-300">{exportError}</p>}</div>
 
           {/* On a phone the two halves are tabs; from tablet width they sit side by side */}
           <div className="md:hidden flex gap-1 px-3 pt-2" role="group" aria-label="Show">
@@ -196,15 +128,6 @@ export const WritingSpace: React.FC<{ assignment: Assignment; onClose: () => voi
           </div>
         </div>
       </div>
-
-      {/* The copy the browser prints for "PDF": hidden on screen, the only thing shown when printing */}
-      {createPortal(
-        <div id="print-root" data-testid="print-root">
-          <h1 style={{ fontSize: '22pt', marginBottom: '12pt' }}>{assignment.title}</h1>
-          <MiniMarkdown text={text} />
-        </div>,
-        document.body
-      )}
     </>
   );
 };

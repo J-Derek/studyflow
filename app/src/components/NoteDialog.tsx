@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { BookOpen, Pencil, Pin, PinOff, Trash2, X } from 'lucide-react';
 import type { Note } from '../types';
 import { useDialog } from '../lib/useDialog';
-import { LinkedText } from './LinkedText';
+import { NOTE_FORMAT } from '../utils/miniMarkdown';
+import { ExportButtons } from './ExportButtons';
+import { FormatButtons, useFormatting } from './FormatToolbar';
+import { MiniMarkdown } from './MiniMarkdown';
 import { NoteReader } from './NoteReader';
 
 export const NOTE_TITLE_MAX = 120;
@@ -37,6 +40,9 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
   const [pinned, setPinned] = useState(note?.pinned ?? false);
   const [askDiscard, setAskDiscard] = useState(false);
   const [reading, setReading] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  // The same formatting buttons as the writing space for assignments.
+  const format = useFormatting(bodyRef, body, (next) => setBody(next.slice(0, NOTE_BODY_MAX)));
 
   const dirty =
     mode === 'edit' && (title !== (note?.title ?? '') || body !== (note?.body ?? '') || course !== (note?.course ?? '') || pinned !== (note?.pinned ?? false));
@@ -101,7 +107,7 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
               {note.course ? `${note.course} · ` : ''}Edited {formatDate(note.editedAt)}
             </p>
             {note.body ? (
-              <LinkedText text={note.body} className="text-sm text-zinc-800 dark:text-zinc-200" />
+              <MiniMarkdown text={note.body} format={NOTE_FORMAT} />
             ) : (
               <p className="text-sm text-zinc-600 dark:text-zinc-400">This note has no text yet.</p>
             )}
@@ -131,6 +137,7 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
                   {note.pinned ? <PinOff className="h-4 w-4" aria-hidden="true" /> : <Pin className="h-4 w-4" aria-hidden="true" />}
                   <span>{note.pinned ? 'Unpin' : 'Pin to top'}</span>
                 </button>
+                <ExportButtons title={note.title || 'Note'} text={note.body} format={NOTE_FORMAT} />
               </div>
               <button
                 type="button"
@@ -183,12 +190,16 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
               <label htmlFor="note-body" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 Note
               </label>
+              <div role="toolbar" aria-label="Formatting" className="flex flex-wrap items-center gap-1 -ml-1">
+                <FormatButtons onFormat={format} />
+              </div>
               <textarea
                 id="note-body"
+                ref={bodyRef}
                 rows={10}
                 value={body}
                 maxLength={NOTE_BODY_MAX}
-                placeholder="Write here. Paste a link to slides or a reading and it becomes clickable when you view the note."
+                placeholder="Write here. Use the buttons for headings, bold, italic and lists. A link to slides or a reading becomes clickable when you view the note."
                 onChange={(e) => setBody(e.target.value)}
                 className={`${field} py-2 resize-y`}
               />
