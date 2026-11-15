@@ -74,9 +74,9 @@ test('the focus timer starts and counts down', async ({ page }) => {
   const clock = page.getByRole('timer');
   const before = await clock.innerText();
   await page.getByRole('button', { name: /^Start$/ }).click();
-  await expect(page.getByRole('button', { name: /Pause Session/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Pause/ })).toBeVisible();
   await expect.poll(() => clock.innerText(), { timeout: 8000 }).not.toBe(before);
-  await page.getByRole('button', { name: /Pause Session/ }).click();
+  await page.getByRole('button', { name: /^Pause/ }).click();
   expect(pageErrors.get(page)).toEqual([]);
 });
 
