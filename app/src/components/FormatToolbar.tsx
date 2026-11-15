@@ -1,7 +1,6 @@
-import React, { useCallback } from 'react';
-import { flushSync } from 'react-dom';
+import React from 'react';
 import { Bold, Heading2, Italic, List, ListOrdered } from 'lucide-react';
-import { applyFormat, type FormatKind } from '../utils/markdownEdit';
+import type { FormatKind } from '../utils/markdownEdit';
 
 const TOOLS: { kind: FormatKind; label: string; Icon: typeof Bold }[] = [
   { kind: 'heading', label: 'Heading', Icon: Heading2 },
@@ -11,26 +10,7 @@ const TOOLS: { kind: FormatKind; label: string; Icon: typeof Bold }[] = [
   { kind: 'numbered', label: 'Numbered list', Icon: ListOrdered }
 ];
 
-/**
- * Applies a formatting button to a text box. The new text is drawn at once (flushSync), so the selection can be put back in the same
- * tap: a phone ignores focus and selection changes made later, which left the student with the cursor elsewhere and, after deleting
- * the placeholder by hand, a stray "****".
- */
-export function useFormatting(areaRef: React.RefObject<HTMLTextAreaElement | null>, text: string, change: (next: string) => void) {
-  return useCallback(
-    (kind: FormatKind) => {
-      const el = areaRef.current;
-      if (!el) return;
-      const out = applyFormat(text, el.selectionStart, el.selectionEnd, kind);
-      flushSync(() => change(out.text));
-      el.focus();
-      el.setSelectionRange(out.start, out.end);
-    },
-    [areaRef, text, change]
-  );
-}
-
-/** The heading, bold, italic and list buttons. Used by the writing space for assignments and by the note editor. */
+/** The heading, bold, italic and list buttons (with lib/useFormatting). Used by the writing space for assignments and by the note editor. */
 export const FormatButtons: React.FC<{ onFormat: (kind: FormatKind) => void }> = ({ onFormat }) => (
   <>
     {TOOLS.map(({ kind, label, Icon }) => (

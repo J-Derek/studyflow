@@ -4,7 +4,8 @@ import type { Note } from '../types';
 import { useDialog } from '../lib/useDialog';
 import { NOTE_FORMAT } from '../utils/miniMarkdown';
 import { ExportButtons } from './ExportButtons';
-import { FormatButtons, useFormatting } from './FormatToolbar';
+import { FormatButtons } from './FormatToolbar';
+import { useFormatting } from '../lib/useFormatting';
 import { MiniMarkdown } from './MiniMarkdown';
 import { NoteReader } from './NoteReader';
 

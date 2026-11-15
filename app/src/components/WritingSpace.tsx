@@ -5,7 +5,8 @@ import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useDialog } from '../lib/useDialog';
 import { MAX_DRAFT_BODY } from '../services/firestoreMappers';
 import { MiniMarkdown } from './MiniMarkdown';
-import { FormatButtons, useFormatting } from './FormatToolbar';
+import { FormatButtons } from './FormatToolbar';
+import { useFormatting } from '../lib/useFormatting';
 import { ExportButtons } from './ExportButtons';
 
 const AUTOSAVE_MS = 1000;
