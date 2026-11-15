@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Each committed batch, as the document paths it set (see the commitArchive tests).
+const batches = vi.hoisted(() => [] as string[][]);
+
 type SnapCb = (snap: unknown) => void;
 const listeners: Array<{ path: string; cb: SnapCb }> = [];
 
@@ -15,14 +18,25 @@ vi.mock('firebase/firestore', () => ({
   setDoc: vi.fn(async () => undefined),
   deleteDoc: vi.fn(async () => undefined),
   getDocs: vi.fn(async () => ({ docs: [] })),
-  writeBatch: () => ({ set: vi.fn(), commit: vi.fn(async () => undefined) }),
+  writeBatch: () => {
+    const sets: string[] = [];
+    return {
+      set: (ref: { path: string }) => {
+        sets.push(ref.path);
+      },
+      commit: async () => {
+        batches.push(sets);
+      }
+    };
+  },
   onSnapshot: (ref: { path: string }, cb: SnapCb) => {
     listeners.push({ path: ref.path, cb });
     return () => undefined;
   }
 }));
 
-import { initFirestoreSync, planMerge, unsubscribeAllFirestoreSync } from './firestoreSync';
+import { setDoc } from 'firebase/firestore';
+import { commitArchive, initFirestoreSync, planMerge, unsubscribeAllFirestoreSync } from './firestoreSync';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 
 /** The four lists start once the account's older documents have been checked for the `archived` flag (a moment, in the mock). */
@@ -126,5 +140,37 @@ describe('planMerge', () => {
   it('never overwrites ids that already exist in the account', () => {
     const out = planMerge(new Set(['a', 'b']), [{ id: 'b' }, { id: 'c' }]);
     expect(out).toEqual([{ id: 'c' }]);
+  });
+});
+
+describe('commitArchive: the semester record is committed with the last items, not afterwards', () => {
+  const period = { id: 'p1', name: 'Term 2', label: 'term' as const, archivedAt: '2026-11-15T10:00:00.000Z', counts: { assignments: 0, sessions: 0, grades: 0, notes: 0 } };
+  const asg = (id: string) => ({ id, title: id, course: 'C', dueDate: '2030-01-01', priority: 'low' as const, status: 'pending' as const, progress: 0, createdAt: 'z', archivedPeriod: 'p1' });
+  const empty = { sessions: [], grades: [], notes: [] };
+
+  beforeEach(() => {
+    batches.length = 0;
+    vi.mocked(setDoc).mockClear();
+  });
+
+  it('writes the period record in the same batch as the items, with no separate write after it', async () => {
+    await commitArchive('U', period, { assignments: [asg('a1'), asg('a2')], ...empty }, []);
+    expect(batches).toHaveLength(1);
+    expect(batches[0]).toEqual(['users/U/assignments/a1', 'users/U/assignments/a2', 'users/U/semesters/p1']);
+    expect(setDoc).not.toHaveBeenCalled();
+  });
+
+  it('with several batches, the record is only in the last one, so a half-finished archive never shows as a past semester', async () => {
+    const many = Array.from({ length: 450 }, (_, i) => asg(`a${i}`));
+    await commitArchive('U', period, { assignments: many, ...empty }, []);
+    expect(batches).toHaveLength(2);
+    expect(batches[0]!.some((p) => p.includes('/semesters/'))).toBe(false);
+    expect(batches[1]!.at(-1)).toBe('users/U/semesters/p1');
+    expect(setDoc).not.toHaveBeenCalled();
+  });
+
+  it('still records an archive with nothing in it (the period alone)', async () => {
+    await commitArchive('U', period, { assignments: [], ...empty }, []);
+    expect(batches).toEqual([['users/U/semesters/p1']]);
   });
 });
