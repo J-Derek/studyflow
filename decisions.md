@@ -1,6 +1,6 @@
 # StudyFlow — Architectural & Design Decisions
 
-## Approved Technology Stack (Decided by ChatGPT Architect - Task 001 Review)
+## Approved Technology Stack
 - **Frontend Framework**: React + Vite
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
@@ -8,7 +8,7 @@
 - **State Management**: Zustand
 - **Persistence**: Local Storage (IndexedDB/Supabase deferred to v2)
 
-## Visual Identity & Design System (Specified by ChatGPT Director)
+## Visual Identity & Design System
 - **Aesthetic**: Minimal, modern, premium productivity software.
 - **Background**: Warm off-white (`#F8F9FA` / `#FAF9F6`)
 - **Primary**: Deep indigo (`#1E1B4B` / `#312E81`)
