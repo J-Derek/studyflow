@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
+import { LegalLinks } from './LegalFooter';
 import { Cloud, Download, HelpCircle, LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useAccountView } from '../store/useAccountView';
@@ -171,6 +172,7 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onOpenProfile, onOpenB
             <LogOut className="h-4 w-4" />
             Sign out
           </button>
+          <LegalLinks onNavigate={() => setOpen(false)} className="border-t border-zinc-200/70 dark:border-zinc-800/70 mt-1 pt-1" />
         </div>
       )}
     </div>

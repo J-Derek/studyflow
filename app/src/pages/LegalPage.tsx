@@ -32,12 +32,6 @@ export const LegalPage: React.FC<{ doc: LegalTab }> = ({ doc }) => {
 
   return (
     <article data-testid="legal-page" data-doc={doc} className="max-w-2xl mx-auto space-y-4 pb-10">
-      <p
-        data-testid="legal-draft-notice"
-        className="rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 px-3 py-2 text-xs text-amber-900 dark:text-amber-200"
-      >
-        <strong>Draft.</strong> This page was written in plain words from what the app really does. It has not been checked by a lawyer yet and is not legal advice.
-      </p>
       {failed ? (
         <p role="alert" className="text-sm text-red-700 dark:text-red-300">This page could not be loaded. Check your connection and try again.</p>
       ) : text && text.doc === doc ? (
@@ -45,6 +39,9 @@ export const LegalPage: React.FC<{ doc: LegalTab }> = ({ doc }) => {
       ) : (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading…</p>
       )}
+      <p data-testid="legal-draft-notice" className="border-t border-zinc-200/70 dark:border-zinc-800/70 pt-3 text-xs text-zinc-600 dark:text-zinc-400">
+        Draft: written in plain words from what the app really does. It has not been checked by a lawyer yet and is not legal advice.
+      </p>
     </article>
   );
 };
