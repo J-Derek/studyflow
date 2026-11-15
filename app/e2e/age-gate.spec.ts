@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** PR5: the age question before the first sign-in. Under 13 gets no account; 13 to 17 need the guardian tick; the answer reaches the account. */
 type W = {
@@ -32,7 +33,7 @@ test('the question appears before Google opens, is accessible in light and dark,
 
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => document.documentElement.classList.toggle('dark', t === 'dark'), theme);
-    await page.waitForTimeout(300);
+    await settleTransitions(page);
     const axe = await new AxeBuilder({ page }).include('[data-testid="age-gate"]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations.map((v) => `${theme} ${v.id}`)).toEqual([]);
   }

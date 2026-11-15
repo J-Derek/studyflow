@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** PR4: a page for addresses the app does not have, a calm screen when a page crashes, and an offline banner. */
 type S = {
@@ -19,7 +20,7 @@ for (const theme of ['light', 'dark'] as const) {
   test(`${theme}: an unknown address shows "We can't find that page", with a way back, and no accessibility problems`, async ({ page }) => {
     await ready(page, '/this-page-does-not-exist');
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);
-    await page.waitForTimeout(400);
+    await settleTransitions(page);
 
     await expect(page.getByRole('heading', { level: 1, name: 'We can’t find that page' })).toBeVisible();
     await expect(page.getByTestId('not-found')).toContainText('nothing was changed');
