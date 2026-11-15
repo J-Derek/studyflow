@@ -96,19 +96,22 @@ test('13 to 17 needs the parent or guardian tick, then signs in and the account 
     }, { timeout: 15_000 })
     .toBe('13-17|true|at,band,guardian');
 
-  // signing out forgets the answer on the device, so the next person is asked
+  // signing out keeps the answer on this device (Derek's choice: ask once per device, not on every sign-in)
   await page.getByRole('button', { name: 'Account menu' }).first().click();
   await page.getByRole('dialog', { name: 'Account' }).getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('alertdialog', { name: 'Sign out?' }).getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.waitForFunction(() => {
     const s = (window as unknown as Partial<W>).__store?.getState();
     return !!s?.userId && s.isAnonymous === true;
   });
-  expect(await page.evaluate(() => localStorage.getItem('studyflow_age_confirmed'))).toBeNull();
+  expect(JSON.parse((await page.evaluate(() => localStorage.getItem('studyflow_age_confirmed')))!)).toMatchObject({ band: '13-17', guardian: true });
+  const straightToGoogle = page.waitForEvent('popup');
   await signInButton(page).click();
-  await expect(page.getByTestId('age-gate')).toBeVisible();
+  await expect(page.getByTestId('age-gate')).toHaveCount(0);
+  await (await straightToGoogle).close();
 });
 
-test('an adult answer is kept for this device, so the question is not asked again until sign-out', async ({ page }) => {
+test('an adult answer is kept for this device, so the question is not asked again', async ({ page }) => {
   await ready(page);
   await signInButton(page).click();
   await page.getByTestId('age-gate').getByLabel('18 or older').check();
