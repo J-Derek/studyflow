@@ -47,7 +47,7 @@ import { reportSyncError } from '../lib/syncErrors';
 import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 import { clampScore } from '../utils/academicCalculations';
-import { afterUncomplete } from '../utils/progress';
+import { afterUncomplete, statusProgress } from '../utils/progress';
 import { newPeriodId, planArchive, type CarryChoice } from '../utils/periods';
 import { MAX_DRAFT_BODY } from '../services/firestoreMappers';
 import { normalizeAssessments } from '../utils/assessments';
@@ -551,9 +551,19 @@ export const useStudyFlowStore = create<StudyFlowState>()(
               if (updates.title !== undefined) updated.title = clampText(updates.title, LIMITS.assignmentTitle);
               if (updates.course !== undefined) updated.course = clampText(updates.course, LIMITS.assignmentCourse);
               if (updates.notes !== undefined) updated.notes = updates.notes.slice(0, LIMITS.assignmentNotes);
-              // With a checklist the ticks decide progress; a number sent from outside is ignored (see utils/progress).
-              if (updates.progress !== undefined && a.subtasks && a.subtasks.length > 0) updated.progress = a.progress;
-              if (updates.progress !== undefined && !(a.subtasks && a.subtasks.length > 0)) {
+              const hasChecklist = !!(a.subtasks && a.subtasks.length > 0);
+              if (hasChecklist) {
+                // With a checklist the ticks decide progress and status; a number or status sent from outside is ignored (see utils/progress).
+                if (updates.progress !== undefined) updated.progress = a.progress;
+                if (updates.status !== undefined) {
+                  updated.status = a.status;
+                  updated.completedAt = a.completedAt;
+                }
+              } else if (updates.status !== undefined && updates.progress === undefined) {
+                // Without one, the simple status (not started, in progress, done) decides the stored progress.
+                updated.progress = statusProgress(updates.status);
+                updated.completedAt = updates.status === 'completed' ? (a.completedAt ?? new Date().toISOString()) : undefined;
+              } else if (updates.progress !== undefined) {
                 if (updates.progress === 100 && a.status !== 'completed') {
                   updated.status = 'completed';
                   updated.completedAt = new Date().toISOString();
