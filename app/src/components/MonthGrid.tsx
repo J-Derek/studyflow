@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Assignment, StudySession } from '../types';
-import { monthGrid } from '../utils/calendarMonth';
 import { needsAttention } from '../utils/deadlineEmphasis';
+import { monthGrid } from '../utils/calendarMonth';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const LONG_DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
