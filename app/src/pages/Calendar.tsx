@@ -152,7 +152,7 @@ export const CalendarPage: React.FC = () => {
             className="min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-surface-dark hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs transition shadow-2xs active:scale-95"
           >
             <Download className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-            <span className="hidden sm:inline tabular-nums">Export .ICS</span>
+            <span className="hidden sm:inline tabular-nums">Export to calendar</span>
           </button>
 
           <div role="group" aria-label="Calendar view" className="flex items-center gap-1 bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-lg p-0.5 shadow-2xs">
@@ -233,7 +233,7 @@ export const CalendarPage: React.FC = () => {
             onClick={() => openAdd()}
             className="min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-xs transition shadow-2xs active:scale-95"
           >
-            <Plus className="h-3.5 w-3.5" /> <span>Add Block</span>
+            <Plus className="h-3.5 w-3.5" /> <span>Add block</span>
           </button>
         </div>
       </div>
@@ -283,7 +283,7 @@ export const CalendarPage: React.FC = () => {
         <MonthGrid year={monthCursor.year} month={monthCursor.month} sessions={sessions} deadlines={deadlines} today={todayISO} onSelectDay={setSelectedDate} />
       )}
 
-      {/* Unified 7-Day Continuous Calendar Grid (Cron / Notion Calendar Architecture) */}
+      {/* The week: one column per day */}
       {view === 'week' && sessions.length > 0 && (
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark shadow-2xs overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 min-h-[500px]">
@@ -590,7 +590,7 @@ export const CalendarPage: React.FC = () => {
                   type="submit"
                   className="px-3.5 py-1.5 rounded-md text-xs font-medium text-white dark:text-zinc-900 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs"
                 >
-                  {editingId ? 'Save changes' : 'Add Block'}
+                  {editingId ? 'Save changes' : 'Add block'}
                 </button>
               </div>
             </form>

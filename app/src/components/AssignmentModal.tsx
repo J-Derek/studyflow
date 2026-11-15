@@ -103,7 +103,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800">
           <div>
             <h2 id="assignment-modal-title" className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">
-              {assignmentToEdit ? 'Edit Assignment' : 'New assignment'}
+              {assignmentToEdit ? 'Edit assignment' : 'New assignment'}
             </h2>
             <p className="text-xs text-zinc-600 dark:text-zinc-400">Add the title, course and due date</p>
           </div>

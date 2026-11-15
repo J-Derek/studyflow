@@ -86,7 +86,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
         setActiveTab('timer');
         onClose();
       },
-      actionLabel: 'Launch Timer'
+      actionLabel: 'Open the timer'
     },
     {
       title: 'Grades',
