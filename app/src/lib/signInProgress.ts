@@ -55,6 +55,43 @@ export function takeSigningInAcrossReload(now = Date.now()): boolean {
   }
 }
 
+/** Longest "finishing" lasts after the reload, in case the cloud never answers (offline). */
+const FINISHING_CAP_MS = 20_000;
+
+let finishing: boolean | null = null; // null: not read from the reload flag yet
+const finishingListeners = new Set<() => void>();
+
+/**
+ * True from the moment the page reloads after signing in to an existing account until that account's plan has arrived. Every "Sign in"
+ * button reads it and shows "Signing in…" instead, so the sign-in offer never flashes back while the account loads.
+ */
+export function isFinishingSignIn(): boolean {
+  if (finishing === null) {
+    finishing = takeSigningInAcrossReload();
+    if (finishing && typeof window !== 'undefined') {
+      window.addEventListener(ACCOUNT_LOADED_EVENT, endFinishingSignIn, { once: true });
+      window.setTimeout(endFinishingSignIn, FINISHING_CAP_MS);
+    }
+  }
+  return finishing;
+}
+
+export function endFinishingSignIn(): void {
+  if (finishing !== true) return;
+  finishing = false;
+  finishingListeners.forEach((l) => l());
+}
+
+export function subscribeFinishingSignIn(listener: () => void): () => void {
+  finishingListeners.add(listener);
+  return () => finishingListeners.delete(listener);
+}
+
+export function resetFinishingSignInForTests(): void {
+  finishing = null;
+  finishingListeners.clear();
+}
+
 /** Fired by the sync code when the signed-in account's assignments have come from the cloud. */
 export const ACCOUNT_LOADED_EVENT = 'studyflow:account-loaded';
 
