@@ -92,6 +92,7 @@ export const CalendarPage: React.FC = () => {
 
   const clashing = useMemo(() => clashingIds(sessions), [sessions]);
   const timesInvalid = toMinutes(endTime) <= toMinutes(startTime);
+  const [titleMissing, setTitleMissing] = useState(false);
   const newClashes = useMemo(
     () =>
       timesInvalid
@@ -117,6 +118,7 @@ export const CalendarPage: React.FC = () => {
     setEndTime('11:30');
     setSessionType('lecture');
     if (day !== undefined) setDayOfWeek(day);
+    setTitleMissing(false);
     setModalOpen(true);
   };
 
@@ -128,14 +130,19 @@ export const CalendarPage: React.FC = () => {
     setStartTime(session.startTime);
     setEndTime(session.endTime);
     setSessionType(session.type);
+    setTitleMissing(false);
     setModalOpen(true);
   };
 
   const handleSaveSession = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !course.trim() || timesInvalid) return;
+    if (!title.trim()) {
+      setTitleMissing(true);
+      return;
+    }
+    if (timesInvalid) return;
 
-    const data = { title: title.trim(), course: course.trim(), dayOfWeek, startTime, endTime, type: sessionType };
+    const data = { title: title.trim(), course: course.trim() || 'General', dayOfWeek, startTime, endTime, type: sessionType };
     if (editingId) updateSession(editingId, data);
     else addSession(data);
     closeModal();
@@ -498,29 +505,38 @@ export const CalendarPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveSession} className="p-5 space-y-3.5">
+            <form onSubmit={handleSaveSession} noValidate className="p-5 space-y-3.5">
               <div>
                 <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   Session Title
                 </label>
                 <input
                   type="text"
-                  required
+                  aria-required="true"
+                  aria-invalid={titleMissing || undefined}
+                  aria-describedby={titleMissing ? 'block-title-error' : undefined}
                   maxLength={LIMITS.blockTitle}
                   placeholder="e.g. Distributed Systems Lab"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    if (e.target.value.trim()) setTitleMissing(false);
+                  }}
                   className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
                 />
+                {titleMissing && (
+                  <p id="block-title-error" role="alert" className="mt-1 text-xs font-medium text-rose-700 dark:text-rose-300">
+                    Give it a title so you can find it later.
+                  </p>
+                )}
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Course Code
+                  Course (optional)
                 </label>
                 <input
                   type="text"
-                  required
                   maxLength={LIMITS.blockCourse}
                   list="course-suggestions"
                   placeholder="e.g. CS 101"
