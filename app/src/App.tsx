@@ -17,7 +17,6 @@ import { SyncErrorToast } from './components/SyncErrorToast';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { NotFoundPage } from './pages/NotFound';
-import { LegalFooter } from './components/LegalFooter';
 import { LEGAL_TABS } from './store/studyFlowStore';
 import { useStudyFlowStore, getTabFromPath } from './store/studyFlowStore';
 import { startAuthSessionLazy } from './lib/authActions';
@@ -199,7 +198,6 @@ export function App() {
         </main>
 
         {/* Privacy, terms and the other rules pages */}
-        <LegalFooter />
 
         {/* Mobile Navigation Bar */}
         <MobileNav />

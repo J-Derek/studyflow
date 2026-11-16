@@ -1,4 +1,5 @@
 import { useDialog } from '../lib/useDialog';
+import { LegalLinks } from './LegalFooter';
 import { confirmAction } from '../lib/confirm';
 import React, { useEffect, useState } from 'react';
 import { X, Download, Upload, AlertTriangle, Copy, LogOut, UserRound, CloudOff, Loader2, Check, CircleAlert, Trash2 } from 'lucide-react';
@@ -420,31 +421,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
           </section>
         )}
 
-        <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">
-          <a
-            href="/privacy"
-            className="underline underline-offset-2"
-            onClick={(e) => {
-              e.preventDefault();
-              onClose();
-              useStudyFlowStore.getState().setActiveTab('privacy');
-            }}
-          >
-            Privacy
-          </a>
-          {' · '}
-          <a
-            href="/terms"
-            className="underline underline-offset-2"
-            onClick={(e) => {
-              e.preventDefault();
-              onClose();
-              useStudyFlowStore.getState().setActiveTab('terms');
-            }}
-          >
-            Terms
-          </a>
-        </p>
+        <LegalLinks onNavigate={onClose} className="justify-center" />
       </div>
     </div>
   );
