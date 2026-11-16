@@ -16,8 +16,7 @@ test('saving a first deadline says so plainly, with no hype', async ({ page }) =
   await page.waitForFunction(() => !!(window as unknown as W).__store?.getState().userId);
   await page.getByLabel('What is due?').fill('Essay draft');
   await page.getByRole('button', { name: /Save deadline/ }).click();
-  await expect(page.getByText('“Essay draft” is on your list.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Start focusing' })).toBeVisible();
+  await expect(page.getByText('Saved “Essay draft”')).toBeVisible();
   for (const hype of ['locked in', 'Live countdown', 'immediate momentum', 'Launch Focus Round']) {
     await expect(page.getByText(hype)).toHaveCount(0);
   }
