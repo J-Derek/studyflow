@@ -12,9 +12,12 @@ export function courseKey(text: string): string {
   return text.split('—')[0]!.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-export function belongsToCourse(itemCourse: string, course: Pick<CourseGrade, 'courseCode'>): boolean {
+/** An item belongs to a course when the text it carries is the course's code or its name (students type either, or "code — name"). */
+export function belongsToCourse(itemCourse: string, course: Pick<CourseGrade, 'courseCode'> & Partial<Pick<CourseGrade, 'courseName'>>): boolean {
   const key = courseKey(itemCourse);
-  return key !== '' && key === courseKey(course.courseCode);
+  if (key === '') return false;
+  const whole = itemCourse.trim().replace(/\s+/g, ' ').toLowerCase();
+  return key === courseKey(course.courseCode) || key === courseKey(course.courseName ?? '') || whole === courseKey(course.courseName ?? '');
 }
 
 export interface CourseSummary {
@@ -52,6 +55,20 @@ export function knownCourseCodes(courses: CourseGrade[], texts: string[]): strin
       seen.add(key);
       out.push(code);
     }
+  }
+  return out;
+}
+
+/** Courses that items carry but that have no Courses entry yet (not "General", no repeats), so the page can say what is missing. */
+export function unlistedCourses(courses: CourseGrade[], texts: string[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of texts) {
+    const code = raw.split('—')[0]!.trim();
+    const key = courseKey(code);
+    if (!key || key === 'general' || seen.has(key)) continue;
+    seen.add(key);
+    if (!courses.some((c) => belongsToCourse(raw, c))) out.push(code);
   }
   return out;
 }

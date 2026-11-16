@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useMemo, useState } from 'react';
 import { ArrowLeft, BookOpen, Clock, NotebookPen } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { courseSummary } from '../utils/courses';
+import { courseSummary, unlistedCourses } from '../utils/courses';
 import { gradeLabel, targetLabel } from '../utils/gradingScale';
 import { getDaysRemaining } from '../utils/formatters';
 import { kindOf, CLASS_TYPE_META } from '../utils/kinds';
@@ -101,10 +101,14 @@ const CourseDetail: React.FC<{ course: CourseGrade; onBack: () => void }> = ({ c
  * course. The grades calculator (formerly the Grades page) follows below, where courses are added and weights and scores are set.
  */
 export const CoursesPage: React.FC = () => {
-  const { grades } = useStudyFlowStore();
+  const { grades, assignments, sessions, notes } = useStudyFlowStore();
   const [openId, setOpenId] = useState<string | null>(null);
   const summaries = useSummaries(grades);
   const open = grades.find((c) => c.id === openId) ?? null;
+  const unlisted = useMemo(
+    () => unlistedCourses(grades, [...assignments.map((a) => a.course), ...sessions.map((s) => s.course), ...notes.map((n) => n.course)]),
+    [grades, assignments, sessions, notes]
+  );
 
   if (open) return <div className="space-y-6 animate-fade-in pb-16"><CourseDetail course={open} onBack={() => setOpenId(null)} /></div>;
 
@@ -114,6 +118,12 @@ export const CoursesPage: React.FC = () => {
         <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Courses</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Each course with its work, classes, notes and grade.</p>
       </div>
+
+      {unlisted.length > 0 && (
+        <p data-testid="unlisted-courses" className="text-sm text-zinc-700 dark:text-zinc-300">
+          Your deadlines, classes or notes mention {unlisted.join(', ')}. Add {unlisted.length === 1 ? 'it' : 'them'} as {unlisted.length === 1 ? 'a course' : 'courses'} below to see the work for {unlisted.length === 1 ? 'it' : 'each'} in one place.
+        </p>
+      )}
 
       {grades.length > 0 && (
         <ul data-testid="course-list" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">

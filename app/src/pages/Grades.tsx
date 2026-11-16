@@ -255,7 +255,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
         {grades.length === 0 ? (
           <div className="p-8 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-surface-light dark:bg-surface-dark text-center">
             <Calculator className="h-8 w-8 text-zinc-600 dark:text-zinc-400 mx-auto mb-2" />
-            <h2 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">No courses enrolled</h2>
+            <h2 className="text-xs font-medium text-zinc-800 dark:text-zinc-200">No courses yet</h2>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mt-0.5">
               Add your classes and course grade weights to calculate your cumulative GPA and simulate target final exam scores.
             </p>
