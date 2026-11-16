@@ -197,6 +197,25 @@ describe('backupValidator', () => {
     expect(withKind(7).success).toBe(false);
   });
 
+  it('keeps a weekly repeat through a backup and refuses a malformed one', () => {
+    const withRepeat = (repeat: unknown, repeatOf?: unknown) => {
+      const p = JSON.parse(JSON.stringify(sampleValidPayload));
+      p.ledger.assignments[0].repeat = repeat;
+      if (repeatOf !== undefined) p.ledger.assignments[0].repeatOf = repeatOf;
+      return validateBackupJson(JSON.stringify(p));
+    };
+    const ok = withRepeat({ every: 'week', until: '2027-01-31', extra: 1 }, 'asg-0');
+    expect(ok.success).toBe(true);
+    if (ok.success) {
+      expect(ok.data.ledger.assignments[0].repeat).toEqual({ every: 'week', until: '2027-01-31' });
+      expect(ok.data.ledger.assignments[0].repeatOf).toBe('asg-0');
+    }
+    expect(withRepeat({ every: 'day' }).success).toBe(false);
+    expect(withRepeat({ every: 'week', until: 'soon' }).success).toBe(false);
+    expect(withRepeat('weekly').success).toBe(false);
+    expect(withRepeat({ every: 'week' }, 7).success).toBe(false);
+  });
+
   it('keeps drafts through a backup, and refuses a malformed or oversized list', () => {
     const withDrafts = (drafts: unknown) => {
       const p = JSON.parse(JSON.stringify(sampleValidPayload));

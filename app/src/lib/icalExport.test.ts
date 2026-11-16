@@ -138,6 +138,19 @@ describe('deadline reminders', () => {
     expect(ics).toContain('TRIGGER:PT8H');
     expect(parse(ics).events).toHaveLength(1);
   });
+  it('repeats a weekly deadline until its end date, and one without an end for as long as the calendar allows', () => {
+    const ics = generateICalendarFeed([], { ...opts, assignments: [deadline({ dueTime: '14:00', repeat: { every: 'week', until: '2026-03-31' } })] });
+    const { events } = parse(ics);
+    expect(events).toHaveLength(1);
+    expect(ics).toMatch(/RRULE:FREQ=WEEKLY;UNTIL=20260331T\d{6}Z/);
+    const it = events[0].iterator();
+    let count = 0;
+    while (it.next() && count < 20) count++;
+    expect(count).toBe(4); // Mar 10, 17, 24, 31
+    const open = generateICalendarFeed([], { ...opts, assignments: [deadline({ repeat: { every: 'week' } })] });
+    expect(open).toContain('RRULE:FREQ=WEEKLY;COUNT=');
+    expect(generateICalendarFeed([], { ...opts, assignments: [deadline()] })).not.toContain('RRULE');
+  });
   it('skips completed and sample assignments', () => {
     const ics = generateICalendarFeed([], { ...opts, assignments: [deadline({ status: 'completed' }), deadline({ id: 'a2', sample: true })] });
     expect(ics).not.toContain('BEGIN:VEVENT');

@@ -21,6 +21,13 @@ export interface Subtask {
   completed: boolean;
 }
 
+/** A deadline that comes back every week. When it is done (or its date passes) the next one is created and this stops repeating. */
+export interface Repeat {
+  every: 'week';
+  /** Last due date a new one may have, "YYYY-MM-DD". Missing means no end. */
+  until?: string;
+}
+
 export interface Assignment {
   id: string;
   title: string;
@@ -36,6 +43,10 @@ export interface Assignment {
   progress: number; // 0 - 100
   notes?: string;
   subtasks?: Subtask[];
+  /** Set on the newest item of a repeating series. Cleared when it creates the next one. */
+  repeat?: Repeat;
+  /** The id of the first item of the series this one came from. */
+  repeatOf?: string;
   createdAt: string;
   completedAt?: string;
   /** Demo content added via the Help menu. Excluded from GPA, backups, .ics and the checklist. */

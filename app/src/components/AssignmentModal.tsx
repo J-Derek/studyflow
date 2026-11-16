@@ -1,11 +1,12 @@
 import { useDialog } from '../lib/useDialog';
 import { KindPicker } from './KindPicker';
 import { kindOf } from '../utils/kinds';
+import { RepeatToggle } from './RepeatToggle';
 import { progressInfo } from '../utils/progress';
 import React, { useId, useState } from 'react';
 import { X, Calendar, Clock, BookOpen, AlertCircle } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import type { Priority, Assignment, AssignmentKind } from '../types';
+import type { Priority, Assignment, AssignmentKind, Repeat } from '../types';
 
 /** The status a student picks for an unfinished item without a checklist. Done is the circle on the list (it celebrates). */
 type OpenStatus = 'pending' | 'in_progress';
@@ -35,6 +36,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
   const [status, setStatus] = useState<OpenStatus>('pending');
   const statusName = useId();
   const [kind, setKind] = useState<AssignmentKind>('assignment');
+  const [repeat, setRepeat] = useState<Repeat | undefined>(undefined);
 
   React.useEffect(() => {
     if (assignmentToEdit) {
@@ -46,6 +48,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
       setNotes(assignmentToEdit.notes || '');
       setStatus(assignmentToEdit.status === 'in_progress' ? 'in_progress' : 'pending');
       setKind(kindOf(assignmentToEdit));
+      setRepeat(assignmentToEdit.repeat);
     } else {
       setTitle('');
       setCourse('');
@@ -55,6 +58,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
       setNotes('');
       setStatus('pending');
       setKind('assignment');
+      setRepeat(undefined);
     }
   }, [assignmentToEdit, isOpen, initialDueDate]);
 
@@ -76,6 +80,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         dueTime,
         priority,
         kind,
+        repeat,
         notes,
         // With a checklist the ticks decide progress. Without one the dialog sends the simple status (the store sets the progress that goes
         // with it); a finished item stays finished until its circle on the list is un-ticked.
@@ -89,6 +94,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         dueTime,
         priority,
         kind,
+        ...(repeat ? { repeat } : {}),
         status: 'pending',
         progress: 0,
         notes
@@ -218,6 +224,8 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
           </div>
 
           <KindPicker value={kind} onChange={setKind} />
+
+          <RepeatToggle value={repeat} onChange={setRepeat} />
 
           {assignmentToEdit && (assignmentToEdit.subtasks?.length ?? 0) > 0 && (
             <div data-testid="checklist-progress" className="rounded-lg bg-zinc-50 dark:bg-zinc-800/60 px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300">
