@@ -154,6 +154,9 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
 
   return (
     <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark p-5 md:p-6 transition-colors shadow-2xs">
+      <p data-testid="what-is-studyflow" className="text-sm text-zinc-700 dark:text-zinc-300 mb-3">
+        StudyFlow keeps your deadlines, weekly timetable, focus timer and grades in one place.
+      </p>
       <div className="space-y-1 mb-4">
         <h2 className="text-lg md:text-xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
           What is your next deadline?

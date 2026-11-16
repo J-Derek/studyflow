@@ -160,7 +160,7 @@ export const CalendarPage: React.FC = () => {
           <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Timetable</h1>
           <p className="text-xs text-zinc-600 dark:text-zinc-400 font-sans">Your weekly classes and study blocks.</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-2 flex-wrap sm:justify-end">
           <button
             onClick={() => exportTimetable()}
             title="Download everything (all weekly classes and open deadlines) as an .ics file for Apple, Google or Outlook Calendar"
@@ -246,7 +246,7 @@ export const CalendarPage: React.FC = () => {
           
           <button
             onClick={() => openAdd()}
-            className="min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-xs transition shadow-2xs active:scale-95"
+            className="min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-xs transition shadow-2xs active:scale-95"
           >
             <Plus className="h-3.5 w-3.5" /> <span>Add block</span>
           </button>
@@ -272,7 +272,7 @@ export const CalendarPage: React.FC = () => {
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium shrink-0 cursor-pointer shadow-2xs"
           >
             <Plus className="h-3.5 w-3.5" />
-            <span>Add a class</span>
+            <span>Add a block</span>
           </button>
         </div>
       )}
@@ -322,7 +322,7 @@ export const CalendarPage: React.FC = () => {
       {/* The week: one column per day */}
       {view === 'week' && sessions.length > 0 && (
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark shadow-2xs overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 min-h-[500px]">
+        <div className="grid grid-cols-1 xl:grid-cols-7 divide-y xl:divide-y-0 xl:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 xl:min-h-[500px]">
           {weekDays.map((day) => {
             const daySessions = sessions
               .filter((s) => s.dayOfWeek === day.dayNumber)
@@ -342,7 +342,7 @@ export const CalendarPage: React.FC = () => {
                   <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800/80 mb-2.5">
                     <div>
                       <span className="text-xs tabular-nums font-medium text-zinc-600 dark:text-zinc-400">{day.dayName}</span>
-                      <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                      <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
                         <span>{day.monthName} {day.dateNumber}</span>
                         {day.isToday && (
                           <span className="text-xs tabular-nums px-1 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 font-semibold">Today</span>
@@ -433,7 +433,7 @@ export const CalendarPage: React.FC = () => {
                   onClick={() => openAdd(day.dayNumber)}
                   className="min-h-[44px] md:min-h-0 mt-3 w-full py-1 rounded-md border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 text-xs tabular-nums transition"
                 >
-                  + Add Block
+                  + Add block
                 </button>
               </div>
             );
