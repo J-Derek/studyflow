@@ -6,13 +6,9 @@
 
 ---
 
-## 1. Project Overview & Tri-Agent Roles
+## 1. Project Overview
 
-StudyFlow is a student productivity and academic task tracking web application. The development follows a structured tri-agent collaboration framework:
-- **21 (Product Owner / Human Leader)**: Sets vision, approves architecture, authorizes production deployments and migrations.
-- **ChatGPT (Supervisor / Lead Architect / QA Lead)**: Defines task specifications, reviews architecture and code deliverables, conducts QA audits.
-- **Antigravity / Agy (Lead Full-Stack Engineer / Builder)**: Executes task specifications, develops code, enforces database integrity, verifies builds, and coordinates deployment.
-- **Claude Sonnet (Adversarial Critic / Security Specialist)**: Conducts hostile architectural roasts, identifies database RLS bypasses, race conditions, edge-case traps, and clock drift vulnerabilities.
+StudyFlow is a student productivity and academic task tracking web application: assignments, a weekly timetable, a Pomodoro timer and a GPA calculator.
 
 ---
 

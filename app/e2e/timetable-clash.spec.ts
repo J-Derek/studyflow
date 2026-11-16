@@ -102,9 +102,9 @@ for (const [label, width] of [['desktop', 1280], ['phone', 375]] as const) {
     await expect(page.getByRole('button', { name: /Edit .*Distributed Systems.*13:00 - 14:30/ })).toBeVisible();
 
     // a block can also be deleted from its edit dialog
-    page.once('dialog', (d) => void d.accept());
     await page.getByRole('button', { name: /Edit .*Differential Calculus/ }).click();
     await page.getByRole('dialog', { name: 'Edit block' }).getByRole('button', { name: 'Delete', exact: true }).click();
+    await page.getByRole('alertdialog', { name: 'Delete this block?' }).getByRole('button', { name: 'Delete block' }).click();
     await expect(page.getByRole('button', { name: /Edit .*Differential Calculus/ })).toHaveCount(0);
   });
 }

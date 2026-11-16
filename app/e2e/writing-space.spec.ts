@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { readFile } from 'node:fs/promises';
 import { strFromU8, unzipSync } from 'fflate';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** PR9: the writing space for an assignment, with automatic saving and export to Word and PDF. */
 type S = { userId: string | null; isSyncing: boolean; addAssignment: (a: object) => void; setTheme: (t: 'light' | 'dark') => void };
@@ -51,6 +52,38 @@ test('write, format, autosave, close, and find it again after a reload', async (
   await page.waitForFunction(() => !!(window as unknown as Partial<W>).__store?.getState().userId);
   await page.getByRole('button', { name: 'Write for "Contract law essay"' }).click();
   await expect(area(page)).toHaveValue('Final text kept');
+});
+
+// Derek's report: the Bold button left "****". The button must not take the cursor away from the text (on a phone that hides the
+// keyboard and loses the selection), the placeholder must be selected at once so typing replaces it, and a second press undoes it.
+test('Bold with nothing selected: the text box keeps the cursor, typing replaces the placeholder, pressing again leaves no stars', async ({ page }) => {
+  await open(page);
+  const space = page.getByTestId('writing-space');
+  await area(page).fill('Intro ');
+  await area(page).evaluate((el) => {
+    const t = el as HTMLTextAreaElement;
+    t.setSelectionRange(6, 6);
+    t.addEventListener('blur', () => ((window as unknown as { __blurred?: boolean }).__blurred = true));
+  });
+  await space.getByRole('button', { name: 'Bold' }).click();
+  expect(await page.evaluate(() => (window as unknown as { __blurred?: boolean }).__blurred)).toBeUndefined();
+  // read straight after the click, without waiting: the placeholder is already selected
+  expect(await area(page).evaluate((el) => [(el as HTMLTextAreaElement).value, (el as HTMLTextAreaElement).selectionStart, (el as HTMLTextAreaElement).selectionEnd])).toEqual(['Intro **bold text**', 8, 17]);
+  await page.keyboard.type('key point');
+  await expect(area(page)).toHaveValue('Intro **key point**');
+  // pressing Bold again at the end of the bold words steps out of them, so the next words are plain
+  await space.getByRole('button', { name: 'Bold' }).click();
+  await page.keyboard.type(' and more');
+  await expect(area(page)).toHaveValue('Intro **key point** and more');
+
+  // changing your mind: a second press takes the untouched placeholder and its stars away
+  await area(page).fill('');
+  await space.getByRole('button', { name: 'Italic' }).click();
+  await space.getByRole('button', { name: 'Italic' }).click();
+  await expect(area(page)).toHaveValue('');
+  await space.getByRole('button', { name: 'Bold' }).click();
+  await space.getByRole('button', { name: 'Bold' }).click();
+  await expect(area(page)).toHaveValue('');
 });
 
 test('the draft reaches the account, and what is typed is never treated as HTML', async ({ page }) => {
@@ -119,7 +152,7 @@ test('on a phone: Write/Preview tabs, 44px controls, fits the screen, no accessi
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);
-    await page.waitForTimeout(300);
+    await settleTransitions(page);
     const axe = await new AxeBuilder({ page }).include('[data-testid="writing-space"]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations.map((v) => `${theme} ${v.id}: ${v.nodes.map((n) => n.html.slice(0, 90)).join(' | ')}`)).toEqual([]);
   }

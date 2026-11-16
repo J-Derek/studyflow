@@ -59,7 +59,7 @@ export default defineConfig({
     }
   ],
   test: {
-    exclude: ['node_modules/**', 'rules-tests/**', 'e2e/**', 'e2e-prod/**']
+    exclude: ['node_modules/**', 'rules-tests/**', 'e2e/**', 'e2e-prod/**', 'e2e-webkit/**']
   },
   build: {
     rollupOptions: {

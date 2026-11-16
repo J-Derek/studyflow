@@ -1,5 +1,5 @@
 import React from 'react';
-import { parseMarkdown, type Block, type Span } from '../utils/miniMarkdown';
+import { parseMarkdown, type Block, type ParseOptions, type Span } from '../utils/miniMarkdown';
 import { getTabFromPath, useStudyFlowStore, type NavigationTab, type LegalTab } from '../store/studyFlowStore';
 
 function Spans({ spans }: { spans: Span[] }): React.ReactElement {
@@ -47,7 +47,7 @@ function BlockView({ block }: { block: Block }): React.ReactElement {
     return <Tag className={HEADING[block.level]}><Spans spans={block.spans} /></Tag>;
   }
   if (block.kind === 'paragraph') {
-    return <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300"><Spans spans={block.spans} /></p>;
+    return <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 whitespace-pre-line [overflow-wrap:anywhere]"><Spans spans={block.spans} /></p>;
   }
   const List = block.ordered ? 'ol' : 'ul';
   return (
@@ -60,8 +60,8 @@ function BlockView({ block }: { block: Block }): React.ReactElement {
 }
 
 /** Draws text written in the small Markdown subset (see utils/miniMarkdown). Nothing here is HTML from the text. */
-export const MiniMarkdown: React.FC<{ text: string }> = ({ text }) => {
-  const blocks = React.useMemo(() => parseMarkdown(text), [text]);
+export const MiniMarkdown: React.FC<{ text: string; format?: ParseOptions }> = ({ text, format }) => {
+  const blocks = React.useMemo(() => parseMarkdown(text, format), [text, format]);
   return (
     <div className="space-y-3">
       {blocks.map((b, i) => (

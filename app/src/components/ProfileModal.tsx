@@ -189,7 +189,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
               <User className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" />
-              <span>Full Name</span>
+              <span>Full name</span>
             </label>
             <input
               type="text"
@@ -312,7 +312,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
                   <span>Saved</span>
                 </>
               ) : (
-                <span>Save Changes</span>
+                <span>Save changes</span>
               )}
             </button>
           </div>

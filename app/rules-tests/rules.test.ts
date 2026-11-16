@@ -326,6 +326,48 @@ describe('assignments: timestamps and updates', () => {
   });
 });
 
+describe('assignments: field-level updates (one tick, one step)', () => {
+  const sub = (id: string, completed: boolean, order: number) => ({ id, title: `Step ${id}`, completed, order });
+  const seedWithSteps = () =>
+    setDoc(aDoc(asAlice()), asg({ subtasks: { s1: sub('s1', false, 0), s2: sub('s2', false, 1), s3: sub('s3', false, 2) } }));
+  it('accepts a tick that touches one subtask and the derived fields, and nothing else changes', async () => {
+    await assertSucceeds(seedWithSteps());
+    await assertSucceeds(updateDoc(aDoc(asAlice()), 'subtasks.s2.completed', true, 'progress', 33, 'status', 'in_progress', 'updatedAt', serverTimestamp()));
+    const data = (await getDoc(aDoc(asAlice()))).data()!;
+    expect(data.subtasks.s2.completed).toBe(true);
+    expect(data.subtasks.s1.completed).toBe(false);
+    expect(data.subtasks.s3.completed).toBe(false);
+    expect(data.title).toBe('Essay');
+  });
+  it('accepts two ticks of different items written one after the other, as two devices would', async () => {
+    await assertSucceeds(seedWithSteps());
+    await assertSucceeds(updateDoc(aDoc(asAlice()), 'subtasks.s1.completed', true, 'progress', 33, 'status', 'in_progress', 'updatedAt', serverTimestamp()));
+    await assertSucceeds(updateDoc(aDoc(asAlice()), 'subtasks.s3.completed', true, 'progress', 33, 'status', 'in_progress', 'updatedAt', serverTimestamp()));
+    const s = (await getDoc(aDoc(asAlice()))).data()!.subtasks;
+    expect([s.s1.completed, s.s2.completed, s.s3.completed]).toEqual([true, false, true]);
+  });
+  it('accepts finishing (status, progress, completedAt) and un-finishing (completedAt removed)', async () => {
+    await assertSucceeds(seedWithSteps());
+    await assertSucceeds(updateDoc(aDoc(asAlice()), 'status', 'completed', 'progress', 100, 'completedAt', '2026-11-14T10:00:00.000Z', 'updatedAt', serverTimestamp()));
+    await assertSucceeds(updateDoc(aDoc(asAlice()), 'status', 'in_progress', 'progress', 66, 'completedAt', deleteField(), 'updatedAt', serverTimestamp()));
+    expect((await getDoc(aDoc(asAlice()))).data()!.completedAt).toBeUndefined();
+  });
+  it('accepts adding and removing a single step', async () => {
+    await assertSucceeds(seedWithSteps());
+    await assertSucceeds(updateDoc(aDoc(asAlice()), 'subtasks.s4', sub('s4', false, 3), 'updatedAt', serverTimestamp()));
+    await assertSucceeds(updateDoc(aDoc(asAlice()), 'subtasks.s1', deleteField(), 'updatedAt', serverTimestamp()));
+    expect(Object.keys((await getDoc(aDoc(asAlice()))).data()!.subtasks).sort()).toEqual(['s2', 's3', 's4']);
+  });
+  it('still refuses a partial update that is stale, leaves the document invalid, or belongs to someone else', async () => {
+    await assertSucceeds(seedWithSteps());
+    await assertFails(updateDoc(aDoc(asAlice()), 'subtasks.s1.completed', true)); // no fresh updatedAt
+    await assertFails(updateDoc(aDoc(asAlice()), 'status', 'completed', 'progress', 50, 'updatedAt', serverTimestamp())); // completed needs 100
+    await assertFails(updateDoc(aDoc(asAlice()), 'progress', 140, 'updatedAt', serverTimestamp()));
+    await assertFails(updateDoc(aDoc(asAlice()), 'title', deleteField(), 'updatedAt', serverTimestamp()));
+    await assertFails(updateDoc(aDoc(asBob()), 'subtasks.s1.completed', true, 'updatedAt', serverTimestamp()));
+  });
+});
+
 describe('notes', () => {
   const note = (over: Record<string, unknown> = {}) => ({
     id: 'n1',

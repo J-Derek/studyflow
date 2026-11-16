@@ -70,6 +70,7 @@ const CHOSEN = {
 async function signOut(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Account menu' }).first().click();
   await page.getByRole('dialog', { name: 'Account' }).getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('alertdialog', { name: 'Sign out?' }).getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.waitForFunction(() => {
     const s = (window as unknown as Partial<W>).__store?.getState();
     return !!s && !!s.userId && s.isAnonymous === true;

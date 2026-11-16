@@ -1,4 +1,6 @@
 import { useDialog } from '../lib/useDialog';
+import { LegalLinks } from './LegalFooter';
+import { confirmAction } from '../lib/confirm';
 import React, { useEffect, useState } from 'react';
 import { X, Download, Upload, AlertTriangle, Copy, LogOut, UserRound, CloudOff, Loader2, Check, CircleAlert, Trash2 } from 'lucide-react';
 import { GoogleIcon } from './GoogleIcon';
@@ -138,6 +140,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
   };
 
   const handleSignOut = async () => {
+    if (!(await confirmAction({ title: 'Sign out?', body: 'Your work stays saved in your account. This device is cleared until you sign in again.', confirmLabel: 'Sign out' }))) return;
     try {
       setSigningOut(true);
       await signOutUser();
@@ -249,7 +252,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
                   className="w-full min-h-[44px] flex items-center justify-center gap-2.5 py-2 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-surface-light dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-100 text-sm font-medium shadow-2xs transition disabled:opacity-60 cursor-pointer"
                 >
                   <GoogleIcon className="h-[18px] w-[18px]" />
-                  <span>{isLinking ? 'Opening Google…' : 'Continue with Google'}</span>
+                  <span>{isLinking ? 'Signing in…' : 'Continue with Google'}</span>
                 </button>
               )}
               {authError && (
@@ -418,31 +421,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
           </section>
         )}
 
-        <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">
-          <a
-            href="/privacy"
-            className="underline underline-offset-2"
-            onClick={(e) => {
-              e.preventDefault();
-              onClose();
-              useStudyFlowStore.getState().setActiveTab('privacy');
-            }}
-          >
-            Privacy
-          </a>
-          {' · '}
-          <a
-            href="/terms"
-            className="underline underline-offset-2"
-            onClick={(e) => {
-              e.preventDefault();
-              onClose();
-              useStudyFlowStore.getState().setActiveTab('terms');
-            }}
-          >
-            Terms
-          </a>
-        </p>
+        <LegalLinks onNavigate={onClose} className="justify-center" />
       </div>
     </div>
   );

@@ -65,8 +65,8 @@ for (const [label, width, height] of [['desktop', 1280, 800], ['phone', 375, 800
     await page.getByRole('button', { name: 'Back to note' }).click();
 
     // removing it asks first, and leaves the note alone
-    page.once('dialog', (d) => void d.accept());
     await page.getByRole('button', { name: /Remove week3-slides\.pdf/ }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Remove PDF' }).click();
     await expect(page.getByText('No PDFs yet')).toBeVisible();
     await expect(page.locator('#note-reader-title')).toHaveText('Week 3: contract law');
 

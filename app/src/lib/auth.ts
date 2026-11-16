@@ -49,7 +49,7 @@ if (authBroadcast) {
  * Removes everything this browser holds for the previous user: listeners, in-memory store,
  * localStorage, sessionStorage, Cache Storage and (optionally) the Firestore IndexedDB cache.
  */
-export async function wipeLocalUserData(opts: { clearFirestoreCache: boolean; keepAge?: boolean }): Promise<void> {
+export async function wipeLocalUserData(opts: { clearFirestoreCache: boolean; forgetAge?: boolean }): Promise<void> {
   unsubscribeAllFirestoreSync();
   clearSyncErrors(); // the previous person's failed saves must not follow the next person
   useStudyFlowStore.getState().resetStore();
@@ -59,8 +59,9 @@ export async function wipeLocalUserData(opts: { clearFirestoreCache: boolean; ke
   } catch {
     /* storage unavailable */
   }
-  // The age answer belongs to the person who gave it. It stays only while a sign-in reloads the page (it is still to be stored in the account).
-  if (!opts.keepAge) clearDeviceAge();
+  // The age answer (a band, never a birth date) stays on this device through sign-out, so the question is asked once per device, not on
+  // every sign-in (Derek's decision). Deleting the account forgets it.
+  if (opts.forgetAge) clearDeviceAge();
   // PDFs attached to notes live only in this browser, so they must not outlive the signed-in student.
   await deleteAllFiles().catch(() => undefined);
   try {
@@ -127,7 +128,7 @@ let wiping = false;
 async function wipeAndReload(opts: { signingIn?: boolean } = {}): Promise<void> {
   wiping = true; // the page is about to reload; ignore any further auth events
   await waitForPendingWrites(db).catch(() => undefined);
-  await wipeLocalUserData({ clearFirestoreCache: true, keepAge: opts.signingIn === true });
+  await wipeLocalUserData({ clearFirestoreCache: true });
   // After the wipe (which empties sessionStorage): keep "Signing you in…" on screen across the reload.
   if (opts.signingIn) markSigningInAcrossReload();
   window.location.reload();
@@ -397,7 +398,7 @@ export async function deleteMyAccount(): Promise<void> {
     throw err;
   }
   authBroadcast?.postMessage('signout');
-  await wipeLocalUserData({ clearFirestoreCache: true });
+  await wipeLocalUserData({ clearFirestoreCache: true, forgetAge: true });
   window.location.reload();
 }
 
