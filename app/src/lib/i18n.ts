@@ -52,6 +52,12 @@ export type StringKey = keyof typeof STRINGS;
 
 const STORAGE_KEY = 'studyflow-lang';
 
+/**
+ * Kiswahili is written and tested but switched off for now: the app stays in English and the toggle is hidden. To bring it back, set this
+ * to true (and un-skip e2e/language.spec.ts). Have a Swahili speaker check the wording in STRINGS first.
+ */
+export const SWAHILI_ENABLED = false;
+
 export function pickLanguage(saved: string | null, deviceLanguage: string | undefined): Lang {
   if (saved === 'en' || saved === 'sw') return saved;
   return deviceLanguage?.toLowerCase().startsWith('sw') ? 'sw' : 'en';
@@ -69,7 +75,7 @@ function readSaved(): string | null {
   }
 }
 
-let current: Lang = pickLanguage(readSaved(), typeof navigator === 'undefined' ? undefined : navigator.language);
+let current: Lang = SWAHILI_ENABLED ? pickLanguage(readSaved(), typeof navigator === 'undefined' ? undefined : navigator.language) : 'en';
 const listeners = new Set<() => void>();
 
 function applyToPage(lang: Lang): void {
@@ -78,7 +84,7 @@ function applyToPage(lang: Lang): void {
 applyToPage(current);
 
 export function setLanguage(lang: Lang): void {
-  if (lang === current) return;
+  if (!SWAHILI_ENABLED || lang === current) return;
   current = lang;
   try {
     localStorage.setItem(STORAGE_KEY, lang);
