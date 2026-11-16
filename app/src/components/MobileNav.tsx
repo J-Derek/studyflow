@@ -2,18 +2,20 @@ import React from 'react';
 import { LayoutDashboard, CheckSquare, Calendar as CalendarIcon, Timer, Award, NotebookPen } from 'lucide-react';
 import { useStudyFlowStore, getPathFromTab } from '../store/studyFlowStore';
 import { cn } from '../utils/formatters';
+import { useI18n } from '../lib/i18n';
 
 export const MobileNav: React.FC = () => {
   const { activeTab, setActiveTab, assignments } = useStudyFlowStore();
   const pendingCount = assignments.filter((a) => a.status !== 'completed').length;
+  const { t } = useI18n();
 
   const items: { id: 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'courses' | 'notes'; label: string; icon: React.ElementType; badge?: number }[] = [
-    { id: 'dashboard' as const, label: 'Today', icon: LayoutDashboard },
-    { id: 'assignments' as const, label: 'Assignments', icon: CheckSquare, badge: pendingCount },
-    { id: 'calendar' as const, label: 'Timetable', icon: CalendarIcon },
-    { id: 'timer' as const, label: 'Timer', icon: Timer },
-    { id: 'courses' as const, label: 'Courses', icon: Award },
-    { id: 'notes' as const, label: 'Notes', icon: NotebookPen }
+    { id: 'dashboard' as const, label: t('nav.today'), icon: LayoutDashboard },
+    { id: 'assignments' as const, label: t('nav.assignments'), icon: CheckSquare, badge: pendingCount },
+    { id: 'calendar' as const, label: t('nav.timetable'), icon: CalendarIcon },
+    { id: 'timer' as const, label: t('nav.timerShort'), icon: Timer },
+    { id: 'courses' as const, label: t('nav.courses'), icon: Award },
+    { id: 'notes' as const, label: t('nav.notes'), icon: NotebookPen }
   ];
 
   return (

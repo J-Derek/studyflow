@@ -8,6 +8,8 @@ import { LIMITS } from '../utils/limits';
 import { PERIOD_LABELS, periodWord, periodWordCapital } from '../utils/periods';
 import type { PeriodLabel, GradingScale } from '../types';
 import { GRADING_SCALES, SCALE_LABEL } from '../utils/gradingScale';
+import { useI18n } from '../lib/i18n';
+import { LanguageToggle } from './LanguageToggle';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -17,6 +19,7 @@ interface ProfileModalProps {
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onOpenHelp }) => {
   const { user, updateUser, isAnonymous, userPhotoUrl, customPhotoUrl, setCustomPhoto, theme, themeMode, setTheme, setThemeMode } = useStudyFlowStore();
+  const { t } = useI18n();
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [name, setName] = useState(user.name);
   const [university, setUniversity] = useState(user.university);
@@ -185,6 +188,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
           )}
         </div>
 
+        <div className="flex items-center justify-between gap-3 pb-3">
+          <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t('lang.label')}</span>
+          <LanguageToggle />
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">

@@ -19,6 +19,8 @@ import { useAccountView } from '../store/useAccountView';
 import { friendlyAuthMessage, signInOrLinkWithGoogle } from '../lib/authActions';
 import { cn } from '../utils/formatters';
 import { AccountMenu } from './AccountMenu';
+import { useI18n } from '../lib/i18n';
+import { LanguageToggle } from './LanguageToggle';
 import { Avatar } from './Avatar';
 import { SignInButton } from './SignInButton';
 
@@ -44,6 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, o
     setThemeMode
   } = useStudyFlowStore();
   const account = useAccountView();
+  const { t } = useI18n();
   const isAnonymous = !account.signedIn;
   const userEmail = account.email;
   const userPhotoUrl = account.photoUrl;
@@ -63,12 +66,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, o
   const pendingCount = assignments.filter((a) => a.status !== 'completed').length;
 
   const navItems = [
-    { id: 'dashboard' as const, label: 'Today', icon: LayoutDashboard },
-    { id: 'assignments' as const, label: 'Assignments', icon: CheckSquare, badge: pendingCount },
-    { id: 'calendar' as const, label: 'Timetable', icon: CalendarIcon },
-    { id: 'timer' as const, label: 'Focus Timer', icon: Timer },
-    { id: 'courses' as const, label: 'Courses', icon: Award },
-    { id: 'notes' as const, label: 'Notes', icon: NotebookPen }
+    { id: 'dashboard' as const, label: t('nav.today'), icon: LayoutDashboard },
+    { id: 'assignments' as const, label: t('nav.assignments'), icon: CheckSquare, badge: pendingCount },
+    { id: 'calendar' as const, label: t('nav.timetable'), icon: CalendarIcon },
+    { id: 'timer' as const, label: t('nav.timer'), icon: Timer },
+    { id: 'courses' as const, label: t('nav.courses'), icon: Award },
+    { id: 'notes' as const, label: t('nav.notes'), icon: NotebookPen }
   ];
 
   // Labels stay in the page for screen readers when the sidebar is collapsed.
@@ -164,6 +167,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, o
             </button>
           </div>
         ))}
+
+        {!collapsed && <LanguageToggle className="mx-2 self-start" />}
 
         {/* Navigation Links */}
         <nav className={cn('pt-1', collapsed ? 'space-y-1 flex flex-col items-center' : 'space-y-0.5')}>
