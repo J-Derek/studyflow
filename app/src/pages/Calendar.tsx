@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { confirmAction } from '../lib/confirm';
 import { Clock, ChevronLeft, ChevronRight, Plus, X, Download, RotateCcw, CalendarDays, CalendarRange } from 'lucide-react';
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
@@ -139,10 +140,11 @@ export const CalendarPage: React.FC = () => {
     closeModal();
   };
 
-  const handleDeleteEditing = () => {
+  const handleDeleteEditing = async () => {
     if (!editingId) return;
-    if (!window.confirm('Delete this block?')) return;
-    deleteSession(editingId);
+    const id = editingId;
+    if (!(await confirmAction({ title: 'Delete this block?', body: 'It is removed from every week of your timetable.', confirmLabel: 'Delete block' }))) return;
+    deleteSession(id);
     closeModal();
   };
 
@@ -386,7 +388,10 @@ export const CalendarPage: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            onClick={() => deleteSession(session.id)}
+                            onClick={async () => {
+                              const ok = await confirmAction({ title: `Delete ${session.title}?`, body: 'It is removed from every week of your timetable.', confirmLabel: 'Delete block' });
+                              if (ok) deleteSession(session.id);
+                            }}
                             className="hidden [@media(hover:hover)]:block absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition p-1 hover:text-rose-600 dark:hover:text-rose-400"
                             title="Delete block"
                             aria-label={`Delete block ${session.title}`}

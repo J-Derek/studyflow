@@ -28,6 +28,7 @@ test('on a phone, a signed-in student can open Account and sign out', async ({ b
   await expect(page.getByRole('dialog')).toContainText('Saved to your account');
   await page.evaluate(() => ((window as unknown as { __reloadMarker?: boolean }).__reloadMarker = true));
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('alertdialog', { name: 'Sign out?' }).getByRole('button', { name: 'Sign out', exact: true }).click();
 
   // the app reloads into a fresh guest session
   await page.waitForFunction(() => !(window as unknown as { __reloadMarker?: boolean }).__reloadMarker);

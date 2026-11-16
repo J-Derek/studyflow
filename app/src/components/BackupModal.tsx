@@ -1,4 +1,5 @@
 import { useDialog } from '../lib/useDialog';
+import { confirmAction } from '../lib/confirm';
 import React, { useEffect, useState } from 'react';
 import { X, Download, Upload, AlertTriangle, Copy, LogOut, UserRound, CloudOff, Loader2, Check, CircleAlert, Trash2 } from 'lucide-react';
 import { GoogleIcon } from './GoogleIcon';
@@ -138,6 +139,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
   };
 
   const handleSignOut = async () => {
+    if (!(await confirmAction({ title: 'Sign out?', body: 'Your work stays saved in your account. This device is cleared until you sign in again.', confirmLabel: 'Sign out' }))) return;
     try {
       setSigningOut(true);
       await signOutUser();
