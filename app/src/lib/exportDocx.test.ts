@@ -1,6 +1,7 @@
 import { unzipSync, strFromU8 } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import { buildDocx, fileNameFor } from './exportDocx';
+import { NOTE_FORMAT } from '../utils/miniMarkdown';
 
 async function documentXml(blob: Blob): Promise<string> {
   const files = unzipSync(new Uint8Array(await blob.arrayBuffer()));
@@ -45,5 +46,15 @@ describe('buildDocx', () => {
     expect((await buildDocx('Empty', '')).size).toBeGreaterThan(1000);
     const long = Array.from({ length: 3000 }, (_, i) => `Paragraph ${i} with some words.`).join('\n\n');
     expect((await documentXml(await buildDocx('Long', long))).length).toBeGreaterThan(100000);
+  });
+});
+
+describe('buildDocx for a note', () => {
+  it('keeps line breaks inside a paragraph and makes bare web addresses links', async () => {
+    const xml = await documentXml(await buildDocx('Week 3', 'first line\nsecond line\nslides: https://example.com/s', NOTE_FORMAT));
+    expect(xml).toContain('<w:br/>');
+    expect(xml).toContain('first line');
+    expect(xml).toContain('second line');
+    expect(xml).toContain('w:hyperlink');
   });
 });

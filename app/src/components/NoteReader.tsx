@@ -5,7 +5,8 @@ import { ArrowLeft, ExternalLink, FileText, Paperclip, Pencil, Trash2, X } from 
 import type { Note } from '../types';
 import { useDialog } from '../lib/useDialog';
 import { addFile, deleteFile, formatBytes, getFileBlob, listFiles, MAX_FILE_BYTES, type LocalFileMeta } from '../lib/localFiles';
-import { LinkedText } from './LinkedText';
+import { NOTE_FORMAT } from '../utils/miniMarkdown';
+import { MiniMarkdown } from './MiniMarkdown';
 
 interface NoteReaderProps {
   note: Note;
@@ -139,7 +140,9 @@ export const NoteReader: React.FC<NoteReaderProps> = ({ note, onClose, onEdit })
               {note.course ? `${note.course} · ` : ''}Edited {new Date(note.editedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
             </p>
             {note.body ? (
-              <LinkedText text={note.body} className="mt-8 text-base sm:text-lg leading-relaxed text-zinc-800 dark:text-zinc-200" />
+              <div className="mt-8">
+                <MiniMarkdown text={note.body} format={NOTE_FORMAT} />
+              </div>
             ) : (
               <p className="mt-8 text-base text-zinc-600 dark:text-zinc-400">This note has no text yet.</p>
             )}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseInline, parseMarkdown, safeHref } from './miniMarkdown';
+import { NOTE_FORMAT, parseInline, parseMarkdown, plainText, safeHref } from './miniMarkdown';
 
 describe('safeHref', () => {
   it('allows web, mail and in-app addresses only', () => {
@@ -57,5 +57,38 @@ describe('parseMarkdown', () => {
     expect(parseMarkdown('a\r\n\r\nb')).toHaveLength(2);
     const big = Array.from({ length: 5000 }, (_, i) => `line ${i} **x**`).join('\n\n');
     expect(parseMarkdown(big)).toHaveLength(5000);
+  });
+});
+
+describe('plainText, for short previews in lists', () => {
+  it('drops the formatting marks and keeps the words, one block per line', () => {
+    expect(plainText('## Offer\n\nAn **offer** must be *clear*.\n\n- one\n- [two](https://example.com)')).toBe('Offer\nAn offer must be clear.\none\ntwo');
+    expect(plainText('')).toBe('');
+  });
+});
+
+// Notes were plain text: a line break was a line break, and a pasted web address was a link. Formatting must not take that away.
+describe('the note format (Markdown that keeps line breaks and bare web addresses)', () => {
+  it('keeps a single line break inside a paragraph', () => {
+    expect(parseMarkdown('line one\nline two', NOTE_FORMAT)).toEqual([{ kind: 'paragraph', spans: [{ kind: 'text', text: 'line one\nline two' }] }]);
+    // assignment writing keeps joining lines, as before
+    expect(parseMarkdown('line one\nline two')).toEqual([{ kind: 'paragraph', spans: [{ kind: 'text', text: 'line one line two' }] }]);
+  });
+  it('makes a bare web address a link, also inside bold, and leaves other text alone', () => {
+    expect(parseMarkdown('see https://example.com/a. now', NOTE_FORMAT)).toEqual([
+      {
+        kind: 'paragraph',
+        spans: [
+          { kind: 'text', text: 'see ' },
+          { kind: 'link', href: 'https://example.com/a', children: [{ kind: 'text', text: 'https://example.com/a' }] },
+          { kind: 'text', text: '. now' }
+        ]
+      }
+    ]);
+    expect(parseInline('**go to https://x.org**', NOTE_FORMAT)).toEqual([
+      { kind: 'bold', children: [{ kind: 'text', text: 'go to ' }, { kind: 'link', href: 'https://x.org', children: [{ kind: 'text', text: 'https://x.org' }] }] }
+    ]);
+    expect(parseInline('javascript:alert(1) and www.example.com', NOTE_FORMAT)).toEqual([{ kind: 'text', text: 'javascript:alert(1) and www.example.com' }]);
+    expect(parseInline('see https://example.com')).toEqual([{ kind: 'text', text: 'see https://example.com' }]);
   });
 });
