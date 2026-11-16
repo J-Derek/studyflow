@@ -1,4 +1,4 @@
-import type { CourseGrade } from '../types';
+import type { Assessment, CourseGrade } from '../types';
 
 // Standard 4.0 GPA scale mapping
 /** A score is a percentage: not-a-number becomes empty, anything else is held between 0 and 100. */
@@ -150,4 +150,37 @@ export function solveRequiredFinalScore(
     isAchievable,
     isAlreadySecured
   };
+}
+
+export interface WhatIf {
+  /** The next assessment without a score (the one the student is trying a score on), if there is one. */
+  upcoming: Assessment | undefined;
+  /** The percentage over what is graded plus the next assessment. */
+  pct: number;
+  /** How much of the course (in percent of the total weight) that percentage is based on. */
+  basedOnWeight: number;
+  /** The weight still without a score after the next assessment, which the number does not include. */
+  restUngradedWeight: number;
+}
+
+/** Try `score` (0 to 100) on the next assessment that has no score yet. Everything else comes from the scores already entered. */
+export function whatIfProjection(course: CourseGrade, score: number): WhatIf {
+  let earned = 0;
+  let gradedWeight = 0;
+  let upcoming: Assessment | undefined;
+  let totalWeight = 0;
+  for (const a of course.assessments) {
+    totalWeight += a.weight;
+    const s = clampScore(a.score ?? undefined);
+    if (s !== undefined) {
+      earned += (s * a.weight) / 100;
+      gradedWeight += a.weight;
+    } else if (!upcoming) {
+      upcoming = a;
+    }
+  }
+  const upWeight = upcoming ? upcoming.weight : 0;
+  const basedOnWeight = gradedWeight + upWeight;
+  const pct = basedOnWeight > 0 ? ((earned + ((clampScore(score) ?? 0) * upWeight) / 100) / basedOnWeight) * 100 : 0;
+  return { upcoming, pct, basedOnWeight, restUngradedWeight: Math.max(0, totalWeight - basedOnWeight) };
 }

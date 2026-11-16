@@ -6,7 +6,8 @@ import {
   calculateCoursePercentage,
   calculateCumulativeGpa,
   getAcademicStanding,
-  solveRequiredFinalScore
+  solveRequiredFinalScore,
+  whatIfProjection
 } from './academicCalculations';
 import type { CourseGrade } from '../types';
 
@@ -292,5 +293,34 @@ describe('academicCalculations', () => {
       expect(result.isAlreadySecured).toBe(true);
       expect(result.requiredScore).toBe(0);
     });
+  });
+});
+
+describe('whatIfProjection', () => {
+  const course = (assessments: { id: string; name: string; weight: number; score?: number }[]): CourseGrade => ({
+    id: 'c', courseCode: 'X 1', courseName: 'X', credits: 3, targetLetter: 'A', color: '#000', assessments
+  });
+
+  it('says how much of the course the number is based on, not just the number', () => {
+    const p = whatIfProjection(course([{ id: 'a', name: 'Midterm', weight: 30, score: 100 }, { id: 'b', name: 'Coursework', weight: 30, score: 60 }, { id: 'c', name: 'Final', weight: 40 }]), 85);
+    expect(p.upcoming?.name).toBe('Final');
+    expect(p.basedOnWeight).toBe(100);
+    expect(p.pct).toBeCloseTo(0.3 * 100 + 0.3 * 60 + 0.4 * 85, 5);
+  });
+
+  it('with only one score entered, the result covers just the graded part plus the next assessment', () => {
+    const p = whatIfProjection(course([{ id: 'a', name: 'Midterm', weight: 30 }, { id: 'b', name: 'Coursework', weight: 30 }, { id: 'c', name: 'Final', weight: 40 }]), 85);
+    expect(p.upcoming?.name).toBe('Midterm');
+    expect(p.basedOnWeight).toBe(30);
+    expect(p.pct).toBe(85);
+    expect(p.restUngradedWeight).toBe(70);
+  });
+
+  it('allows a failing score and a course with nothing left to grade', () => {
+    expect(whatIfProjection(course([{ id: 'a', name: 'Exam', weight: 100 }]), 0).pct).toBe(0);
+    const done = whatIfProjection(course([{ id: 'a', name: 'Exam', weight: 100, score: 70 }]), 85);
+    expect(done.upcoming).toBeUndefined();
+    expect(done.pct).toBe(70);
+    expect(done.restUngradedWeight).toBe(0);
   });
 });
