@@ -64,6 +64,14 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
     setDueDate(getCalculatedDate('tomorrow'));
   }, []);
 
+  // A sample to look at and change, for a student who is not sure what to type
+  const [exampleShown, setExampleShown] = useState(false);
+  const fillExample = () => {
+    setTitle('Chemistry CAT 1');
+    handleChipClick('friday');
+    setExampleShown(true);
+  };
+
   const handleChipClick = (type: 'today' | 'tomorrow' | 'friday' | 'nextWeek') => {
     setActiveChip(type);
     setDueDate(getCalculatedDate(type));
@@ -154,23 +162,43 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
 
   return (
     <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark p-5 md:p-6 transition-colors shadow-2xs">
-      <p data-testid="what-is-studyflow" className="text-sm text-zinc-700 dark:text-zinc-300 mb-3">
-        StudyFlow keeps your deadlines, weekly timetable, focus timer and grades in one place.
-      </p>
+      <div data-testid="what-is-studyflow" className="mb-4 space-y-1">
+        <p className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Never miss a deadline.</p>
+        <p className="text-sm text-zinc-700 dark:text-zinc-300">Add what is due and StudyFlow shows how many days are left. Then plan your week and start a focus timer.</p>
+      </div>
+      <ol data-testid="how-it-works" className="mb-4 hidden sm:grid gap-2 sm:grid-cols-3 text-xs text-zinc-700 dark:text-zinc-300">
+        {['Add a deadline: a title and a date is enough.', 'Today shows how many days are left.', 'Start a focus block on it and tick it off.'].map((step, i) => (
+          <li key={step} className="flex items-start gap-2 rounded-lg bg-zinc-100/70 dark:bg-zinc-800/50 px-3 py-2">
+            <span aria-hidden="true" className="tabular-nums font-semibold text-zinc-900 dark:text-zinc-100">{i + 1}</span>
+            <span>{step}</span>
+          </li>
+        ))}
+      </ol>
       <div className="space-y-1 mb-4">
         <h2 className="text-lg md:text-xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
           What is your next deadline?
         </h2>
         <p className="text-xs text-zinc-600 dark:text-zinc-400">
-          A title and a date is enough. StudyFlow shows how many days are left.
+          A title and a date is enough.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="first-deadline-title" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-            What is due?
-          </label>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <label htmlFor="first-deadline-title" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              What is due?
+            </label>
+            {title.trim() === '' && (
+              <button
+                type="button"
+                onClick={fillExample}
+                className="inline-flex items-center min-h-[44px] px-1 -my-3 text-xs font-medium text-blue-700 dark:text-blue-300 underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-200 cursor-pointer"
+              >
+                Try an example
+              </button>
+            )}
+          </div>
           <input
             id="first-deadline-title"
             type="text"
@@ -181,6 +209,11 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             placeholder="e.g. Problem Set 2 or Chapter 4 Summary"
             className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
           />
+          {exampleShown && title === 'Chemistry CAT 1' && (
+            <p data-testid="example-hint" className="mt-1 text-xs text-zinc-700 dark:text-zinc-300">
+              This is an example. Change it to your own deadline, then save.
+            </p>
+          )}
         </div>
 
         {/* Date Quick Chips */}
