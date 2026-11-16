@@ -72,8 +72,9 @@ const toMinutes = (seconds: number) => String(Math.round(seconds / 60));
 const LengthsForm: React.FC<{
   settings: { focusDuration: number; shortBreakDuration: number; longBreakDuration: number };
   timerStatus: 'idle' | 'running' | 'paused' | string;
+  signedIn: boolean;
   onApply: (lengths: { focusDuration: number; shortBreakDuration: number; longBreakDuration: number }, restartCurrent: boolean) => void;
-}> = ({ settings, timerStatus, onApply }) => {
+}> = ({ settings, timerStatus, signedIn, onApply }) => {
   const saved = [toMinutes(settings.focusDuration), toMinutes(settings.shortBreakDuration), toMinutes(settings.longBreakDuration)];
   const [draft, setDraft] = useState<string[]>(saved);
   const savedKey = saved.join('/');
@@ -88,7 +89,11 @@ const LengthsForm: React.FC<{
     onApply({ focusDuration: f * 60, shortBreakDuration: sh * 60, longBreakDuration: lg * 60 }, restartCurrent);
   };
 
-  const btn = 'min-h-[44px] px-4 rounded-lg text-sm font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+  const btn = 'min-h-[44px] px-4 rounded-lg text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-600 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-400 disabled:border-zinc-300 dark:disabled:border-zinc-700';
+  const names = ['Focus', 'Short break', 'Long break'];
+  const adjusted = draft
+    .map((v, i) => ({ name: names[i], typed: v.trim(), max: LIMITS[i], to: clampMinutes(Number(v), LIMITS[i]) }))
+    .filter((d) => d.typed !== '' && String(d.to) !== String(Number(d.typed)));
   return (
     <form
       noValidate
@@ -103,10 +108,16 @@ const LengthsForm: React.FC<{
         <LengthField id="len-short" label="Short break" value={draft[1]} onChange={(v) => setDraft([draft[0], v, draft[2]])} />
         <LengthField id="len-long" label="Long break" value={draft[2]} onChange={(v) => setDraft([draft[0], draft[1], v])} />
       </div>
+      {adjusted.map((d) => (
+        <p key={d.name} role="status" className="text-xs font-medium text-amber-800 dark:text-amber-300">
+          {d.name} can be 1 to {d.max} minutes, so {d.typed} will be saved as {d.to}.
+        </p>
+      ))}
       <p className="text-xs text-zinc-600 dark:text-zinc-400">
         {busy
           ? 'A block is in progress (running or paused). Keep it as it is and use the new length from the next block, or restart it now.'
-          : 'The new length shows on the clock straight away. These settings are saved to your account.'}
+          : 'The new length shows on the clock straight away. '}
+        {signedIn ? ' These settings are saved to your account.' : ' These settings are saved on this device.'}
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <button type="submit" disabled={!changed} className={`${btn} bg-blue-600 text-white hover:bg-blue-700`}>
@@ -144,7 +155,8 @@ export const FocusTimerPage: React.FC = () => {
     pauseTimer,
     resetTimer,
     setSoundscape,
-    setSoundscapeVolume
+    setSoundscapeVolume,
+    isAnonymous
   } = useStudyFlowStore();
 
   const timerMode = timer.mode;
@@ -405,7 +417,7 @@ export const FocusTimerPage: React.FC = () => {
         <summary className="cursor-pointer select-none px-4 min-h-[44px] flex items-center text-sm font-medium text-zinc-800 dark:text-zinc-200">
           Change timer lengths
         </summary>
-        <LengthsForm key={`${timerSettings.focusDuration}/${timerSettings.shortBreakDuration}/${timerSettings.longBreakDuration}`} settings={timerSettings} timerStatus={timer.status} onApply={(lengths, restartCurrent) => updateTimerSettings(lengths, { restartCurrent })} />
+        <LengthsForm key={`${timerSettings.focusDuration}/${timerSettings.shortBreakDuration}/${timerSettings.longBreakDuration}`} settings={timerSettings} timerStatus={timer.status} signedIn={!isAnonymous} onApply={(lengths, restartCurrent) => updateTimerSettings(lengths, { restartCurrent })} />
       </details>
 
       {/* AMBIENT SOUNDSCAPES DEEP WORK AUDIO (Web Audio Synthesizer) */}

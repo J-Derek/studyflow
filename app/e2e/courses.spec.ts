@@ -108,3 +108,41 @@ test('course fields suggest the courses already in use', async ({ page }) => {
   await page.getByRole('button', { name: 'Add assignment' }).first().click();
   await expect(page.getByRole('dialog').getByPlaceholder('e.g. CS 101 or Physics')).toHaveAttribute('list', 'course-suggestions');
 });
+
+test('work typed with just the course name counts for the course, and courses with no entry are listed', async ({ page }) => {
+  await ready(page, '/courses');
+  await page.evaluate(() => {
+    const s = (window as unknown as W).__store.getState();
+    s.addCourseGrade({ courseCode: 'PHY 101', courseName: 'Physics', credits: 3, targetLetter: 'A', color: '#4F46E5', assessments: [{ id: 'x', name: 'Exam', weight: 100 }] });
+    s.addAssignment({ title: 'Lab report', course: 'Physics', dueDate: '2030-01-15', priority: 'medium', status: 'pending', progress: 0 });
+    s.addSession({ title: 'Physics lecture', course: 'physics', dayOfWeek: 1, startTime: '10:00', endTime: '11:00', type: 'lecture' });
+    s.addAssignment({ title: 'Cell essay', course: 'BIO 200', dueDate: '2030-01-20', priority: 'low', status: 'pending', progress: 0 });
+  });
+  await expect(page.locator('[data-course="PHY 101"]')).toContainText('1 to do · 1 class');
+  await expect(page.getByTestId('unlisted-courses')).toContainText('BIO 200');
+  await expect(page.getByTestId('unlisted-courses')).not.toContainText('Physics');
+  await expect(page.getByText('No courses enrolled')).toHaveCount(0);
+});
+
+test('the course is optional in the assignment and class forms, and a missing title shows the inline message', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await ready(page, '/assignments');
+  await page.getByRole('button', { name: /new assignment|add assignment/i }).first().click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText('Course (optional)')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Add assignment' }).click();
+  await expect(dialog.getByRole('alert')).toHaveText('Give it a title so you can find it later.');
+  await dialog.getByPlaceholder('e.g. Problem Set 2').fill('No course yet');
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Add assignment' }).click();
+  await expect(dialog).toHaveCount(0);
+  const courseOf = () => page.evaluate(() => (window as unknown as { __store: { getState: () => { assignments: { title: string; course: string }[] } } }).__store.getState().assignments.find((a) => a.title === 'No course yet')?.course);
+  expect(await courseOf()).toBe('General');
+
+  await ready(page, '/calendar');
+  await page.getByRole('button', { name: 'Add a class' }).click();
+  const block = page.getByRole('dialog');
+  await expect(block.getByText('Course (optional)')).toBeVisible();
+  await block.getByRole('button', { name: 'Add block' }).click();
+  await expect(block.getByRole('alert')).toHaveText('Give it a title so you can find it later.');
+});

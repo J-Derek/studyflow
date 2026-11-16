@@ -29,6 +29,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
 
   const [title, setTitle] = useState('');
   const [course, setCourse] = useState('');
+  const [titleMissing, setTitleMissing] = useState(false);
   const [dueDate, setDueDate] = useState(localDateISO());
   const [dueTime, setDueTime] = useState('23:59');
   const [priority, setPriority] = useState<Priority>('medium');
@@ -39,6 +40,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
   const [repeat, setRepeat] = useState<Repeat | undefined>(undefined);
 
   React.useEffect(() => {
+    setTitleMissing(false);
     if (assignmentToEdit) {
       setTitle(assignmentToEdit.title);
       setCourse(assignmentToEdit.course);
@@ -68,14 +70,18 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !course.trim() || !isDateInRange(dueDate)) return;
+    if (!title.trim()) {
+      setTitleMissing(true);
+      return;
+    }
+    if (!isDateInRange(dueDate)) return;
 
     if (assignmentToEdit) {
       const hasChecklist = (assignmentToEdit.subtasks?.length ?? 0) > 0;
       const isDone = assignmentToEdit.status === 'completed';
       updateAssignment(assignmentToEdit.id, {
         title: title.trim(),
-        course: course.trim(),
+        course: course.trim() || 'General',
         dueDate,
         dueTime,
         priority,
@@ -89,7 +95,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
     } else {
       addAssignment({
         title: title.trim(),
-        course: course.trim(),
+        course: course.trim() || 'General',
         dueDate,
         dueTime,
         priority,
@@ -132,29 +138,38 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-3.5">
+        <form onSubmit={handleSubmit} noValidate className="p-5 space-y-3.5">
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
               Assignment title
             </label>
             <input
               type="text"
-              required
+              aria-required="true"
+              aria-invalid={titleMissing || undefined}
+              aria-describedby={titleMissing ? 'assignment-title-error' : undefined}
               maxLength={LIMITS.assignmentTitle}
               placeholder="e.g. Problem Set 2"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (e.target.value.trim()) setTitleMissing(false);
+              }}
               className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
             />
+            {titleMissing && (
+              <p id="assignment-title-error" role="alert" className="mt-1 text-xs font-medium text-rose-700 dark:text-rose-300">
+                Give it a title so you can find it later.
+              </p>
+            )}
           </div>
 
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
-              <BookOpen className="h-3 w-3 text-zinc-600 dark:text-zinc-400" /> Course
+              <BookOpen className="h-3 w-3 text-zinc-600 dark:text-zinc-400" /> Course (optional)
             </label>
             <input
               type="text"
-              required
               maxLength={LIMITS.assignmentCourse}
               list="course-suggestions"
               placeholder="e.g. CS 101 or Physics"

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Assignment, CourseGrade, Note, StudySession } from '../types';
-import { belongsToCourse, courseKey, courseSummary, knownCourseCodes } from './courses';
+import { belongsToCourse, courseKey, courseSummary, knownCourseCodes, unlistedCourses } from './courses';
 
 const course = (over: Partial<CourseGrade> = {}): CourseGrade => ({
   id: 'g1', courseCode: 'CS 301', courseName: 'Algorithms', credits: 3, targetLetter: 'A', color: '#4F46E5',
@@ -51,5 +51,31 @@ describe('courseSummary', () => {
 describe('knownCourseCodes', () => {
   it('lists each code once, courses first, without the long name', () => {
     expect(knownCourseCodes([course()], ['cs 301', 'LAW 101 — Contracts', 'law 101', '', 'ACS 443'])).toEqual(['CS 301', 'LAW 101', 'ACS 443']);
+  });
+});
+
+describe('matching by the course name as well as the code', () => {
+  it('counts work typed as "Physics" for the course PHY 101 Physics', () => {
+    const c = course({ courseCode: 'PHY 101', courseName: 'Physics' });
+    expect(belongsToCourse('Physics', c)).toBe(true);
+    expect(belongsToCourse('physics ', c)).toBe(true);
+    expect(belongsToCourse('PHY 101', c)).toBe(true);
+    expect(belongsToCourse('PHY 101 — Physics', c)).toBe(true);
+    expect(belongsToCourse('Chemistry', c)).toBe(false);
+    expect(belongsToCourse('Physics', course({ courseCode: 'PHY 101', courseName: '' }))).toBe(false);
+  });
+  it('shows up in the course summary', () => {
+    const c = course({ courseCode: 'PHY 101', courseName: 'Physics' });
+    const s = courseSummary(c, { assignments: [asg({ course: 'Physics' })], sessions: [ses({ course: 'Physics' })], notes: [note({ course: 'physics' })] });
+    expect([s.pending.length, s.classes.length, s.notes.length]).toEqual([1, 1, 1]);
+  });
+});
+
+describe('unlistedCourses', () => {
+  it('names the courses used on items that have no Courses entry, once each, leaving out General and blanks', () => {
+    const c = course({ courseCode: 'PHY 101', courseName: 'Physics' });
+    const items = ['Physics', 'Chemistry', 'chemistry', 'General', '', 'BIO 200 — Cells', 'PHY 101'];
+    expect(unlistedCourses([c], items)).toEqual(['Chemistry', 'BIO 200']);
+    expect(unlistedCourses([], [])).toEqual([]);
   });
 });
