@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** PR10: start a new semester (or term): archive what is not carried over, keep it readable, never delete it. */
 type S = {
@@ -124,19 +125,22 @@ test('start a new semester: ticked work and notes carry over, the rest is archiv
   await page.waitForFunction(() => !(window as unknown as W).__store.getState().isSyncing);
   // (a sync echo can briefly empty the list before the saved record arrives, so wait for it)
   await expect.poll(() => page.evaluate(() => (window as unknown as W).__store.getState().periods.length), { timeout: 15_000 }).toBe(1);
-  const periodId = await page.evaluate(() => (window as unknown as W).__store.getState().periods[0]!.id);
+  // (read it with a wait too: the list can empty for a moment again between the check above and this read)
+  let periodId = '';
+  await expect.poll(async () => (periodId = await page.evaluate(() => (window as unknown as W).__store.getState().periods[0]?.id ?? '')), { timeout: 15_000 }).not.toBe('');
   const list = async (c: string) => ((await (await fetch(`${DOCS}/users/${uid}/${c}?pageSize=100`, { headers: H })).json()) as { documents?: { name: string; fields: Record<string, { stringValue?: string }> }[] }).documents ?? [];
   await expect.poll(async () => (await list('assignments')).filter((d) => d.fields.archivedPeriod?.stringValue === periodId).length, { timeout: 15_000 }).toBe(2);
   expect((await list('assignments')).filter((d) => !d.fields.archivedPeriod).map((d) => d.fields.title?.stringValue)).toEqual(['Open one']);
   expect((await list('sessions')).every((d) => d.fields.archivedPeriod?.stringValue === periodId)).toBe(true);
   expect((await list('notes')).filter((d) => d.fields.archivedPeriod?.stringValue === periodId)).toHaveLength(1);
-  // the period record is written last, after the archived documents, so on a slow machine it can arrive a moment later
-  await expect.poll(async () => (await list('semesters')).length, { timeout: 15_000 }).toBe(1);
+  // the semester record is committed in the same batch as the archived work, so it is there once the work is
   const sem = await list('semesters');
   expect(sem).toHaveLength(1);
   expect(JSON.stringify(sem[0])).toContain('Current semester'); // the period that ended keeps its name
-  const profile = await (await fetch(`${DOCS}/users/${uid}`, { headers: H })).json();
-  expect(JSON.stringify(profile)).toContain('"term"');
+  // the profile (the new word, "term") is a separate small write, so wait for it
+  await expect
+    .poll(async () => JSON.stringify(await (await fetch(`${DOCS}/users/${uid}`, { headers: H })).json()), { timeout: 15_000 })
+    .toContain('"term"');
 
   // Past terms: read-only record with the archived work, the grade and the note
   await page.getByTestId('new-semester-done').getByRole('button', { name: /See Past terms/ }).click();
@@ -176,14 +180,18 @@ test('keeping the timetable and the courses carries them over, with the old scor
   await dialog.getByLabel(/Keep my courses/).check();
   await dialog.getByRole('button', { name: /Archive and start the new semester/ }).click();
   await expect(page.getByTestId('new-semester-done')).toBeVisible();
-  const state = await page.evaluate(() => {
-    const s = (window as unknown as W).__store.getState();
-    return { sessions: s.sessions.length, grades: s.grades.map((g) => g.assessments.map((a) => a.score)), archivedGrades: s.archived.grades.length, archivedSessions: s.archived.sessions.length };
+  const read = () =>
+    page.evaluate(() => {
+      const s = (window as unknown as W).__store.getState();
+      return { sessions: s.sessions.length, grades: s.grades.map((g) => g.assessments.map((a) => a.score)), archivedGrades: s.archived.grades.length, archivedSessions: s.archived.sessions.length };
+    });
+  // wait for it to settle: a snapshot worked out just before the archive can put the old score back for a moment
+  await expect.poll(read, { timeout: 15_000 }).toEqual({
+    sessions: 1,
+    grades: [[undefined, undefined]], // same course, scores cleared
+    archivedGrades: 1, // the old copy, with its scores, is in the archive
+    archivedSessions: 0
   });
-  expect(state.sessions).toBe(1);
-  expect(state.grades).toEqual([[undefined, undefined]]); // same course, scores cleared
-  expect(state.archivedGrades).toBe(1); // the old copy, with its scores, is in the archive
-  expect(state.archivedSessions).toBe(0);
 });
 
 test('on a phone, in light and dark: the dialogs fit, tap targets are 44px and there are no accessibility problems', async ({ page }) => {
@@ -199,7 +207,7 @@ test('on a phone, in light and dark: the dialogs fit, tap targets are 44px and t
   for (const label of await dialog.locator('label').all()) if (await label.isVisible() && (await label.locator('input[type=checkbox]').count()) > 0) expect((await label.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);
-    await page.waitForTimeout(300);
+    await settleTransitions(page);
     const axe = await new AxeBuilder({ page }).include('[data-testid="new-semester"]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations.map((v) => `${theme} ${v.id}: ${v.nodes.map((n) => n.html.slice(0, 90)).join(' | ')}`)).toEqual([]);
   }

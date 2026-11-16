@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** PR6: kinds of deadline, progress that follows the checklist, the celebration, and the keys. */
 type A = { id: string; title: string; status: string; progress: number; kind?: string; subtasks?: { id: string; title: string; completed: boolean }[] };
@@ -67,7 +68,7 @@ test('the first-deadline card on an empty Today asks what it is too', async ({ p
   await expect.poll(async () => (await find(page, 'CAT 1'))?.kind).toBe('test');
 });
 
-test('with a checklist, progress comes from the ticks (no slider); without one, the slider stays', async ({ page }) => {
+test('with a checklist, progress comes from the ticks; without one, a simple status replaces the old slider', async ({ page }) => {
   await ready(page, '/assignments');
   await seed(page, [
     { title: 'With checklist', subtasks: ['a', 'b', 'c', 'd'].map((n) => ({ id: `s-${n}`, title: `Step ${n}`, completed: n === 'a' })) },
@@ -102,10 +103,25 @@ test('with a checklist, progress comes from the ticks (no slider); without one, 
   });
   expect(await find(page, 'With checklist')).toMatchObject({ status: 'in_progress', progress: 99 });
 
-  // the one with no checklist keeps its slider
+  // the one with no checklist has no slider, just its status: not started or in progress (done is the circle on the list)
   await page.getByRole('button', { name: 'Edit assignment "By hand"' }).click();
-  await expect(page.getByRole('dialog').getByRole('slider', { name: 'Progress, percent' })).toHaveValue('35');
-  await expect(page.getByRole('dialog').getByTestId('checklist-progress')).toHaveCount(0);
+  const hand = page.getByRole('dialog');
+  await expect(hand.getByRole('slider')).toHaveCount(0);
+  await expect(hand.getByTestId('checklist-progress')).toHaveCount(0);
+  const status = hand.getByRole('radiogroup', { name: 'Status' });
+  await expect(status.getByRole('radio', { name: 'In progress' })).toBeChecked();
+  await status.getByText('Not started', { exact: true }).click();
+  await hand.getByRole('button', { name: 'Save changes' }).click();
+  await expect.poll(async () => await find(page, 'By hand')).toMatchObject({ status: 'pending', progress: 0 });
+  // the list shows the status in words rather than a made-up percentage
+  await expect(page.getByTestId('item-status').filter({ hasText: 'Not started' })).toHaveCount(1);
+
+  // a finished item without a checklist says so, and points to the circle to reopen it
+  await page.getByRole('button', { name: 'Mark "By hand" complete' }).click();
+  await settled(page);
+  await page.getByRole('button', { name: 'Edit assignment "By hand"' }).click();
+  await expect(page.getByRole('dialog').getByRole('radiogroup', { name: 'Status' })).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toContainText('Done. To reopen it, tap its circle on the list.');
 });
 
 test('a progress number sent for an item with a checklist is ignored, so the two cannot disagree', async ({ page }) => {
@@ -148,7 +164,7 @@ test('the keys: kinds on Assignments, class colours on the Timetable, each class
 
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);
-    await page.waitForTimeout(300);
+    await settleTransitions(page);
     const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations.map((v) => `${theme} ${v.id}: ${v.nodes.map((n) => n.html.slice(0, 80)).join(' | ')}`)).toEqual([]);
   }

@@ -12,6 +12,31 @@ describe('bold and italic', () => {
   it('take the marks off when pressed again', () => {
     expect(applyFormat('**this**', 0, 8, 'bold')).toEqual({ text: 'this', start: 0, end: 4 });
   });
+  // Derek's report: the Bold button left "****" behind. Pressing it again must undo it, never nest more marks.
+  it('take the marks off when pressed again with only the words inside selected (as the button leaves them)', () => {
+    expect(applyFormat('a **word** b', 4, 8, 'bold')).toEqual({ text: 'a word b', start: 2, end: 6 });
+    expect(applyFormat('a *word* b', 3, 7, 'italic')).toEqual({ text: 'a word b', start: 2, end: 6 });
+  });
+  it('take a placeholder that was never typed over away completely when pressed again', () => {
+    expect(applyFormat('Intro **bold text**', 8, 17, 'bold')).toEqual({ text: 'Intro ', start: 6, end: 6 });
+    expect(applyFormat('*italic text*', 1, 12, 'italic')).toEqual({ text: '', start: 0, end: 0 });
+  });
+  it('remove empty marks the cursor sits between, instead of adding more', () => {
+    expect(applyFormat('a****b', 3, 3, 'bold')).toEqual({ text: 'ab', start: 1, end: 1 });
+    expect(applyFormat('a**b', 2, 2, 'italic')).toEqual({ text: 'ab', start: 1, end: 1 });
+  });
+  it('step out of bold or italic when pressed at the end of the words just typed, so the next words are plain', () => {
+    expect(applyFormat('Intro **key point**', 17, 17, 'bold')).toEqual({ text: 'Intro **key point**', start: 19, end: 19 });
+    expect(applyFormat('an *idea* here', 8, 8, 'italic')).toEqual({ text: 'an *idea* here', start: 9, end: 9 });
+  });
+  it('tell bold and italic marks apart', () => {
+    // italic on a bold word adds italic; it does not mistake one of the bold stars for an italic one
+    expect(applyFormat('**word**', 2, 6, 'italic')).toEqual({ text: '***word***', start: 3, end: 7 });
+    expect(applyFormat('**word**', 0, 8, 'italic')).toEqual({ text: '***word***', start: 1, end: 9 });
+    // and each button takes off only its own marks
+    expect(applyFormat('***word***', 3, 7, 'bold')).toEqual({ text: '*word*', start: 1, end: 5 });
+    expect(applyFormat('***word***', 3, 7, 'italic')).toEqual({ text: '**word**', start: 2, end: 6 });
+  });
 });
 
 describe('line formats', () => {

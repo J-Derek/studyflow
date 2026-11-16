@@ -115,15 +115,14 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             <div>
               <div className="flex items-center gap-2">
                 <span className="tabular-nums text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  Assignment Saved
+                  Saved
                 </span>
-                <span className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">Live countdown active</span>
               </div>
               <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mt-1">
-                "{savedAssignment.title}" is locked in.
+                “{savedAssignment.title}” is on your list.
               </h2>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-                Take immediate momentum: launch a focus round now or review your schedule.
+                Start a focus block on it now, or add your next deadline.
               </p>
             </div>
           </div>
@@ -134,7 +133,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium text-xs hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs cursor-pointer"
             >
               <Flame className="h-3.5 w-3.5 text-amber-500" />
-              <span>Launch Focus Round</span>
+              <span>Start focusing</span>
             </button>
             <button
               onClick={() => {
@@ -145,7 +144,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
               className="inline-flex items-center gap-1 px-3 py-2 min-h-[44px] rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 transition cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>Add Another</span>
+              <span>Add another</span>
             </button>
           </div>
         </div>
