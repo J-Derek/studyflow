@@ -1,4 +1,5 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import {
   browserLocalPersistence,
   browserPopupRedirectResolver,
@@ -30,6 +31,15 @@ const firebaseConfig = {
 
 // Initialize Firebase App singleton
 export const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
+// App Check proves that requests come from this app, so a script cannot use the public config to create guest accounts and
+// write without limit (audit finding F2). It is switched on only when a reCAPTCHA Enterprise site key is configured
+// (VITE_RECAPTCHA_ENTERPRISE_SITE_KEY), and never against the local emulators. Enforcement is a separate step in the Firebase
+// console, taken only after the live site has been seen sending valid tokens (see docs/APP-CHECK.md).
+const appCheckSiteKey = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY as string | undefined;
+if (appCheckSiteKey && import.meta.env.VITE_USE_EMULATORS !== 'true' && typeof window !== 'undefined') {
+  initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey), isTokenAutoRefreshEnabled: true });
+}
 
 // Initialize Firestore with multi-tab offline persistence
 export const db: Firestore = initializeFirestore(app, {
