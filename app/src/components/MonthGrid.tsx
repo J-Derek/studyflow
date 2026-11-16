@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Assignment, StudySession } from '../types';
+import { needsAttention } from '../utils/deadlineEmphasis';
 import { monthGrid } from '../utils/calendarMonth';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -63,12 +64,20 @@ export const MonthGrid: React.FC<MonthGridProps> = ({ year, month, sessions, dea
                   type="button"
                   data-date={cell.date}
                   aria-current={isToday ? 'date' : undefined}
+                  data-attention={needsAttention(due) ? 'true' : undefined}
+                  style={{ position: 'relative' }}
                   onClick={() => onSelectDay(cell.date)}
                   className={`min-h-[56px] md:min-h-[88px] p-1 md:p-1.5 flex flex-col items-start justify-between text-left transition-colors cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 focus-visible:outline-2 focus-visible:outline-blue-500 ${
                     cell.inMonth ? '' : 'bg-zinc-50/50 dark:bg-zinc-900/30'
                   } ${isToday ? 'bg-blue-50/60 dark:bg-blue-950/30' : ''}`}
                 >
                   <span className="sr-only">{label}</span>
+                  {/* An unfinished exam, test, project or high-priority deadline: a ring (a shape, not only a colour) and the same in words. */}
+                  {needsAttention(due) && (
+                    <span data-testid="attention-ring" className="sf-ring pointer-events-none absolute inset-0.5 rounded-md ring-2 ring-rose-500 dark:ring-rose-400">
+                      <span className="sr-only">, needs attention</span>
+                    </span>
+                  )}
                   <span
                     className={`tabular-nums text-xs font-medium ${
                       isToday

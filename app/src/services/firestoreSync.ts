@@ -2,6 +2,8 @@ import {
   collection,
   doc,
   setDoc,
+  updateDoc,
+  FieldPath,
   deleteDoc,
   writeBatch,
   onSnapshot,
@@ -21,7 +23,7 @@ import { db } from '../lib/firebase';
 import type { Assignment, CourseGrade, Draft, Note, Period, StudySession } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
-import { ageToDoc, assignmentToDoc, docToAssignment, docToDraft, docToPeriod, draftToDoc, periodToDoc, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
+import { REMOVE_FIELD, assignmentChangesToUpdates, type AssignmentFieldChanges, ageToDoc, assignmentToDoc, docToAssignment, docToDraft, docToPeriod, draftToDoc, periodToDoc, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
 import { RECENT_WRITE_MS, createRecentWrites, mergeById } from './mergeById';
 import { isDefaultTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 import { cleanUpProfile } from '../utils/placeholderProfile';
@@ -591,6 +593,26 @@ export async function syncAssignmentToFirestore(uid: string, assignment: Assignm
     ...assignmentToDoc(assignment),
     updatedAt: serverTimestamp()
   });
+}
+
+/**
+ * Writes only the changed fields of one assignment (a tick, finishing it, adding or removing a checklist step). The rules check the whole
+ * stored document after the change, so every rule still applies. An assignment deleted elsewhere is not brought back: that is not an error.
+ */
+export async function updateAssignmentFieldsInFirestore(uid: string, assignmentId: string, changes: AssignmentFieldChanges): Promise<void> {
+  recentWrites.note(assignmentId);
+  const updates = assignmentChangesToUpdates(changes);
+  if (updates.length === 0) return;
+  const [first, ...rest] = updates;
+  const more: unknown[] = [];
+  for (const u of rest) more.push(new FieldPath(...u.path), u.value === REMOVE_FIELD ? deleteField() : u.value);
+  more.push('updatedAt', serverTimestamp());
+  try {
+    await updateDoc(doc(db, 'users', uid, 'assignments', assignmentId), new FieldPath(...first!.path), first!.value === REMOVE_FIELD ? deleteField() : first!.value, ...more);
+  } catch (err) {
+    if ((err as { code?: string })?.code === 'not-found') return;
+    throw err;
+  }
 }
 
 export async function deleteAssignmentFromFirestore(uid: string, assignmentId: string): Promise<void> {
