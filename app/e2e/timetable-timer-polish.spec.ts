@@ -185,21 +185,28 @@ test('the Focus timer page stays accessible in light and dark', async ({ page })
   }
 });
 
-test('the Start focus timer button on Today glows softly, and holds still with "reduce motion"', async ({ page }) => {
+test('the Start focus timer button on Today has a slowly turning colour ring and glow, and holds still with "reduce motion"', async ({ page }) => {
   await ready(page, '/');
   const start = page.getByRole('button', { name: 'Start focus timer' });
   await expect(start).toBeVisible();
-  const style = await start.evaluate((el) => {
-    const c = getComputedStyle(el);
-    return { name: c.animationName, s: parseFloat(c.animationDuration) };
+  const aura = start.locator('xpath=..');
+  await expect(aura).toHaveClass(/sf-aura/);
+  const ring = () => aura.evaluate((el) => {
+    const c = getComputedStyle(el, '::before');
+    const g = getComputedStyle(el, '::after');
+    return { name: c.animationName, s: parseFloat(c.animationDuration), bg: c.backgroundImage, glowBlur: g.filter };
   });
-  expect(style.name).toBe('sf-glow');
-  expect(style.s).toBeGreaterThanOrEqual(2);
+  const moving = await ring();
+  expect(moving.name).toBe('sf-spin');
+  expect(moving.s).toBeGreaterThanOrEqual(3);
+  expect(moving.bg).toContain('conic-gradient');
+  expect(moving.glowBlur).toContain('blur');
 
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  expect(await start.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
-  // still visibly highlighted without the motion
-  expect(await start.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe('none');
+  const still = await ring();
+  expect(still.name).toBe('none');
+  // the ring is still there, just not turning
+  expect(still.bg).toContain('conic-gradient');
 
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);
