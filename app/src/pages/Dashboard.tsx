@@ -12,7 +12,7 @@ import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useAccountView } from '../store/useAccountView';
 import { getDaysRemaining } from '../utils/formatters';
-import { calculateCumulativeGpa, getAcademicStanding } from '../utils/academicCalculations';
+import { overallResult } from '../utils/gradingScale';
 import type { Assignment } from '../types';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { FirstDeadlineCard } from '../components/FirstDeadlineCard';
@@ -34,7 +34,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenBackup
 }) => {
   const isAnonymous = !useAccountView().signedIn;
-  const { focusMinutes, guestNoticeDismissed, dismissGuestNotice, assignments, sessions, grades, pomodorosCompleted, setActiveTab, toggleAssignmentComplete } = useStudyFlowStore();
+  const { focusMinutes, guestNoticeDismissed, dismissGuestNotice, assignments, sessions, grades, user, pomodorosCompleted, setActiveTab, toggleAssignmentComplete } = useStudyFlowStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   // The assignment being edited from this screen (opens the same dialog as the Assignments page).
   const [editing, setEditing] = useState<Assignment | null>(null);
@@ -67,8 +67,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const completionRate = totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0;
 
   // Real-time Dynamic GPA & Academic Standing
-  const { gpaString, gpa, hasData: hasGpa } = calculateCumulativeGpa(grades);
-  const academicStanding = getAcademicStanding(gpa);
+  const scale = user.gradingScale ?? 'us4';
+  const overall = overallResult(grades, scale);
   const focusHours = (focusMinutes / 60).toFixed(1);
   const todayLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -208,8 +208,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <dd className="font-display tabular-nums text-3xl font-semibold text-zinc-900 dark:text-zinc-50">{pomodorosCompleted}<span className="ml-2 text-sm font-normal font-sans text-zinc-600 dark:text-zinc-400">about {focusHours} h</span></dd>
         </div>
         <div>
-          <dt className="text-sm text-zinc-600 dark:text-zinc-400">Projected GPA</dt>
-          <dd className="font-display tabular-nums text-3xl font-semibold text-zinc-900 dark:text-zinc-50">{hasGpa ? gpaString : '—'}<span className="ml-2 text-sm font-normal font-sans text-zinc-600 dark:text-zinc-400">{hasGpa ? academicStanding.standing : 'Add graded work in Grades'}</span></dd>
+          <dt className="text-sm text-zinc-600 dark:text-zinc-400">{scale === 'us4' ? 'Projected GPA' : 'Average so far'}</dt>
+          <dd className="font-display tabular-nums text-3xl font-semibold text-zinc-900 dark:text-zinc-50">{overall.hasData ? overall.value : '—'}<span className="ml-2 text-sm font-normal font-sans text-zinc-600 dark:text-zinc-400">{overall.hasData ? (overall.standing ?? overall.unit) : 'Add graded work in Grades'}</span></dd>
         </div>
       </dl>
 

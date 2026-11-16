@@ -77,7 +77,7 @@ service cloud.firestore {
 
     function isValidUser(data, userId) {
       return data.keys().hasAll(['uid', 'name', 'university', 'program', 'semester', 'updatedAt']) &&
-             data.keys().hasOnly(['uid', 'name', 'university', 'program', 'semester', 'semesterStart', 'semesterEnd', 'timeZone', 'photo', 'updatedAt', 'onboarding', 'timerPrefs', 'ageConfirmed', 'periodLabel']) &&
+             data.keys().hasOnly(['uid', 'name', 'university', 'program', 'semester', 'semesterStart', 'semesterEnd', 'timeZone', 'photo', 'updatedAt', 'onboarding', 'timerPrefs', 'ageConfirmed', 'periodLabel', 'gradingScale']) &&
              data.uid is string && data.uid == userId &&
              validString(data.name, 1, 100) &&
              validString(data.university, 1, 150) &&
@@ -96,6 +96,7 @@ service cloud.firestore {
                 data.onboarding.dismissed is bool)) &&
              (!('timerPrefs' in data) || isValidTimerPrefs(data.timerPrefs)) &&
              (!('periodLabel' in data) || data.periodLabel in ['semester', 'term', 'trimester']) &&
+             (!('gradingScale' in data) || data.gradingScale in ['us4', 'pct', 'uk', 'ke']) &&
              (!('ageConfirmed' in data) || isValidAgeConfirmed(data.ageConfirmed));
     }
 

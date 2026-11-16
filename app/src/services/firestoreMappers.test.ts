@@ -135,6 +135,16 @@ describe('archived items and past semesters', () => {
     expect(docToPeriod('p1', periodToDoc(p))).toEqual(p);
     expect(docToPeriod('p', { name: 5, label: 'year', counts: { assignments: -4, sessions: 'x', grades: 2.9 } })).toMatchObject({ name: 'Past semester', label: 'semester', counts: { assignments: 0, sessions: 0, grades: 2, notes: 0 } });
   });
+  it('keeps the grading scale and ignores anything else', () => {
+    const u = { name: 'A', university: 'U', program: 'P', semester: 'S' };
+    for (const gradingScale of ['us4', 'pct', 'uk', 'ke'] as const) {
+      expect(profileToDoc('uid', { ...u, gradingScale }, null).gradingScale).toBe(gradingScale);
+      expect(docToProfile({ name: 'A', gradingScale }).user.gradingScale).toBe(gradingScale);
+    }
+    expect('gradingScale' in profileToDoc('uid', u, null)).toBe(false);
+    expect(docToProfile({ name: 'A', gradingScale: 'gpa5' }).user.gradingScale).toBeUndefined();
+    expect(docToProfile({ name: 'A', gradingScale: 4 }).user.gradingScale).toBeUndefined();
+  });
   it('keeps the profile word (semester, term, trimester) and ignores anything else', () => {
     const u = { name: 'A', university: 'U', program: 'P', semester: 'S' };
     expect(profileToDoc('uid', { ...u, periodLabel: 'term' }, null).periodLabel).toBe('term');
