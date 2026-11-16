@@ -137,6 +137,20 @@ test('the "Choose sound for" switch follows the timer mode, and can still be swi
   await expect(focus).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('the clock moves on in step with Start: 24:59 a little after the first second, never stuck on 25:00', async ({ page }) => {
+  await ready(page, '/timer');
+  for (let run = 0; run < 3; run++) {
+    await page.getByRole('button', { name: 'Start', exact: true }).click();
+    const startedAt = await page.evaluate(() => (window as unknown as { __store: { getState: () => { timer: { startedAtMs: number } } } }).__store.getState().timer.startedAtMs);
+    // wait until 1.25 s after the block started, then read the clock straight away (no retrying)
+    await page.waitForFunction((t) => Date.now() >= t + 1250, startedAt);
+    expect(await page.getByRole('timer').innerText()).toBe('24:59');
+    await page.getByRole('button', { name: 'Reset Timer' }).click();
+    await expect(page.getByRole('timer')).toHaveText('25:00');
+    await page.waitForTimeout(300 + run * 350); // start again at a different point of the old one-second beat
+  }
+});
+
 test('finished focus sessions show a gently moving flame; unfinished ones and "reduce motion" stay still', async ({ page }) => {
   await ready(page, '/timer');
   await page.evaluate(() => (window as unknown as W).__store.setState({ pomodorosCompleted: 2 }));
