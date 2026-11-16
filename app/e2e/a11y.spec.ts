@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 type W = {
   __store: {
@@ -20,7 +21,7 @@ async function prepare(page: Page, path: string, theme: 'light' | 'dark'): Promi
     s.addNote({ title: 'Week 3: contract law', body: 'Offer, acceptance, consideration.\nSlides: https://example.com/week3', course: 'LAW 101', pinned: true });
     s.addNote({ title: 'Exam tips', body: 'Past papers are on the portal.', course: '' });
   }, theme);
-  await page.waitForTimeout(400);
+  await settleTransitions(page);
 }
 
 async function scan(page: Page) {

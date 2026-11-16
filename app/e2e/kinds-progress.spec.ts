@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** PR6: kinds of deadline, progress that follows the checklist, the celebration, and the keys. */
 type A = { id: string; title: string; status: string; progress: number; kind?: string; subtasks?: { id: string; title: string; completed: boolean }[] };
@@ -148,7 +149,7 @@ test('the keys: kinds on Assignments, class colours on the Timetable, each class
 
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);
-    await page.waitForTimeout(300);
+    await settleTransitions(page);
     const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations.map((v) => `${theme} ${v.id}: ${v.nodes.map((n) => n.html.slice(0, 80)).join(' | ')}`)).toEqual([]);
   }

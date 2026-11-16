@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** PR3: the refreshed "Your account" dialog (who is signed in, whether work is saved, what the plan holds, data). */
 type W = {
@@ -79,7 +80,7 @@ for (const [label, width, height] of [['desktop', 1280, 800], ['phone', 375, 700
     // no accessibility problems, light and dark
     for (const theme of ['light', 'dark'] as const) {
       await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);
-      await page.waitForTimeout(400); // let the colour transitions finish, as a11y.spec.ts does
+      await settleTransitions(page);
       const results = await new AxeBuilder({ page })
         .include('[role="dialog"][aria-labelledby="backup-modal-title"]')
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])

@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** PR10: start a new semester (or term): archive what is not carried over, keep it readable, never delete it. */
 type S = {
@@ -197,7 +198,7 @@ test('on a phone, in light and dark: the dialogs fit, tap targets are 44px and t
   for (const label of await dialog.locator('label').all()) if (await label.isVisible() && (await label.locator('input[type=checkbox]').count()) > 0) expect((await label.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);
-    await page.waitForTimeout(300);
+    await settleTransitions(page);
     const axe = await new AxeBuilder({ page }).include('[data-testid="new-semester"]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations.map((v) => `${theme} ${v.id}: ${v.nodes.map((n) => n.html.slice(0, 90)).join(' | ')}`)).toEqual([]);
   }
