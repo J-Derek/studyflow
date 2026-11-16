@@ -17,6 +17,7 @@ import type { Assignment } from '../types';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { FirstDeadlineCard } from '../components/FirstDeadlineCard';
 import { KindBadge } from '../components/KindBadge';
+import { BusyWeekNotice } from '../components/BusyWeekNotice';
 import { WritingSpace } from '../components/WritingSpace';
 import { celebrate } from '../components/CelebrateBurst';
 import { kindOf } from '../utils/kinds';
@@ -121,6 +122,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
       )}
+
+      <BusyWeekNotice assignments={assignments} />
 
       {/* Zero State Activation Hero: Quick First Deadline Input */}
       {assignments.length === 0 && (

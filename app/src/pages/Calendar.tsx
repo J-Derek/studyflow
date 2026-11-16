@@ -16,6 +16,7 @@ import { MonthSummaryBar } from '../components/MonthSummaryBar';
 import { DaySheet } from '../components/DaySheet';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { KindBadge } from '../components/KindBadge';
+import { BusyWeekNotice } from '../components/BusyWeekNotice';
 import { classesOn, deadlinesByDate, monthLabel, monthSummary, selectPendingDeadlines } from '../utils/calendarMonth';
 import { kindOf } from '../utils/kinds';
 import { readCalendarView, saveCalendarView, type CalendarView } from '../utils/calendarView';
@@ -275,6 +276,8 @@ export const CalendarPage: React.FC = () => {
           </button>
         </div>
       )}
+
+      <BusyWeekNotice assignments={assignments} />
 
       {dueSoon.length > 0 && (
         <section
