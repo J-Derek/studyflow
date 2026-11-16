@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assignmentToDoc, docToAssignment, docToSession, docToPeriod, periodToDoc, draftToDoc, docToDraft, MAX_DRAFT_BODY, docToNote, docToProfile, docToTimerPrefs, timerPrefsToDoc, MAX_NOTE_BODY, MAX_PHOTO_CHARS, noteToDoc, profileToDoc, sessionToDoc, validPhoto } from './firestoreMappers';
+import { assignmentChangesToUpdates, REMOVE_FIELD, assignmentToDoc, docToAssignment, docToSession, docToPeriod, periodToDoc, draftToDoc, docToDraft, MAX_DRAFT_BODY, docToNote, docToProfile, docToTimerPrefs, timerPrefsToDoc, MAX_NOTE_BODY, MAX_PHOTO_CHARS, noteToDoc, profileToDoc, sessionToDoc, validPhoto } from './firestoreMappers';
 import type { Assignment } from '../types';
 
 const base: Assignment = {
@@ -238,5 +238,39 @@ describe('note documents', () => {
     expect(back.title).toBe('Untitled note');
     expect(back.body).toBe('');
     expect(back.pinned).toBe(false);
+  });
+});
+
+describe('assignmentChangesToUpdates (field-level writes)', () => {
+  it('turns a checklist tick into the one subtask field plus the derived fields', () => {
+    expect(assignmentChangesToUpdates({ tickSubtask: { id: 's-a', completed: true }, status: 'in_progress', progress: 17, completedAt: null })).toEqual([
+      { path: ['subtasks', 's-a', 'completed'], value: true },
+      { path: ['status'], value: 'in_progress' },
+      { path: ['progress'], value: 17 },
+      { path: ['completedAt'], value: REMOVE_FIELD }
+    ]);
+  });
+  it('writes completedAt when there is one, and nothing for fields that did not change', () => {
+    expect(assignmentChangesToUpdates({ status: 'completed', progress: 100, completedAt: '2026-11-14T10:00:00.000Z' })).toEqual([
+      { path: ['status'], value: 'completed' },
+      { path: ['progress'], value: 100 },
+      { path: ['completedAt'], value: '2026-11-14T10:00:00.000Z' }
+    ]);
+    expect(assignmentChangesToUpdates({})).toEqual([]);
+  });
+  it('adds and removes a checklist item by its own path, so other items are never touched', () => {
+    expect(assignmentChangesToUpdates({ addSubtask: { id: 's-x', title: '  Read ch 4  ', completed: false, order: 3 }, progress: 20 })).toEqual([
+      { path: ['subtasks', 's-x'], value: { id: 's-x', title: 'Read ch 4', completed: false, order: 3 } },
+      { path: ['progress'], value: 20 }
+    ]);
+    expect(assignmentChangesToUpdates({ removeSubtask: 's-x' })).toEqual([{ path: ['subtasks', 's-x'], value: REMOVE_FIELD }]);
+  });
+  it('keeps what it writes inside what the cloud accepts, and never writes undefined', () => {
+    const u = assignmentChangesToUpdates({ addSubtask: { id: 's', title: 'x'.repeat(500), completed: false, order: 0 }, progress: 250, status: 'bogus' as never });
+    expect((u[0]!.value as { title: string }).title.length).toBeLessThanOrEqual(200);
+    expect(u.find((x) => x.path[0] === 'progress')!.value).toBe(100);
+    expect(u.some((x) => x.path[0] === 'status')).toBe(false);
+    expect(u.some((x) => x.value === undefined)).toBe(false);
+    expect(assignmentChangesToUpdates({ progress: Number.NaN }).some((x) => x.path[0] === 'progress')).toBe(false);
   });
 });
