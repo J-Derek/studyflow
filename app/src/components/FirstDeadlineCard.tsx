@@ -10,6 +10,8 @@ import type { Priority, AssignmentKind, Repeat } from '../types';
 import { KindPicker } from './KindPicker';
 import { RepeatToggle } from './RepeatToggle';
 import { DATE_MAX, DATE_MIN, LIMITS, isDateInRange, localDateISO } from '../utils/limits';
+import { useI18n } from '../lib/i18n';
+import { LanguageToggle } from './LanguageToggle';
 
 interface FirstDeadlineCardProps {
   onSuccessFocus?: (assignmentTitle: string) => void;
@@ -17,6 +19,7 @@ interface FirstDeadlineCardProps {
 
 export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessFocus }) => {
   const { addAssignment, setActiveTab, setTimerMode } = useStudyFlowStore();
+  const { t } = useI18n();
   
   const [title, setTitle] = useState('');
   const [course, setCourse] = useState('');
@@ -67,7 +70,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
   // A sample to look at and change, for a student who is not sure what to type
   const [exampleShown, setExampleShown] = useState(false);
   const fillExample = () => {
-    setTitle('Chemistry CAT 1');
+    setTitle(t('first.exampleTitle'));
     handleChipClick('friday');
     setExampleShown(true);
   };
@@ -161,25 +164,28 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
   }
 
   return (
-    <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark p-5 md:p-6 transition-colors shadow-2xs">
+    <div data-testid="first-screen" className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark p-4 sm:p-5 md:p-6 transition-colors shadow-2xs">
       <div data-testid="what-is-studyflow" className="mb-4 space-y-1">
-        <p className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Never miss a deadline.</p>
-        <p className="text-sm text-zinc-700 dark:text-zinc-300">Add what is due and StudyFlow shows how many days are left. Then plan your week and start a focus timer.</p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="font-display text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">{t('first.promise')}</p>
+          <LanguageToggle className="shrink-0" />
+        </div>
+        <p className="text-sm text-zinc-700 dark:text-zinc-300">{t('first.intro')}</p>
       </div>
       <ol data-testid="how-it-works" className="mb-4 hidden sm:grid gap-2 sm:grid-cols-3 text-xs text-zinc-700 dark:text-zinc-300">
-        {['Add a deadline: a title and a date is enough.', 'Today shows how many days are left.', 'Start a focus block on it and tick it off.'].map((step, i) => (
-          <li key={step} className="flex items-start gap-2 rounded-lg bg-zinc-100/70 dark:bg-zinc-800/50 px-3 py-2">
+        {(['first.step1', 'first.step2', 'first.step3'] as const).map((key, i) => (
+          <li key={key} className="flex items-start gap-2 rounded-lg bg-zinc-100/70 dark:bg-zinc-800/50 px-3 py-2">
             <span aria-hidden="true" className="tabular-nums font-semibold text-zinc-900 dark:text-zinc-100">{i + 1}</span>
-            <span>{step}</span>
+            <span>{t(key)}</span>
           </li>
         ))}
       </ol>
       <div className="space-y-1 mb-4">
         <h2 className="text-lg md:text-xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
-          What is your next deadline?
+          {t('first.heading')}
         </h2>
-        <p className="text-xs text-zinc-600 dark:text-zinc-400">
-          A title and a date is enough.
+        <p className="hidden sm:block text-xs text-zinc-600 dark:text-zinc-400">
+          {t('first.subtitle')}
         </p>
       </div>
 
@@ -187,7 +193,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
         <div>
           <div className="flex items-center justify-between gap-2 mb-1">
             <label htmlFor="first-deadline-title" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-              What is due?
+              {t('first.whatDue')}
             </label>
             {title.trim() === '' && (
               <button
@@ -195,7 +201,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
                 onClick={fillExample}
                 className="inline-flex items-center min-h-[44px] px-1 -my-3 text-xs font-medium text-blue-700 dark:text-blue-300 underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-200 cursor-pointer"
               >
-                Try an example
+                {t('first.tryExample')}
               </button>
             )}
           </div>
@@ -206,12 +212,12 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={LIMITS.assignmentTitle}
-            placeholder="e.g. Problem Set 2 or Chapter 4 Summary"
+            placeholder={t('first.placeholder')}
             className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/60 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 min-h-[44px]"
           />
-          {exampleShown && title === 'Chemistry CAT 1' && (
+          {exampleShown && title === t('first.exampleTitle') && (
             <p data-testid="example-hint" className="mt-1 text-xs text-zinc-700 dark:text-zinc-300">
-              This is an example. Change it to your own deadline, then save.
+              {t('first.exampleHint')}
             </p>
           )}
         </div>
@@ -219,7 +225,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
         {/* Date Quick Chips */}
         <div>
           <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-            When is it due?
+            {t('first.whenDue')}
           </label>
           <div className="flex items-center gap-2 flex-wrap">
             <button
@@ -231,7 +237,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
               }`}
             >
-              Today
+              {t('first.today')}
             </button>
             <button
               type="button"
@@ -242,7 +248,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
               }`}
             >
-              Tomorrow
+              {t('first.tomorrow')}
             </button>
             <button
               type="button"
@@ -253,7 +259,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
               }`}
             >
-              This Friday
+              {t('first.friday')}
             </button>
             <button
               type="button"
@@ -264,7 +270,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
               }`}
             >
-              Next Week
+              {t('first.nextWeek')}
             </button>
 
             {/* Custom Date Input */}
@@ -333,14 +339,14 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
             aria-expanded={more}
             className="inline-flex items-center min-h-[44px] px-2 text-xs font-medium text-zinc-700 dark:text-zinc-300 underline underline-offset-2 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer"
           >
-            {more ? 'Fewer options' : 'More options'}
+            {more ? t('first.fewerOptions') : t('first.moreOptions')}
           </button>
 
           <button
             type="submit"
             className="inline-flex items-center justify-center gap-1.5 px-4 py-2 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium text-xs hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs cursor-pointer"
           >
-            <span>Save deadline</span>
+            <span>{t('first.save')}</span>
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
