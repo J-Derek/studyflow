@@ -35,6 +35,19 @@ export function remainingSeconds(t: TimerState, now: number): number {
   return Math.ceil(remainingMs(t, now) / 1000);
 }
 
+/**
+ * How long until the shown number of seconds (rounded up) changes, plus a few milliseconds so the refresh lands just after the change.
+ * The scheduler waits exactly this long, so the clock moves on in step with Start instead of on a fixed beat that could leave it up to
+ * a second behind. A timer that is not running is simply checked once a second.
+ */
+export function msUntilNextSecond(t: TimerState, now: number): number {
+  if (t.status !== 'running') return 1000;
+  const left = remainingMs(t, now);
+  if (left <= 0) return 20;
+  const intoSecond = left % 1000;
+  return (intoSecond === 0 ? 1000 : intoSecond) + 20;
+}
+
 export function isFinished(t: TimerState, now: number): boolean {
   return t.status === 'running' && remainingMs(t, now) <= 0;
 }
