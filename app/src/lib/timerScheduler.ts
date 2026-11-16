@@ -1,5 +1,5 @@
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { isFinished } from './timerEngine';
+import { isFinished, msUntilNextSecond } from './timerEngine';
 
 const STORAGE_KEY = 'studyflow_storage_v1'; // same key as lib/auth.ts (not imported: that file pulls in Firebase)
 
@@ -7,8 +7,8 @@ let started = false;
 
 /**
  * One scheduler for the whole app, outside React. It only reads the clock: the timer's state is
- * timestamps, so a missed tick (background tab, sleep) costs nothing. It refreshes `nowMs` once a
- * second while a block runs and finishes the block exactly once when its time is used up. Because it
+ * timestamps, so a missed tick (background tab, sleep) costs nothing. It refreshes `nowMs` each time
+ * the shown second changes while a block runs (timed from the block's start, so the clock never lags) and finishes the block exactly once when its time is used up. Because it
  * does not depend on any page being mounted, a block finishes even if the student is on another tab
  * of the app.
  */
@@ -45,7 +45,20 @@ export function startTimerScheduler(): void {
     }
   };
 
-  window.setInterval(tick, 1000);
+  // Each refresh is timed for the moment the shown second changes. Starting, pausing or switching re-times it at once.
+  let pending: ReturnType<typeof setTimeout> | undefined;
+  const schedule = () => {
+    clearTimeout(pending);
+    const state = useStudyFlowStore.getState();
+    pending = setTimeout(() => {
+      tick();
+      schedule();
+    }, msUntilNextSecond(state.timer, Date.now()));
+  };
+  useStudyFlowStore.subscribe((s, prev) => {
+    if (s.timer !== prev.timer) schedule();
+  });
+  schedule();
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') tick();
   });

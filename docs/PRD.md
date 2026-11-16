@@ -2,7 +2,7 @@
 
 **Document Version**: 2.0.0  
 **Phase**: Phase 2 — Production Hardening & Cloud Expansion  
-**Author**: Antigravity (Lead Full-Stack Engineer) in collaboration with ChatGPT (Architect / PM) & Claude Sonnet (Security & Systems Reviewer)  
+**Author**: Derrick Macharia  
 **Target Audience**: Engineering, Product Management, QA  
 **Date**: November 2026  
 
