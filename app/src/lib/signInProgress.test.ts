@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  endFinishingSignIn,
   getSignInProgress,
+  isFinishingSignIn,
   markSigningInAcrossReload,
+  resetFinishingSignInForTests,
+  subscribeFinishingSignIn,
   setSignInProgress,
   subscribeSignInProgress,
   takeSigningInAcrossReload
@@ -23,6 +27,25 @@ class MemoryStorage {
 beforeEach(() => {
   (globalThis as unknown as { sessionStorage: MemoryStorage }).sessionStorage = new MemoryStorage();
   setSignInProgress(null);
+  resetFinishingSignInForTests();
+});
+
+describe('finishing a sign-in after the reload (so no screen offers "Sign in" while it completes)', () => {
+  it('is false on an ordinary page load', () => {
+    expect(isFinishingSignIn()).toBe(false);
+  });
+  it('is true after the sign-in reload, stays true however often it is asked, and ends when told', () => {
+    markSigningInAcrossReload(Date.now());
+    const seen: boolean[] = [];
+    const stop = subscribeFinishingSignIn(() => seen.push(isFinishingSignIn()));
+    expect(isFinishingSignIn()).toBe(true);
+    expect(isFinishingSignIn()).toBe(true);
+    endFinishingSignIn();
+    endFinishingSignIn();
+    stop();
+    expect(isFinishingSignIn()).toBe(false);
+    expect(seen).toEqual([false]);
+  });
 });
 
 describe('sign-in progress message', () => {

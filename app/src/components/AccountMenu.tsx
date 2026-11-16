@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
+import { confirmAction } from '../lib/confirm';
 import { Cloud, Download, HelpCircle, LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useAccountView } from '../store/useAccountView';
@@ -69,6 +70,7 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onOpenProfile, onOpenB
   };
 
   const handleSignOut = async () => {
+    if (!(await confirmAction({ title: 'Sign out?', body: 'Your work stays saved in your account. This device is cleared until you sign in again.', confirmLabel: 'Sign out' }))) return;
     try {
       setSigningOut(true);
       await signOutUser();

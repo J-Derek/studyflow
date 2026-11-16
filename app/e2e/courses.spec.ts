@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** PR8: Grades became Courses: a list of courses with their work, classes, notes and grade; the old address still works; still six links. */
 type S = {
@@ -89,7 +90,7 @@ test('on a phone and in dark mode: course cards are easy to tap and there are no
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);
-    await page.waitForTimeout(300);
+    await settleTransitions(page);
     const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations.map((v) => `${theme} ${v.id}: ${v.nodes.map((n) => n.html.slice(0, 90)).join(' | ')}`)).toEqual([]);
   }

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { confirmAction } from '../lib/confirm';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, ExternalLink, FileText, Paperclip, Pencil, Trash2, X } from 'lucide-react';
 import type { Note } from '../types';
@@ -82,7 +83,7 @@ export const NoteReader: React.FC<NoteReaderProps> = ({ note, onClose, onEdit })
   };
 
   const remove = async (meta: LocalFileMeta) => {
-    if (!window.confirm(`Remove “${meta.name}” from this device? The note itself is not changed.`)) return;
+    if (!(await confirmAction({ title: `Remove ${meta.name}?`, body: 'The PDF is removed from this device. The note itself is not changed.', confirmLabel: 'Remove PDF' }))) return;
     try {
       await deleteFile(meta.id);
     } catch {

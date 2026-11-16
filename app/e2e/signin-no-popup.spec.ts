@@ -119,6 +119,7 @@ test('signing in to an existing account on the same page merges the guest record
     .toBe(true);
   await page.getByRole('button', { name: 'Account menu' }).first().click();
   await page.getByRole('dialog', { name: 'Account' }).getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('alertdialog', { name: 'Sign out?' }).getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.waitForFunction(() => {
     const s = (window as unknown as { __store?: { getState: () => Store } }).__store?.getState();
     return !!s && !!s.userId && s.isAnonymous === true;

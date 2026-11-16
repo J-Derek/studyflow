@@ -824,8 +824,9 @@ export async function syncPeriodToFirestore(uid: string, period: Period): Promis
 
 /**
  * Writes an archive to the account in batches of 400 (Firestore allows 500 per batch). Every write sets a whole document, so running it
- * again after a failure simply writes the same values; nothing is ever deleted here. The period record goes in last, so a half-finished
- * archive never shows up as a past semester.
+ * again after a failure simply writes the same values; nothing is ever deleted here. The period record is the very last write of the very
+ * last batch, so a half-finished archive never shows up as a past semester, and it is committed together with the final items (not as a
+ * separate write afterwards, which left a gap where the items were saved but the semester was not yet).
  */
 export async function commitArchive(
   uid: string,
@@ -841,12 +842,14 @@ export async function commitArchive(
   for (const n of items.notes) ops.push((b) => b.set(doc(db, 'users', uid, 'notes', n.id), { ...noteToDoc(n), ...stamp }));
   // Courses that stay (their scores cleared for the new period)
   for (const g of keptGrades) ops.push((b) => b.set(doc(db, 'users', uid, 'grades', g.id), { ...gradeToDoc(g), ...stamp }));
+  ops.push((b) => b.set(doc(db, 'users', uid, 'semesters', period.id), { ...periodToDoc(period), ...stamp }));
+  // Like every other write: a snapshot worked out just before this one must not put an old version back on screen (a kept course's old score).
+  for (const x of [...items.assignments, ...items.sessions, ...items.grades, ...items.notes, ...keptGrades]) recentWrites.note(x.id);
   for (let i = 0; i < ops.length; i += 400) {
     const batch = writeBatch(db);
     ops.slice(i, i + 400).forEach((op) => op(batch));
     await batch.commit();
   }
-  await syncPeriodToFirestore(uid, period);
 }
 
 export async function syncDraftToFirestore(uid: string, draft: Draft): Promise<void> {

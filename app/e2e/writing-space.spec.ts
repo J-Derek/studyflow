@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { readFile } from 'node:fs/promises';
 import { strFromU8, unzipSync } from 'fflate';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** PR9: the writing space for an assignment, with automatic saving and export to Word and PDF. */
 type S = { userId: string | null; isSyncing: boolean; addAssignment: (a: object) => void; setTheme: (t: 'light' | 'dark') => void };
@@ -151,7 +152,7 @@ test('on a phone: Write/Preview tabs, 44px controls, fits the screen, no accessi
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);
-    await page.waitForTimeout(300);
+    await settleTransitions(page);
     const axe = await new AxeBuilder({ page }).include('[data-testid="writing-space"]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations.map((v) => `${theme} ${v.id}: ${v.nodes.map((n) => n.html.slice(0, 90)).join(' | ')}`)).toEqual([]);
   }

@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** UX round, part A: a phone-first Today. A title and a date are enough; the rest waits behind "More options". */
 type S = { userId: string | null; assignments: { title: string; course: string; kind?: string; priority: string }[]; addAssignment: (a: object) => void; toggleAssignmentComplete: (id: string) => void; setTheme: (t: 'light' | 'dark') => void };
@@ -56,7 +57,7 @@ test('the add card comes before the sign-in nudge, and both are accessible in li
   expect((await card.boundingBox())!.y).toBeLessThan((await nudge.boundingBox())!.y);
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);
-    await page.waitForTimeout(300);
+    await settleTransitions(page);
     const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations.map((v) => `${theme} ${v.id}: ${v.nodes.map((n) => n.html.slice(0, 90)).join(' | ')}`)).toEqual([]);
   }
