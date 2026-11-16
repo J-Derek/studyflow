@@ -71,6 +71,31 @@ jobs:
           name: playwright-traces
           path: app/test-results
 
+  safari:
+    name: Safari smoke (WebKit + Auth/Firestore emulators)
+    # New and not yet proven stable, so a failure here is reported but does not block merging. Make it required once it has run clean for a while.
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      - run: npm run test:e2e:webkit
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-webkit-traces
+          path: app/test-results
+
   deploy-rules:
     name: Deploy Firestore rules and indexes
     # Rules ship from the repository by the Firebase CLI, never pasted into the console.

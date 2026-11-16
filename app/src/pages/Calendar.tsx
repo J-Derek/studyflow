@@ -16,6 +16,8 @@ import { AssignmentModal } from '../components/AssignmentModal';
 import { KindBadge } from '../components/KindBadge';
 import { classesOn, deadlinesByDate, monthLabel, selectPendingDeadlines } from '../utils/calendarMonth';
 import { kindOf } from '../utils/kinds';
+import { readCalendarView, saveCalendarView, type CalendarView } from '../utils/calendarView';
+import { dueSoonTone } from '../utils/deadlineEmphasis';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -23,7 +25,12 @@ export const CalendarPage: React.FC = () => {
   const { sessions, assignments, addSession, updateSession, deleteSession } = useStudyFlowStore();
 
   // Week or month, which month is shown, the day whose list is open, and the deadline being added or edited from a day.
-  const [view, setView] = useState<'week' | 'month'>('week');
+  // Kept on this device, so a student who prefers Month does not land back on Week every visit.
+  const [view, setViewState] = useState<CalendarView>(readCalendarView);
+  const setView = (v: CalendarView) => {
+    setViewState(v);
+    saveCalendarView(v);
+  };
   const [monthCursor, setMonthCursor] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() + 1 };
@@ -136,6 +143,9 @@ export const CalendarPage: React.FC = () => {
     deleteSession(editingId);
     closeModal();
   };
+
+  // Something overdue or due today makes the Due soon strip stand out as a whole.
+  const dueUrgent = dueSoon.some((a) => a.dueDate <= todayISO);
 
   return (
     <div className="space-y-5 animate-fade-in pb-16">
@@ -263,16 +273,31 @@ export const CalendarPage: React.FC = () => {
       )}
 
       {dueSoon.length > 0 && (
-        <section aria-label="Due soon" data-testid="due-soon" className="rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark px-3 py-2 text-xs">
-          <h2 className="font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Due soon</h2>
-          <ul className="flex flex-wrap gap-x-4 gap-y-1">
-            {dueSoon.map((a) => (
-              <li key={a.id} className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200 [overflow-wrap:anywhere]">
-                <span className="tabular-nums text-zinc-600 dark:text-zinc-400">{a.dueDate.slice(5)}</span>
-                {a.title}
-                {kindOf(a) !== 'assignment' && <KindBadge kind={kindOf(a)} />}
-              </li>
-            ))}
+        <section
+          aria-label="Due soon"
+          data-testid="due-soon"
+          data-urgent={dueUrgent ? 'true' : undefined}
+          className={`rounded-lg border bg-surface-light dark:bg-surface-dark px-3 py-2 text-xs transition-colors duration-200 motion-reduce:transition-none ${
+            dueUrgent ? 'border-rose-300 dark:border-rose-800 border-l-4 border-l-rose-500 dark:border-l-rose-400' : 'border-zinc-200/80 dark:border-zinc-800/80'
+          }`}
+        >
+          <h2 className="flex items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-200 mb-1.5">
+            <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+            Due soon
+          </h2>
+          <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
+            {dueSoon.map((a) => {
+              const t = dueSoonTone(a.dueDate, todayISO);
+              return (
+                <li key={a.id} data-tone={t.tone} className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200 [overflow-wrap:anywhere]">
+                  <span title={a.dueDate} className={`shrink-0 rounded border px-1.5 py-px font-medium tabular-nums ${t.badge}`}>
+                    {t.label}
+                  </span>
+                  <span className={t.tone === 'overdue' || t.tone === 'today' ? 'font-medium text-zinc-900 dark:text-zinc-50' : ''}>{a.title}</span>
+                  {kindOf(a) !== 'assignment' && <KindBadge kind={kindOf(a)} />}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
