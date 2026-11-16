@@ -100,6 +100,8 @@ test('deleting the account removes every record, the profile and the sign-in acc
   const local = await page.evaluate(() => JSON.stringify({ ...localStorage }) + document.documentElement.innerText);
   expect(local).not.toContain('DELETE-ME');
   expect(local).not.toContain(email);
+  // deleting the account also forgets the age answer given on this device
+  expect(await page.evaluate(() => localStorage.getItem('studyflow_age_confirmed'))).toBeNull();
 
   // and nothing is left in the cloud
   for (const c of ['assignments', 'sessions', 'grades', 'notes', 'drafts', 'semesters', 'focusSessions', 'liveState']) {

@@ -20,6 +20,10 @@ import { KindBadge } from '../components/KindBadge';
 import { celebrate } from '../components/CelebrateBurst';
 import { kindOf } from '../utils/kinds';
 import { progressInfo } from '../utils/progress';
+import { orderAssignmentsList } from '../utils/assignmentOrder';
+
+/** Anything on a card that does its own job when clicked; a click there must not also open the card's details. */
+const OWN_CONTROLS = 'button, a, input, label, select, textarea';
 
 export const AssignmentsPage: React.FC = () => {
   const { assignments, toggleAssignmentComplete, deleteAssignment, restoreAssignment, toggleSubtask, addSubtask } = useStudyFlowStore();
@@ -56,9 +60,9 @@ export const AssignmentsPage: React.FC = () => {
     return list;
   }, [assignments]);
 
-  // Filter assignments
+  // Filter assignments, then order them: unfinished first (overdue, then by date, priority and time), finished last.
   const filteredAssignments = useMemo(() => {
-    return assignments.filter((a) => {
+    return orderAssignmentsList(assignments.filter((a) => {
       const matchesSearch =
         a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         a.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -74,7 +78,7 @@ export const AssignmentsPage: React.FC = () => {
           : a.status !== 'completed';
 
       return matchesSearch && matchesCourse && matchesPriority && matchesStatus;
-    });
+    }));
   }, [assignments, searchQuery, selectedCourse, selectedPriority, selectedStatus]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAssignments.length / ITEMS_PER_PAGE));
@@ -88,6 +92,17 @@ export const AssignmentsPage: React.FC = () => {
     setModalOpen(true);
   };
 
+  // A click anywhere on a card opens its details, unless it landed on one of the card's own buttons, boxes or links.
+  const openFromCard = (e: React.MouseEvent<HTMLElement>, asg: Assignment) => {
+    if ((e.target as HTMLElement).closest(OWN_CONTROLS) !== null) return;
+    if ((window.getSelection()?.toString() ?? '') !== '') return; // selecting text to copy is not a tap
+    handleEdit(asg);
+  };
+  const openFromKey = (e: React.KeyboardEvent<HTMLElement>, asg: Assignment) => {
+    if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault(); // Space would otherwise scroll the page
+    handleEdit(asg);
+  };
 
   return (
     <div className="space-y-5 animate-fade-in pb-16">
@@ -212,8 +227,14 @@ export const AssignmentsPage: React.FC = () => {
             return (
               <div
                 key={asg.id}
-                className={`p-3.5 transition-[opacity,background-color] duration-200 motion-reduce:transition-none hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 flex flex-col gap-2.5 ${
-                  isCompleted ? 'opacity-70 bg-zinc-50/30 dark:bg-zinc-900/30' : ''
+                role="group"
+                aria-label={`Open details for "${asg.title}"`}
+                tabIndex={0}
+                onClick={(e) => openFromCard(e, asg)}
+                onKeyDown={(e) => openFromKey(e, asg)}
+                className={`p-3.5 cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-400 transition-[background-color] duration-200 motion-reduce:transition-none hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 flex flex-col gap-2.5 ${
+                  // finished: a muted background and the struck-through title; no fading, which dropped its text below 4.5:1 contrast
+                  isCompleted ? 'bg-zinc-50 dark:bg-zinc-900/60' : ''
                 }`}
               >
                 {/* Main Assignment Row */}
@@ -264,19 +285,25 @@ export const AssignmentsPage: React.FC = () => {
                       {asg.priority}
                     </span>
 
-                    {/* Progress Percentage */}
-                    <div
-                      className="hidden lg:flex items-center gap-1.5 tabular-nums text-xs text-zinc-600 dark:text-zinc-400"
-                      title={progress.mode === 'checklist' ? progress.note : 'Progress you set yourself'}
-                    >
-                      <div className="w-12 bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
-                        <div
-                          className="bg-zinc-400 dark:bg-zinc-500 h-full rounded-full"
-                          style={{ width: `${progress.progress}%` }}
-                        />
+                    {/* Progress: a percentage from the checklist ticks, or the simple status in words when there is no checklist */}
+                    {progress.mode === 'checklist' ? (
+                      <div
+                        className="hidden lg:flex items-center gap-1.5 tabular-nums text-xs text-zinc-600 dark:text-zinc-400"
+                        title={progress.note}
+                      >
+                        <div className="w-12 bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
+                          <div
+                            className="bg-zinc-400 dark:bg-zinc-500 h-full rounded-full"
+                            style={{ width: `${progress.progress}%` }}
+                          />
+                        </div>
+                        <span className="tabular-nums">{progress.progress}%</span>
                       </div>
-                      <span className="tabular-nums">{progress.progress}%</span>
-                    </div>
+                    ) : (
+                      <span data-testid="item-status" className="hidden lg:inline text-xs text-zinc-600 dark:text-zinc-400">
+                        {progress.note}
+                      </span>
+                    )}
 
                     {/* Due Date — clean monospace */}
                     <span

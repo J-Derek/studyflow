@@ -38,6 +38,7 @@ test('dark mode survives signing out and signing back in', async ({ page }) => {
   // sign out from the account menu: the app reloads into a fresh guest session, still dark
   await page.getByRole('button', { name: 'Account menu' }).first().click();
   await page.getByRole('dialog', { name: 'Account' }).getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('alertdialog', { name: 'Sign out?' }).getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.waitForFunction(() => {
     const s = (window as unknown as Partial<W>).__store?.getState();
     return !!s && !!s.userId && s.isAnonymous === true;
