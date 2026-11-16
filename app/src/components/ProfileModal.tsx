@@ -8,7 +8,7 @@ import { LIMITS } from '../utils/limits';
 import { PERIOD_LABELS, periodWord, periodWordCapital } from '../utils/periods';
 import type { PeriodLabel, GradingScale } from '../types';
 import { GRADING_SCALES, SCALE_LABEL } from '../utils/gradingScale';
-import { useI18n } from '../lib/i18n';
+import { SWAHILI_ENABLED, useI18n } from '../lib/i18n';
 import { LanguageToggle } from './LanguageToggle';
 
 interface ProfileModalProps {
@@ -188,10 +188,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3 pb-3">
-          <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t('lang.label')}</span>
-          <LanguageToggle />
-        </div>
+        {SWAHILI_ENABLED && (
+          <div className="flex items-center justify-between gap-3 pb-3">
+            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t('lang.label')}</span>
+            <LanguageToggle />
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
