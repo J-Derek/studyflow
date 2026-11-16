@@ -5,9 +5,10 @@ import { isAssignmentKind, kindOf } from './kinds';
 const st = (n: number, done: number) => Array.from({ length: n }, (_, i) => ({ id: `s${i}`, title: `t${i}`, completed: i < done }));
 
 describe('progressInfo', () => {
-  it('uses the number the student set when there is no checklist', () => {
-    expect(progressInfo({ progress: 35, status: 'in_progress' })).toEqual({ mode: 'manual', progress: 35, done: 0, total: 0, note: '' });
-    expect(progressInfo({ progress: 35, status: 'in_progress', subtasks: [] }).mode).toBe('manual');
+  it('follows the simple status when there is no checklist (an old hand-set number is not shown)', () => {
+    expect(progressInfo({ progress: 35, status: 'in_progress' })).toEqual({ mode: 'status', progress: 50, done: 0, total: 0, note: 'In progress' });
+    expect(progressInfo({ progress: 35, status: 'pending', subtasks: [] })).toMatchObject({ mode: 'status', progress: 0, note: 'Not started' });
+    expect(progressInfo({ progress: 100, status: 'completed' })).toMatchObject({ mode: 'status', progress: 100, note: 'Done' });
   });
   it('works it out from the ticks when there is a checklist, whatever number is stored', () => {
     expect(progressInfo({ progress: 90, status: 'in_progress', subtasks: st(5, 2) })).toEqual({
