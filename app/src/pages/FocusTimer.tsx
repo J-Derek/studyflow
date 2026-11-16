@@ -383,12 +383,14 @@ export const FocusTimerPage: React.FC = () => {
               <Pause className="h-3.5 w-3.5" /> Pause
             </button>
           ) : (
-            <button
-              onClick={startTimer}
-              className="min-h-[44px] md:min-h-0 px-6 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-sm transition flex items-center gap-2 active:scale-95"
-            >
-              <Play className="h-3.5 w-3.5 fill-current" /> Start
-            </button>
+            <span className="sf-aura rounded-lg">
+              <button
+                onClick={startTimer}
+                className="min-h-[44px] md:min-h-0 px-6 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-sm transition flex items-center gap-2 active:scale-95"
+              >
+                <Play className="h-3.5 w-3.5 fill-current" /> Start
+              </button>
+            </span>
           )}
 
           <button

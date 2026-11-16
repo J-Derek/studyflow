@@ -136,9 +136,21 @@ summary:focus-visible,
 .sf-ring { animation: sf-ring 3.2s ease-in-out infinite; }
 .sf-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: sf-flicker 2.4s ease-in-out infinite; animation-delay: var(--d, 0s); }
 .sf-flame-core { animation: sf-core 1.8s ease-in-out infinite; animation-delay: var(--d, 0s); }
+/* A colour ring that turns slowly round a button, with a blurred copy behind it as the glow. Put it on a wrapper around a button that has
+   its own solid background; the wrapper's own box stays empty so the ring shows only as an edge and a halo. */
+@property --sf-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes sf-spin { to { --sf-angle: 360deg; } }
+.sf-aura { position: relative; isolation: isolate; display: inline-flex; }
+.sf-aura::before, .sf-aura::after {
+  content: ''; position: absolute; border-radius: inherit; z-index: -1; pointer-events: none;
+  background: conic-gradient(from var(--sf-angle), #4285f4, #ea4335, #fbbc04, #34a853, #4285f4);
+  animation: sf-spin 5s linear infinite;
+}
+.sf-aura::before { inset: -1.5px; }
+.sf-aura::after { inset: -3px; filter: blur(12px); opacity: 0.5; }
 .sf-glow { box-shadow: 0 0 0 1px rgb(245 158 11 / 0.22), 0 0 10px 0 rgb(245 158 11 / 0.22); animation: sf-glow 3.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .sf-ring, .sf-flame, .sf-flame-core, .sf-glow { animation: none !important; }
+  .sf-ring, .sf-flame, .sf-flame-core, .sf-glow, .sf-aura::before, .sf-aura::after { animation: none !important; }
 }
 
 /* The writing space prints its own copy of the text (see components/WritingSpace). On screen it is hidden; when printing, only it shows. */
