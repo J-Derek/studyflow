@@ -2,6 +2,8 @@ import {
   collection,
   doc,
   setDoc,
+  updateDoc,
+  FieldPath,
   deleteDoc,
   writeBatch,
   onSnapshot,
@@ -21,7 +23,7 @@ import { db } from '../lib/firebase';
 import type { Assignment, CourseGrade, Draft, Note, Period, StudySession } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
-import { ageToDoc, assignmentToDoc, docToAssignment, docToDraft, docToPeriod, draftToDoc, periodToDoc, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
+import { REMOVE_FIELD, assignmentChangesToUpdates, type AssignmentFieldChanges, ageToDoc, assignmentToDoc, docToAssignment, docToDraft, docToPeriod, draftToDoc, periodToDoc, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
 import { RECENT_WRITE_MS, createRecentWrites, mergeById } from './mergeById';
 import { isDefaultTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
 import { cleanUpProfile } from '../utils/placeholderProfile';
@@ -593,6 +595,26 @@ export async function syncAssignmentToFirestore(uid: string, assignment: Assignm
   });
 }
 
+/**
+ * Writes only the changed fields of one assignment (a tick, finishing it, adding or removing a checklist step). The rules check the whole
+ * stored document after the change, so every rule still applies. An assignment deleted elsewhere is not brought back: that is not an error.
+ */
+export async function updateAssignmentFieldsInFirestore(uid: string, assignmentId: string, changes: AssignmentFieldChanges): Promise<void> {
+  recentWrites.note(assignmentId);
+  const updates = assignmentChangesToUpdates(changes);
+  if (updates.length === 0) return;
+  const [first, ...rest] = updates;
+  const more: unknown[] = [];
+  for (const u of rest) more.push(new FieldPath(...u.path), u.value === REMOVE_FIELD ? deleteField() : u.value);
+  more.push('updatedAt', serverTimestamp());
+  try {
+    await updateDoc(doc(db, 'users', uid, 'assignments', assignmentId), new FieldPath(...first!.path), first!.value === REMOVE_FIELD ? deleteField() : first!.value, ...more);
+  } catch (err) {
+    if ((err as { code?: string })?.code === 'not-found') return;
+    throw err;
+  }
+}
+
 export async function deleteAssignmentFromFirestore(uid: string, assignmentId: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid, 'assignments', assignmentId));
 }
@@ -802,8 +824,9 @@ export async function syncPeriodToFirestore(uid: string, period: Period): Promis
 
 /**
  * Writes an archive to the account in batches of 400 (Firestore allows 500 per batch). Every write sets a whole document, so running it
- * again after a failure simply writes the same values; nothing is ever deleted here. The period record goes in last, so a half-finished
- * archive never shows up as a past semester.
+ * again after a failure simply writes the same values; nothing is ever deleted here. The period record is the very last write of the very
+ * last batch, so a half-finished archive never shows up as a past semester, and it is committed together with the final items (not as a
+ * separate write afterwards, which left a gap where the items were saved but the semester was not yet).
  */
 export async function commitArchive(
   uid: string,
@@ -819,12 +842,14 @@ export async function commitArchive(
   for (const n of items.notes) ops.push((b) => b.set(doc(db, 'users', uid, 'notes', n.id), { ...noteToDoc(n), ...stamp }));
   // Courses that stay (their scores cleared for the new period)
   for (const g of keptGrades) ops.push((b) => b.set(doc(db, 'users', uid, 'grades', g.id), { ...gradeToDoc(g), ...stamp }));
+  ops.push((b) => b.set(doc(db, 'users', uid, 'semesters', period.id), { ...periodToDoc(period), ...stamp }));
+  // Like every other write: a snapshot worked out just before this one must not put an old version back on screen (a kept course's old score).
+  for (const x of [...items.assignments, ...items.sessions, ...items.grades, ...items.notes, ...keptGrades]) recentWrites.note(x.id);
   for (let i = 0; i < ops.length; i += 400) {
     const batch = writeBatch(db);
     ops.slice(i, i + 400).forEach((op) => op(batch));
     await batch.commit();
   }
-  await syncPeriodToFirestore(uid, period);
 }
 
 export async function syncDraftToFirestore(uid: string, draft: Draft): Promise<void> {

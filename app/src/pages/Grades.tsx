@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { confirmAction } from '../lib/confirm';
 import {
   Calculator,
   BookOpen,
@@ -139,7 +140,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
       </div>
       )}
 
-      {/* Main Interactive "What-If" Final Exam Simulator */}
+      {/* What-if calculator for the next assessment */}
       {selectedCourse && (
         <div className="p-5 md:p-6 rounded-xl bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs space-y-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800/80 pb-4">
@@ -186,7 +187,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                   <span>
                     Simulated Score on{' '}
                     <strong className="text-zinc-900 dark:text-white">
-                      {upcomingAssessment ? upcomingAssessment.name : 'Final Assessment'} ({upcomingAssessment ? upcomingAssessment.weight : 30}% weight)
+                      {upcomingAssessment ? upcomingAssessment.name : 'Final assessment'} ({upcomingAssessment ? upcomingAssessment.weight : 30}% weight)
                     </strong>
                   </span>
                 </label>
@@ -249,7 +250,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
             className="min-h-[44px] md:min-h-0 flex items-center gap-1.5 px-3 py-1 rounded-md bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 text-xs font-medium shadow-2xs transition-transform active:scale-95"
           >
             <Plus className="h-3 w-3" />
-            <span>Add Course</span>
+            <span>Add course</span>
           </button>
         </div>
 
@@ -386,10 +387,13 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
 
                   {grades.length > 1 && (
                     <button
-                      onClick={() => deleteCourseGrade(course.id)}
+                      onClick={async () => {
+                        const ok = await confirmAction({ title: `Delete ${course.courseCode}?`, body: 'Its assessments and scores are deleted too. This cannot be undone.', confirmLabel: 'Delete course' });
+                        if (ok) deleteCourseGrade(course.id);
+                      }}
                       className="text-zinc-600 dark:text-zinc-400 hover:text-rose-500 transition-colors p-1"
-                      title={`Delete ${course.courseCode} from portfolio`}
-                      aria-label={`Delete ${course.courseCode} from portfolio`}
+                      title={`Delete course ${course.courseCode}`}
+                      aria-label={`Delete course ${course.courseCode}`}
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -420,7 +424,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
 
             <form onSubmit={handleCreateCourse} className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Course Code</label>
+                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Course code</label>
                 <input
                   type="text"
                   maxLength={LIMITS.courseCode}
@@ -433,7 +437,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
               </div>
 
               <div>
-                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Course Name</label>
+                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Course name</label>
                 <input
                   type="text"
                   maxLength={LIMITS.courseName}
@@ -460,7 +464,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Target Grade</label>
+                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Target grade</label>
                   <select
                     aria-label="Target grade"
                     value={newTarget}

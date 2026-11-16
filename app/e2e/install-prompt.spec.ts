@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** UX round, part F: "Install StudyFlow" from Help, using the browser's own install prompt where there is one. */
 type W = { __store: { getState: () => { userId: string | null } }; __prompted?: number };
@@ -58,7 +59,7 @@ test('the install card has no accessibility problems in light and dark', async (
   await page.evaluate(() => document.documentElement.classList.remove('dark'));
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as { __store: { getState: () => { setTheme: (x: string) => void } } }).__store.getState().setTheme(t), theme);
-    await page.waitForTimeout(300);
+    await settleTransitions(page);
     const dialog = await openHelp(page);
     await expect(dialog.getByTestId('install-card')).toBeVisible();
     const axe = await new AxeBuilder({ page }).include('[data-testid="install-card"]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();

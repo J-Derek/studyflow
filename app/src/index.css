@@ -113,6 +113,34 @@ summary:focus-visible,
   .sf-float { opacity: 0; }
 }
 
+/* Slow, gentle loops for things worth a glance: the attention ring on an important day (MonthGrid), the flame for a finished focus
+   session (FocusTimer) and the Start focus timer button on Today. All three hold still with "reduce motion"; the ring and the glow stay
+   visible, only the movement stops. */
+@keyframes sf-ring {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+@keyframes sf-flicker {
+  0%, 100% { transform: scale(1, 1) rotate(0deg); }
+  30% { transform: scale(0.95, 1.06) rotate(-2deg); }
+  60% { transform: scale(1.03, 0.97) rotate(1.5deg); }
+}
+@keyframes sf-core {
+  0%, 100% { opacity: 0.95; }
+  50% { opacity: 0.6; }
+}
+@keyframes sf-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgb(245 158 11 / 0.18), 0 0 8px 0 rgb(245 158 11 / 0.18); }
+  50% { box-shadow: 0 0 0 2px rgb(245 158 11 / 0.3), 0 0 16px 2px rgb(245 158 11 / 0.3); }
+}
+.sf-ring { animation: sf-ring 3.2s ease-in-out infinite; }
+.sf-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: sf-flicker 2.4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.sf-flame-core { animation: sf-core 1.8s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.sf-glow { box-shadow: 0 0 0 1px rgb(245 158 11 / 0.22), 0 0 10px 0 rgb(245 158 11 / 0.22); animation: sf-glow 3.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .sf-ring, .sf-flame, .sf-flame-core, .sf-glow { animation: none !important; }
+}
+
 /* The writing space prints its own copy of the text (see components/WritingSpace). On screen it is hidden; when printing, only it shows. */
 #print-root {
   display: none;

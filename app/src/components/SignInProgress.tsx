@@ -1,15 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { Loader2 } from 'lucide-react';
-import {
-  ACCOUNT_LOADED_EVENT,
-  LOADING_MESSAGE,
-  getSignInProgress,
-  subscribeSignInProgress,
-  takeSigningInAcrossReload
-} from '../lib/signInProgress';
-
-/** Longest the "loading your plan" note stays after the reload, in case the cloud never answers (offline). */
-const LOADING_CAP_MS = 20_000;
+import { LOADING_MESSAGE, getSignInProgress, isFinishingSignIn, subscribeFinishingSignIn, subscribeSignInProgress } from '../lib/signInProgress';
 
 /**
  * A small note at the top of the screen while a sign-in into an existing account finishes (see
@@ -17,20 +8,10 @@ const LOADING_CAP_MS = 20_000;
  */
 export const SignInProgress: React.FC = () => {
   const [moving, setMoving] = useState<string | null>(() => getSignInProgress());
-  const [loading, setLoading] = useState<boolean>(() => takeSigningInAcrossReload());
+  // Shared with the sign-in buttons (lib/signInProgress): true after the sign-in reload until the account's plan has arrived.
+  const loading = useSyncExternalStore(subscribeFinishingSignIn, isFinishingSignIn, () => false);
 
   useEffect(() => subscribeSignInProgress(setMoving), []);
-
-  useEffect(() => {
-    if (!loading) return;
-    const done = () => setLoading(false);
-    window.addEventListener(ACCOUNT_LOADED_EVENT, done);
-    const t = window.setTimeout(done, LOADING_CAP_MS);
-    return () => {
-      window.removeEventListener(ACCOUNT_LOADED_EVENT, done);
-      window.clearTimeout(t);
-    };
-  }, [loading]);
 
   const message = moving ?? (loading ? LOADING_MESSAGE : null);
   return (

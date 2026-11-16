@@ -2,11 +2,17 @@ import { useDialog } from '../lib/useDialog';
 import { KindPicker } from './KindPicker';
 import { kindOf } from '../utils/kinds';
 import { progressInfo } from '../utils/progress';
-import { celebrate } from './CelebrateBurst';
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { X, Calendar, Clock, BookOpen, AlertCircle } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Priority, Assignment, AssignmentKind } from '../types';
+
+/** The status a student picks for an unfinished item without a checklist. Done is the circle on the list (it celebrates). */
+type OpenStatus = 'pending' | 'in_progress';
+const OPEN_STATUSES: { value: OpenStatus; label: string }[] = [
+  { value: 'pending', label: 'Not started' },
+  { value: 'in_progress', label: 'In progress' }
+];
 import { DATE_MAX, DATE_MIN, LIMITS, isDateInRange, localDateISO } from '../utils/limits';
 
 interface AssignmentModalProps {
@@ -26,7 +32,8 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
   const [dueTime, setDueTime] = useState('23:59');
   const [priority, setPriority] = useState<Priority>('medium');
   const [notes, setNotes] = useState('');
-  const [progress, setProgress] = useState(0);
+  const [status, setStatus] = useState<OpenStatus>('pending');
+  const statusName = useId();
   const [kind, setKind] = useState<AssignmentKind>('assignment');
 
   React.useEffect(() => {
@@ -37,7 +44,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
       setDueTime(assignmentToEdit.dueTime || '23:59');
       setPriority(assignmentToEdit.priority);
       setNotes(assignmentToEdit.notes || '');
-      setProgress(assignmentToEdit.progress);
+      setStatus(assignmentToEdit.status === 'in_progress' ? 'in_progress' : 'pending');
       setKind(kindOf(assignmentToEdit));
     } else {
       setTitle('');
@@ -46,7 +53,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
       setDueTime('23:59');
       setPriority('medium');
       setNotes('');
-      setProgress(0);
+      setStatus('pending');
       setKind('assignment');
     }
   }, [assignmentToEdit, isOpen, initialDueDate]);
@@ -61,6 +68,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
 
     if (assignmentToEdit) {
       const hasChecklist = (assignmentToEdit.subtasks?.length ?? 0) > 0;
+      const isDone = assignmentToEdit.status === 'completed';
       updateAssignment(assignmentToEdit.id, {
         title: title.trim(),
         course: course.trim(),
@@ -69,10 +77,10 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         priority,
         kind,
         notes,
-        // With a checklist the ticks decide progress, so the dialog does not send a number.
-        ...(hasChecklist ? {} : { progress })
+        // With a checklist the ticks decide progress. Without one the dialog sends the simple status (the store sets the progress that goes
+        // with it); a finished item stays finished until its circle on the list is un-ticked.
+        ...(hasChecklist || isDone ? {} : { status })
       });
-      if (!hasChecklist && progress === 100 && assignmentToEdit.status !== 'completed') celebrate(title.trim());
     } else {
       addAssignment({
         title: title.trim(),
@@ -103,7 +111,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800">
           <div>
             <h2 id="assignment-modal-title" className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">
-              {assignmentToEdit ? 'Edit Assignment' : 'New assignment'}
+              {assignmentToEdit ? 'Edit assignment' : 'New assignment'}
             </h2>
             <p className="text-xs text-zinc-600 dark:text-zinc-400">Add the title, course and due date</p>
           </div>
@@ -218,24 +226,31 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
             </div>
           )}
 
-          {assignmentToEdit && (assignmentToEdit.subtasks?.length ?? 0) === 0 && (
+          {assignmentToEdit && (assignmentToEdit.subtasks?.length ?? 0) === 0 && assignmentToEdit.status === 'completed' && (
+            <p data-testid="item-done" className="rounded-lg bg-zinc-50 dark:bg-zinc-800/60 px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300">
+              Done. To reopen it, tap its circle on the list.
+            </p>
+          )}
+
+          {assignmentToEdit && (assignmentToEdit.subtasks?.length ?? 0) === 0 && assignmentToEdit.status !== 'completed' && (
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 tabular-nums">
-                  Progress ({progress}%)
-                </label>
+              <p id={`${statusName}-label`} className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                Status
+              </p>
+              <div role="radiogroup" aria-labelledby={`${statusName}-label`} className="flex flex-wrap gap-1.5">
+                {OPEN_STATUSES.map((s) => (
+                  <label
+                    key={s.value}
+                    className="inline-flex items-center justify-center min-h-[44px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-700 dark:text-zinc-200 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 has-[:checked]:bg-zinc-900 has-[:checked]:text-white has-[:checked]:border-zinc-900 dark:has-[:checked]:bg-zinc-100 dark:has-[:checked]:text-zinc-900 dark:has-[:checked]:border-zinc-100 focus-within:ring-2 focus-within:ring-blue-500"
+                  >
+                    <input type="radio" name={statusName} value={s.value} checked={status === s.value} onChange={() => setStatus(s.value)} className="sr-only" />
+                    {s.label}
+                  </label>
+                ))}
               </div>
-              <input
-                type="range"
-                aria-label="Progress, percent"
-                min="0"
-                max="100"
-                step="5"
-                value={progress}
-                onChange={(e) => setProgress(Number(e.target.value))}
-                className="w-full accent-blue-600 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
-              />
-              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Set by you. Add a checklist on the Assignments page and it will be worked out from the ticks instead.</p>
+              <p className="mt-1.5 text-xs text-zinc-600 dark:text-zinc-400">
+                Tick its circle on the list when it is done. Add a checklist on the Assignments page and progress is worked out from the ticks.
+              </p>
             </div>
           )}
 
