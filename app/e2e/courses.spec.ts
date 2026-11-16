@@ -140,7 +140,7 @@ test('the course is optional in the assignment and class forms, and a missing ti
   expect(await courseOf()).toBe('General');
 
   await ready(page, '/calendar');
-  await page.getByRole('button', { name: 'Add a class' }).click();
+  await page.getByRole('button', { name: 'Add a block' }).click();
   const block = page.getByRole('dialog');
   await expect(block.getByText('Course (optional)')).toBeVisible();
   await block.getByRole('button', { name: 'Add block' }).click();
