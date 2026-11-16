@@ -102,9 +102,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="flex items-center gap-2.5 flex-wrap">
           <button
             onClick={() => setActiveTab('timer')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 font-medium text-sm border border-zinc-200/80 dark:border-zinc-700/80 transition-colors active:scale-95 cursor-pointer"
+            className="sf-glow inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 font-medium text-sm border border-amber-300/80 dark:border-amber-700/70 transition-colors duration-150 active:scale-95 cursor-pointer"
           >
-            <Flame className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+            <Flame className="h-4 w-4 text-orange-600 dark:text-amber-400" aria-hidden="true" />
             <span>Start focus timer</span>
           </button>
         </div>

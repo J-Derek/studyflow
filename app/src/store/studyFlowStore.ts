@@ -20,6 +20,7 @@ import type {
 import { playSoundscape, stopSoundscape, playCompletionChime, setSoundscapeVolume as setAudioVolume } from '../lib/soundscapes';
 import {
   syncAssignmentToFirestore,
+  updateAssignmentFieldsInFirestore,
   deleteAssignmentFromFirestore,
   syncSessionToFirestore,
   deleteSessionFromFirestore,
@@ -49,7 +50,7 @@ import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 import { clampScore } from '../utils/academicCalculations';
 import { afterUncomplete } from '../utils/progress';
 import { newPeriodId, planArchive, type CarryChoice } from '../utils/periods';
-import { MAX_DRAFT_BODY } from '../services/firestoreMappers';
+import { MAX_DRAFT_BODY, type AssignmentFieldChanges } from '../services/firestoreMappers';
 import { normalizeAssessments } from '../utils/assessments';
 
 export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'courses' | 'notes';
@@ -211,6 +212,7 @@ interface StudyFlowState {
 // Friendly names for the things that can fail to save, used in the "couldn't save" message.
 const SYNC_WHAT: Record<string, string> = {
   syncAssignmentToFirestore: 'your assignment',
+  updateAssignmentFieldsInFirestore: 'your change to an assignment',
   deleteAssignmentFromFirestore: 'an assignment you deleted',
   syncSessionToFirestore: 'your class',
   deleteSessionFromFirestore: 'a class you deleted',
@@ -230,6 +232,11 @@ const SYNC_WHAT: Record<string, string> = {
 /** The handler for a failed cloud save: tell the student (with Retry when the save can simply be repeated). */
 const failed = (fn: string, retry?: () => Promise<unknown>) => (err: unknown) =>
   reportSyncError(SYNC_WHAT[fn] ?? 'your changes', err, retry);
+
+/** Saves just what changed on one assignment, so another device changing something else at the same moment keeps its change. */
+const syncFields = (uid: string, id: string, changes: AssignmentFieldChanges): void => {
+  updateAssignmentFieldsInFirestore(uid, id, changes).catch(failed('updateAssignmentFieldsInFirestore', () => updateAssignmentFieldsInFirestore(uid, id, changes)));
+};
 
 const defaultSettings: TimerSettings = DEFAULT_TIMER_SETTINGS;
 
@@ -752,11 +759,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
                 completedAt: isCompleted ? undefined : new Date().toISOString()
               };
               const uid = get().userId;
-              if (uid) {
-                syncAssignmentToFirestore(uid, updated).catch((err) => {
-                  failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, updated))(err);
-                });
-              }
+              if (uid) syncFields(uid, id, { status: updated.status, progress: updated.progress, completedAt: updated.completedAt ?? null });
               return updated;
             }
             return a;
@@ -781,7 +784,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
                 completedAt: allDone ? (a.completedAt || new Date().toISOString()) : undefined
               };
               const uid = get().userId;
-              if (uid) syncAssignmentToFirestore(uid, updated).catch(failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, updated)));
+              const ticked = updatedSubtasks.find((st) => st.id === subtaskId);
+              if (uid && ticked) syncFields(uid, assignmentId, { tickSubtask: { id: subtaskId, completed: ticked.completed }, status, progress, completedAt: updated.completedAt ?? null });
               return updated;
             }
             return a;
@@ -812,7 +816,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
                 completedAt: allDone ? (a.completedAt || new Date().toISOString()) : undefined
               };
               const uid = get().userId;
-              if (uid) syncAssignmentToFirestore(uid, updated).catch(failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, updated)));
+              if (uid) syncFields(uid, assignmentId, { addSubtask: { ...newSubtask, order: currentSubtasks.length }, status, progress, completedAt: updated.completedAt ?? null });
               return updated;
             }
             return a;
@@ -834,7 +838,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
                 completedAt: allDone ? (a.completedAt || new Date().toISOString()) : undefined
               };
               const uid = get().userId;
-              if (uid) syncAssignmentToFirestore(uid, updated).catch(failed('syncAssignmentToFirestore', () => syncAssignmentToFirestore(uid, updated)));
+              if (uid) syncFields(uid, assignmentId, { removeSubtask: subtaskId, status, progress, completedAt: updated.completedAt ?? null });
               return updated;
             }
             return a;
