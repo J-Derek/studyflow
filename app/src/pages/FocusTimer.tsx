@@ -3,7 +3,6 @@ import {
   Play,
   Pause,
   RotateCcw,
-  Flame,
   CheckCircle,
   Volume2,
   VolumeX,
@@ -41,6 +40,26 @@ const LengthField: React.FC<{ id: string; label: string; value: string; onChange
       <span className="text-xs text-zinc-600 dark:text-zinc-400">min</span>
     </div>
   </div>
+);
+
+/** A small flame for each finished focus session. A lit one flickers slowly; with "reduce motion" it holds still (see index.css). */
+const FocusFlame: React.FC<{ lit: boolean; delay: number }> = ({ lit, delay }) => (
+  <svg
+    data-testid="focus-flame"
+    data-lit={lit ? 'true' : 'false'}
+    viewBox="0 0 16 16"
+    className={`h-3.5 w-3.5 ${lit ? 'text-orange-500 dark:text-amber-400' : 'text-zinc-400 dark:text-zinc-500'}`}
+    aria-hidden="true"
+  >
+    <g className={lit ? 'sf-flame' : undefined} style={{ ['--d' as string]: `${-delay * 0.7}s` }}>
+      <path
+        d="M8 1.2c.5 2.4 4.3 4.2 4.3 8.3A4.3 4.3 0 0 1 8 14.8a4.3 4.3 0 0 1-4.3-4.3c0-1.8.9-3.1 1.8-3.9.1 1.3.7 2.2 1.5 2.5C6.6 6.3 7.2 3.6 8 1.2Z"
+        fill="currentColor"
+        opacity={lit ? 1 : 0.55}
+      />
+      {lit && <path className="sf-flame-core" d="M8 7.6c.4 1.3 2.1 2.1 2.1 3.9A2.1 2.1 0 0 1 8 13.6a2.1 2.1 0 0 1-2.1-2.1c0-1.3 1-2.2 2.1-3.9Z" fill="#fde68a" />}
+    </g>
+  </svg>
 );
 
 const LIMITS = [TIMER_LIMITS_MIN.focus, TIMER_LIMITS_MIN.shortBreak, TIMER_LIMITS_MIN.longBreak] as const;
@@ -129,15 +148,21 @@ export const FocusTimerPage: React.FC = () => {
   } = useStudyFlowStore();
 
   const timerMode = timer.mode;
-  // Which sound is being chosen: the one for focus blocks or the one for breaks.
+  // Which sound is being chosen: the one for focus blocks or the one for breaks. It follows the timer mode; a switch by hand
+  // lasts until the mode changes (by a tap or when a block ends), and then the card follows the mode again.
   const [pickedTarget, setPickedTarget] = useState<'focus' | 'break' | null>(null);
+  const [pickedInMode, setPickedInMode] = useState(timer.mode);
+  if (pickedInMode !== timer.mode) {
+    setPickedInMode(timer.mode);
+    setPickedTarget(null);
+  }
   const soundTarget: 'focus' | 'break' = pickedTarget ?? (timer.mode === 'focus' ? 'focus' : 'break');
   const chosenSound = soundTarget === 'focus' ? soundscape : breakSoundscape;
   const soundIsPlayingNow = timer.status === 'running' && (timer.mode === 'focus') === (soundTarget === 'focus');
   const timerIsRunning = timer.status === 'running';
   const timerSecondsLeft = remainingSeconds(timer, nowMs);
 
-  // Screen Wake Lock API — keeps display awake during active deep work and recovers on tab focus
+  // Keeps the screen on while a block runs (Screen Wake Lock), and asks again when the tab comes back
   useEffect(() => {
     let wakeLockSentinel: any = null;
 
@@ -343,7 +368,7 @@ export const FocusTimerPage: React.FC = () => {
               onClick={pauseTimer}
               className="min-h-[44px] md:min-h-0 px-6 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium text-xs hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs flex items-center gap-2 active:scale-95"
             >
-              <Pause className="h-3.5 w-3.5" /> Pause Session
+              <Pause className="h-3.5 w-3.5" /> Pause
             </button>
           ) : (
             <button
@@ -479,18 +504,21 @@ export const FocusTimerPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-1.5">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className={`h-6 w-6 rounded-md flex items-center justify-center tabular-nums text-xs ${
-                i < pomodorosCompleted % 4 || pomodorosCompleted >= 4
-                  ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
-              }`}
-            >
-              <Flame className="h-3 w-3" />
-            </div>
-          ))}
+          {Array.from({ length: 4 }).map((_, i) => {
+            const lit = i < pomodorosCompleted % 4 || pomodorosCompleted >= 4;
+            return (
+              <div
+                key={i}
+                className={`h-6 w-6 rounded-md flex items-center justify-center tabular-nums text-xs transition-colors duration-200 motion-reduce:transition-none ${
+                  lit
+                    ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                }`}
+              >
+                <FocusFlame lit={lit} delay={i} />
+              </div>
+            );
+          })}
           <span className="text-xs tabular-nums font-semibold text-zinc-900 dark:text-zinc-100 ml-1.5">
             {pomodorosCompleted} total
           </span>

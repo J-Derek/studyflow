@@ -55,7 +55,7 @@ export const Legend: React.FC<{ show: ('kinds' | 'classTypes' | 'priority' | 'pr
         <div>
           <p className="font-semibold mb-1">Progress</p>
           <p className="text-zinc-600 dark:text-zinc-400">
-            With a checklist, progress is worked out from the items you tick and reaches 100% only when all are ticked. Without one, you set it yourself when you edit.
+            With a checklist, progress is worked out from the items you tick and reaches 100% only when all are ticked. Without one, it shows a simple status: not started, in progress or done.
           </p>
         </div>
       )}

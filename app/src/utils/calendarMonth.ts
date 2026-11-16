@@ -158,6 +158,50 @@ export function findBusyWeek(assignments: Assignment[], today: string): BusyWeek
   return null;
 }
 
+export interface MonthSummary {
+  /** Deadlines due in the month. */
+  total: number;
+  pending: number;
+  done: number;
+  /** Unfinished exams, tests and projects due in the month. */
+  exams: number;
+  tests: number;
+  projects: number;
+  /** The day with the most unfinished deadlines, when that is two or more (the earliest on a tie). */
+  busiest: { date: string; count: number } | null;
+}
+
+/** First and last day of a month as "YYYY-MM-DD" (month is 1 to 12). */
+export function monthRange(year: number, month: number): { from: string; to: string } {
+  const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return { from: isoDate(year, month, 1), to: isoDate(year, month, last) };
+}
+
+/** What a month holds, for the strip above the month grid. */
+export function monthSummary(deadlines: Map<string, Assignment[]>, year: number, month: number): MonthSummary {
+  const { from, to } = monthRange(year, month);
+  const out: MonthSummary = { total: 0, pending: 0, done: 0, exams: 0, tests: 0, projects: 0, busiest: null };
+  for (const [date, items] of [...deadlines.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    if (date < from || date > to) continue;
+    let pendingToday = 0;
+    for (const a of items) {
+      out.total++;
+      if (a.status === 'completed') {
+        out.done++;
+        continue;
+      }
+      out.pending++;
+      pendingToday++;
+      const k = kindOf(a);
+      if (k === 'exam') out.exams++;
+      else if (k === 'test') out.tests++;
+      else if (k === 'project') out.projects++;
+    }
+    if (pendingToday >= 2 && (!out.busiest || pendingToday > out.busiest.count)) out.busiest = { date, count: pendingToday };
+  }
+  return out;
+}
+
 /** "November 2026" */
 export function monthLabel(year: number, month: number): string {
   return new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });

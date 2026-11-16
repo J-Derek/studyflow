@@ -1,4 +1,6 @@
 import { useDialog } from '../lib/useDialog';
+import { LegalLinks } from './LegalFooter';
+import { confirmAction } from '../lib/confirm';
 import { deleteAllFiles } from '../lib/localFiles';
 import React, { useState } from 'react';
 import { 
@@ -86,7 +88,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
         setActiveTab('timer');
         onClose();
       },
-      actionLabel: 'Launch Timer'
+      actionLabel: 'Open the timer'
     },
     {
       title: 'Grades',
@@ -115,7 +117,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
   };
 
   const handleClearAll = async () => {
-    if (window.confirm('Delete ALL your assignments, timetable and grades? This cannot be undone. Make a backup first if you might want them back.')) {
+    if (await confirmAction({ title: 'Delete all your data?', body: 'All your assignments, timetable, courses and notes are deleted. This cannot be undone. Make a backup first if you might want them back.', confirmLabel: 'Delete everything' })) {
       // Past semesters are loaded on demand, so fetch them first or they would be left behind in the account.
       const uid = useStudyFlowStore.getState().userId;
       if (uid) await loadArchivedFromCloud(uid).catch((err) => console.warn('Could not load past semesters before clearing:', err));
@@ -345,8 +347,9 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
                   <li>Only your own account can read or write your records. Other students cannot see them.</li>
                   <li>There are no ads and no analytics. The site is hosted on Vercel, which keeps ordinary server logs.</li>
                   <li>Backup exports everything to a file you keep. “Delete all my data” removes your assignments, timetable blocks, grades, notes and PDFs from this device and from the cloud. Signed-in students can also delete the whole account (Your account, then Delete my account), which removes the profile and the sign-in account too.</li>
-                  <li>The full rules are on the Privacy, Terms, Children and parents, Storage and Accessibility pages, linked at the bottom of every screen. They are drafts that a lawyer has not checked yet.</li>
+                  <li>The full rules are on these pages. They are drafts that a lawyer has not checked yet.</li>
                 </ul>
+                <LegalLinks onNavigate={onClose} className="-mx-2 pt-1" />
               </div>
             </div>
           )}

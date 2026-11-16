@@ -10,13 +10,13 @@ import { HelpMenuModal } from './components/HelpMenuModal';
 import { AuthNotice } from './components/AuthNotice';
 import { SignInProgress } from './components/SignInProgress';
 import { AgeGateDialog } from './components/AgeGateDialog';
+import { ConfirmHost } from './components/ConfirmHost';
 import { CelebrateBurst } from './components/CelebrateBurst';
 import { CourseSuggestions } from './components/CourseSuggestions';
 import { SyncErrorToast } from './components/SyncErrorToast';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { NotFoundPage } from './pages/NotFound';
-import { LegalFooter } from './components/LegalFooter';
 import { LEGAL_TABS } from './store/studyFlowStore';
 import { useStudyFlowStore, getTabFromPath } from './store/studyFlowStore';
 import { startAuthSessionLazy } from './lib/authActions';
@@ -198,7 +198,6 @@ export function App() {
         </main>
 
         {/* Privacy, terms and the other rules pages */}
-        <LegalFooter />
 
         {/* Mobile Navigation Bar */}
         <MobileNav />
@@ -251,6 +250,7 @@ export function App() {
 
         {/* The one-time age question before signing in */}
         <AgeGateDialog />
+        <ConfirmHost />
 
         {/* A happy burst when work is marked done */}
         <CelebrateBurst />

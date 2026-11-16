@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { deleteFilesForNote } from '../lib/localFiles';
-import { Pin, Plus, Search } from 'lucide-react';
+import { FileText, Pin, Plus, Search } from 'lucide-react';
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import type { Note } from '../types';
+import type { Assignment, Note } from '../types';
 import { NoteDialog } from '../components/NoteDialog';
+import { WritingSpace } from '../components/WritingSpace';
+import { assignmentWritings, courseCode } from '../utils/assignmentWriting';
+import { NOTE_FORMAT, plainText } from '../utils/miniMarkdown';
 
 const formatDate = (iso: string) => {
   const d = new Date(iso);
@@ -12,13 +15,15 @@ const formatDate = (iso: string) => {
 };
 
 export const NotesPage: React.FC = () => {
-  const { notes, assignments, grades, addNote, updateNote, deleteNote, restoreNote } = useStudyFlowStore();
+  const { notes, drafts, assignments, grades, addNote, updateNote, deleteNote, restoreNote } = useStudyFlowStore();
   const [query, setQuery] = useState('');
   const [courseFilter, setCourseFilter] = useState('all');
   // null: closed. { id: null }: writing a new note. { id }: reading or editing that note.
   const [open, setOpen] = useState<{ id: string | null } | null>(null);
   // The last deleted note stays recoverable for a few seconds.
   const [justDeleted, setJustDeleted] = useState<Note | null>(null);
+  // The assignment whose writing is open in the writing space (the same one the Assignments page opens).
+  const [writingFor, setWritingFor] = useState<Assignment | null>(null);
 
   useEffect(() => {
     if (!justDeleted) return;
@@ -43,7 +48,15 @@ export const NotesPage: React.FC = () => {
     return [...set].sort((a, b) => a.localeCompare(b));
   }, [notes, grades, assignments]);
 
-  const noteCourses = useMemo(() => [...new Set(notes.map((n) => n.course).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [notes]);
+  // Writing done for assignments is listed here too, so everything the student wrote can be found in one place.
+  const allWritings = useMemo(() => assignmentWritings(drafts, assignments, { query: '', course: 'all' }), [drafts, assignments]);
+  const writings = useMemo(() => assignmentWritings(drafts, assignments, { query, course: courseFilter }), [drafts, assignments, query, courseFilter]);
+  const hasAnything = notes.length > 0 || allWritings.length > 0;
+
+  const noteCourses = useMemo(
+    () => [...new Set([...notes.map((n) => n.course), ...allWritings.map((w) => courseCode(w.assignment.course))].filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [notes, allWritings]
+  );
   const hasUncategorised = notes.some((n) => !n.course);
 
   const visible = useMemo(() => {
@@ -77,7 +90,7 @@ export const NotesPage: React.FC = () => {
         </button>
       </div>
 
-      {notes.length > 0 && (
+      {hasAnything && (
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600 dark:text-zinc-400" aria-hidden="true" />
@@ -126,7 +139,7 @@ export const NotesPage: React.FC = () => {
           </button>
         </div>
       ) : visible.length === 0 ? (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 py-6 text-center">No notes match. Try a different word or course.</p>
+        writings.length === 0 && <p className="text-sm text-zinc-600 dark:text-zinc-400 py-6 text-center">No notes match. Try a different word or course.</p>
       ) : (
         <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {visible.map((n) => (
@@ -141,7 +154,7 @@ export const NotesPage: React.FC = () => {
                   <span>{formatDate(n.editedAt)}</span>
                 </span>
                 <span className="block mt-1.5 font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">{n.title}</span>
-                {n.body && <span className="block mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap [overflow-wrap:anywhere] line-clamp-4">{n.body}</span>}
+                {n.body && <span className="block mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap [overflow-wrap:anywhere] line-clamp-4">{plainText(n.body, NOTE_FORMAT)}</span>}
               </button>
               <button
                 type="button"
@@ -157,6 +170,43 @@ export const NotesPage: React.FC = () => {
           ))}
         </ul>
       )}
+
+      {writings.length > 0 && (
+        <section aria-labelledby="from-assignments-heading" className="space-y-3">
+          <div className="space-y-0.5">
+            <h2 id="from-assignments-heading" className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+              From Assignments
+            </h2>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">What you wrote in the writing space for an assignment. It opens where you wrote it.</p>
+          </div>
+          <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {writings.map(({ assignment, draft }) => (
+              <li key={draft.id}>
+                <button
+                  type="button"
+                  onClick={() => setWritingFor(assignment)}
+                  className="w-full h-full flex flex-col items-start justify-start text-left p-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-surface-light dark:bg-surface-dark hover:border-zinc-500 dark:hover:border-zinc-500 transition-colors cursor-pointer"
+                >
+                  <span className="flex w-full flex-wrap items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200">
+                      <FileText className="h-3 w-3" aria-hidden="true" />
+                      Assignment writing
+                    </span>
+                    {courseCode(assignment.course) && <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">{courseCode(assignment.course)}</span>}
+                    <span>{formatDate(draft.editedAt)}</span>
+                  </span>
+                  <span className="block mt-1.5 font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">
+                    From Assignments: {assignment.title}
+                  </span>
+                  <span className="block mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap [overflow-wrap:anywhere] line-clamp-4">{plainText(draft.body)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {writingFor && <WritingSpace assignment={writingFor} onClose={() => setWritingFor(null)} />}
 
       {dialogOpen && (
         <NoteDialog
