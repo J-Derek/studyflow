@@ -88,3 +88,55 @@ test('two tabs: a tick in one tab reaches the other, and quick ticks in both end
   await expect.poll(() => doneCount(two), { timeout: 15_000 }).toBe(6);
   await context.close();
 });
+
+// Item 5 (audit F6): each tick now writes only its own field, so two devices ticking DIFFERENT items at the same instant keep both.
+test('two tabs ticking DIFFERENT items at the same instant keep both ticks, 20 rounds in a row', async ({ browser }) => {
+  test.setTimeout(240_000);
+  const context = await browser.newContext();
+  const one = await context.newPage();
+  await ready(one);
+  await one.evaluate(() => {
+    const s = (window as unknown as W).__store.getState();
+    for (let i = 0; i < 20; i++) {
+      s.addAssignment({
+        title: `Round ${i}`,
+        course: 'GEN 1',
+        dueDate: '2030-01-01',
+        priority: 'medium',
+        status: 'pending',
+        progress: 0,
+        subtasks: ['a', 'b', 'c'].map((n, k) => ({ id: `r${i}-${n}`, title: `Step ${n}`, completed: false, order: k }))
+      });
+    }
+  });
+  const two = await context.newPage();
+  await ready(two);
+  await two.waitForFunction(() => (window as unknown as W).__store.getState().assignments.length === 20, undefined, { timeout: 20_000 });
+
+  const state = (page: Page, round: number) =>
+    page.evaluate((i) => {
+      const a = (window as unknown as W).__store.getState().assignments.find((x) => x.title === `Round ${i}`);
+      return (a?.subtasks ?? []).map((s) => (s.completed ? 1 : 0)).join('');
+    }, round);
+  const tickNow = (page: Page, round: number, step: string) =>
+    page.evaluate(
+      ([i, n]) => {
+        const st = (window as unknown as W).__store.getState();
+        const a = st.assignments.find((x) => x.title === `Round ${i}`)!;
+        st.toggleSubtask(a.id, `r${i}-${n}`);
+      },
+      [round, step] as const
+    );
+
+  for (let round = 0; round < 20; round++) {
+    // fire both ticks in the same moment from the two tabs, on different items
+    await Promise.all([tickNow(one, round, 'a'), tickNow(two, round, 'c')]);
+    await expect.poll(() => state(one, round), { timeout: 15_000, message: `tab one, round ${round}` }).toBe('101');
+    await expect.poll(() => state(two, round), { timeout: 15_000, message: `tab two, round ${round}` }).toBe('101');
+  }
+  // and the account itself holds them after a reload
+  await one.reload();
+  await one.waitForFunction(() => (window as unknown as W).__store.getState().assignments.length === 20, undefined, { timeout: 20_000 });
+  for (let round = 0; round < 20; round++) expect(await state(one, round), `after reload, round ${round}`).toBe('101');
+  await context.close();
+});

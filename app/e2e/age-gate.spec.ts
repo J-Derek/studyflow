@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** PR5: the age question before the first sign-in. Under 13 gets no account; 13 to 17 need the guardian tick; the answer reaches the account. */
 type W = {
@@ -32,7 +33,7 @@ test('the question appears before Google opens, is accessible in light and dark,
 
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => document.documentElement.classList.toggle('dark', t === 'dark'), theme);
-    await page.waitForTimeout(300);
+    await settleTransitions(page);
     const axe = await new AxeBuilder({ page }).include('[data-testid="age-gate"]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations.map((v) => `${theme} ${v.id}`)).toEqual([]);
   }
@@ -96,19 +97,22 @@ test('13 to 17 needs the parent or guardian tick, then signs in and the account 
     }, { timeout: 15_000 })
     .toBe('13-17|true|at,band,guardian');
 
-  // signing out forgets the answer on the device, so the next person is asked
+  // signing out keeps the answer on this device (Derek's choice: ask once per device, not on every sign-in)
   await page.getByRole('button', { name: 'Account menu' }).first().click();
   await page.getByRole('dialog', { name: 'Account' }).getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('alertdialog', { name: 'Sign out?' }).getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.waitForFunction(() => {
     const s = (window as unknown as Partial<W>).__store?.getState();
     return !!s?.userId && s.isAnonymous === true;
   });
-  expect(await page.evaluate(() => localStorage.getItem('studyflow_age_confirmed'))).toBeNull();
+  expect(JSON.parse((await page.evaluate(() => localStorage.getItem('studyflow_age_confirmed')))!)).toMatchObject({ band: '13-17', guardian: true });
+  const straightToGoogle = page.waitForEvent('popup');
   await signInButton(page).click();
-  await expect(page.getByTestId('age-gate')).toBeVisible();
+  await expect(page.getByTestId('age-gate')).toHaveCount(0);
+  await (await straightToGoogle).close();
 });
 
-test('an adult answer is kept for this device, so the question is not asked again until sign-out', async ({ page }) => {
+test('an adult answer is kept for this device, so the question is not asked again', async ({ page }) => {
   await ready(page);
   await signInButton(page).click();
   await page.getByTestId('age-gate').getByLabel('18 or older').check();

@@ -10,6 +10,7 @@ import { HelpMenuModal } from './components/HelpMenuModal';
 import { AuthNotice } from './components/AuthNotice';
 import { SignInProgress } from './components/SignInProgress';
 import { AgeGateDialog } from './components/AgeGateDialog';
+import { ConfirmHost } from './components/ConfirmHost';
 import { CelebrateBurst } from './components/CelebrateBurst';
 import { CourseSuggestions } from './components/CourseSuggestions';
 import { SyncErrorToast } from './components/SyncErrorToast';
@@ -249,6 +250,7 @@ export function App() {
 
         {/* The one-time age question before signing in */}
         <AgeGateDialog />
+        <ConfirmHost />
 
         {/* A happy burst when work is marked done */}
         <CelebrateBurst />

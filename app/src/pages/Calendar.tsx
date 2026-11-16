@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
+import { confirmAction } from '../lib/confirm';
 import { Clock, ChevronLeft, ChevronRight, Plus, X, Download, RotateCcw, CalendarDays, CalendarRange } from 'lucide-react';
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useDialog } from '../lib/useDialog';
-import { exportTimetable } from '../lib/exportTimetable';
+import { exportMonth, exportTimetable } from '../lib/exportTimetable';
 import { clashingIds, findClashes, toMinutes } from '../utils/timetable';
 import type { StudySession } from '../types';
 import { Legend } from '../components/Legend';
@@ -11,11 +12,14 @@ import { CLASS_TYPE_META } from '../utils/kinds';
 import { LIMITS, localDateISO } from '../utils/limits';
 import type { Assignment } from '../types';
 import { MonthGrid } from '../components/MonthGrid';
+import { MonthSummaryBar } from '../components/MonthSummaryBar';
 import { DaySheet } from '../components/DaySheet';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { KindBadge } from '../components/KindBadge';
-import { classesOn, deadlinesByDate, monthLabel, selectPendingDeadlines } from '../utils/calendarMonth';
+import { classesOn, deadlinesByDate, monthLabel, monthSummary, selectPendingDeadlines } from '../utils/calendarMonth';
 import { kindOf } from '../utils/kinds';
+import { readCalendarView, saveCalendarView, type CalendarView } from '../utils/calendarView';
+import { dueSoonTone } from '../utils/deadlineEmphasis';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -23,7 +27,12 @@ export const CalendarPage: React.FC = () => {
   const { sessions, assignments, addSession, updateSession, deleteSession } = useStudyFlowStore();
 
   // Week or month, which month is shown, the day whose list is open, and the deadline being added or edited from a day.
-  const [view, setView] = useState<'week' | 'month'>('week');
+  // Kept on this device, so a student who prefers Month does not land back on Week every visit.
+  const [view, setViewState] = useState<CalendarView>(readCalendarView);
+  const setView = (v: CalendarView) => {
+    setViewState(v);
+    saveCalendarView(v);
+  };
   const [monthCursor, setMonthCursor] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() + 1 };
@@ -32,6 +41,7 @@ export const CalendarPage: React.FC = () => {
   const [deadlineDialog, setDeadlineDialog] = useState<{ date?: string; edit?: Assignment } | null>(null);
   const todayISO = localDateISO();
   const deadlines = useMemo(() => deadlinesByDate(assignments, { withoutSample: false }), [assignments]);
+  const summary = useMemo(() => monthSummary(deadlines, monthCursor.year, monthCursor.month), [deadlines, monthCursor]);
   const dueSoon = useMemo(() => selectPendingDeadlines(assignments).slice(0, 3), [assignments]);
   const stepMonth = (by: number) =>
     setMonthCursor((c) => {
@@ -130,12 +140,16 @@ export const CalendarPage: React.FC = () => {
     closeModal();
   };
 
-  const handleDeleteEditing = () => {
+  const handleDeleteEditing = async () => {
     if (!editingId) return;
-    if (!window.confirm('Delete this block?')) return;
-    deleteSession(editingId);
+    const id = editingId;
+    if (!(await confirmAction({ title: 'Delete this block?', body: 'It is removed from every week of your timetable.', confirmLabel: 'Delete block' }))) return;
+    deleteSession(id);
     closeModal();
   };
+
+  // Something overdue or due today makes the Due soon strip stand out as a whole.
+  const dueUrgent = dueSoon.some((a) => a.dueDate <= todayISO);
 
   return (
     <div className="space-y-5 animate-fade-in pb-16">
@@ -148,7 +162,7 @@ export const CalendarPage: React.FC = () => {
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <button
             onClick={() => exportTimetable()}
-            title="Export calendar to Apple Calendar, Google Calendar, or Outlook (.ics)"
+            title="Download everything (all weekly classes and open deadlines) as an .ics file for Apple, Google or Outlook Calendar"
             className="min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-surface-dark hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs transition shadow-2xs active:scale-95"
           >
             <Download className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
@@ -263,21 +277,40 @@ export const CalendarPage: React.FC = () => {
       )}
 
       {dueSoon.length > 0 && (
-        <section aria-label="Due soon" data-testid="due-soon" className="rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark px-3 py-2 text-xs">
-          <h2 className="font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Due soon</h2>
-          <ul className="flex flex-wrap gap-x-4 gap-y-1">
-            {dueSoon.map((a) => (
-              <li key={a.id} className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200 [overflow-wrap:anywhere]">
-                <span className="tabular-nums text-zinc-600 dark:text-zinc-400">{a.dueDate.slice(5)}</span>
-                {a.title}
-                {kindOf(a) !== 'assignment' && <KindBadge kind={kindOf(a)} />}
-              </li>
-            ))}
+        <section
+          aria-label="Due soon"
+          data-testid="due-soon"
+          data-urgent={dueUrgent ? 'true' : undefined}
+          className={`rounded-lg border bg-surface-light dark:bg-surface-dark px-3 py-2 text-xs transition-colors duration-200 motion-reduce:transition-none ${
+            dueUrgent ? 'border-rose-300 dark:border-rose-800 border-l-4 border-l-rose-500 dark:border-l-rose-400' : 'border-zinc-200/80 dark:border-zinc-800/80'
+          }`}
+        >
+          <h2 className="flex items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-200 mb-1.5">
+            <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+            Due soon
+          </h2>
+          <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
+            {dueSoon.map((a) => {
+              const t = dueSoonTone(a.dueDate, todayISO);
+              return (
+                <li key={a.id} data-tone={t.tone} className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200 [overflow-wrap:anywhere]">
+                  <span title={a.dueDate} className={`shrink-0 rounded border px-1.5 py-px font-medium tabular-nums ${t.badge}`}>
+                    {t.label}
+                  </span>
+                  <span className={t.tone === 'overdue' || t.tone === 'today' ? 'font-medium text-zinc-900 dark:text-zinc-50' : ''}>{a.title}</span>
+                  {kindOf(a) !== 'assignment' && <KindBadge kind={kindOf(a)} />}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
 
       {(view === 'month' || sessions.length > 0) && <Legend show={view === 'month' ? ['month', 'classTypes', 'kinds'] : ['classTypes', 'kinds']} />}
+
+      {view === 'month' && (
+        <MonthSummaryBar summary={summary} monthName={monthLabel(monthCursor.year, monthCursor.month)} onDownload={() => exportMonth(monthCursor.year, monthCursor.month)} />
+      )}
 
       {view === 'month' && (
         <MonthGrid year={monthCursor.year} month={monthCursor.month} sessions={sessions} deadlines={deadlines} today={todayISO} onSelectDay={setSelectedDate} />
@@ -355,7 +388,10 @@ export const CalendarPage: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            onClick={() => deleteSession(session.id)}
+                            onClick={async () => {
+                              const ok = await confirmAction({ title: `Delete ${session.title}?`, body: 'It is removed from every week of your timetable.', confirmLabel: 'Delete block' });
+                              if (ok) deleteSession(session.id);
+                            }}
                             className="hidden [@media(hover:hover)]:block absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition p-1 hover:text-rose-600 dark:hover:text-rose-400"
                             title="Delete block"
                             aria-label={`Delete block ${session.title}`}

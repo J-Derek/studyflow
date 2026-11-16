@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleTransitions } from './themeSettle';
 
 /** PR7: week and month views, deadlines on the timetable, tap a day, quick add. */
 type S = {
@@ -115,7 +116,7 @@ test('on a phone: day buttons are at least 44px, the day sheet fits, and there a
 
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);
-    await page.waitForTimeout(300);
+    await settleTransitions(page);
     const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations.map((v) => `${theme} ${v.id}: ${v.nodes.map((n) => n.html.slice(0, 90)).join(' | ')}`)).toEqual([]);
   }

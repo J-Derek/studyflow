@@ -1,5 +1,6 @@
 import { useDialog } from '../lib/useDialog';
 import { LegalLinks } from './LegalFooter';
+import { confirmAction } from '../lib/confirm';
 import { deleteAllFiles } from '../lib/localFiles';
 import React, { useState } from 'react';
 import { 
@@ -116,7 +117,7 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
   };
 
   const handleClearAll = async () => {
-    if (window.confirm('Delete ALL your assignments, timetable and grades? This cannot be undone. Make a backup first if you might want them back.')) {
+    if (await confirmAction({ title: 'Delete all your data?', body: 'All your assignments, timetable, courses and notes are deleted. This cannot be undone. Make a backup first if you might want them back.', confirmLabel: 'Delete everything' })) {
       // Past semesters are loaded on demand, so fetch them first or they would be left behind in the account.
       const uid = useStudyFlowStore.getState().userId;
       if (uid) await loadArchivedFromCloud(uid).catch((err) => console.warn('Could not load past semesters before clearing:', err));

@@ -1,5 +1,5 @@
 /**
- * The age step before the first sign-in on a device.
+ * The age step before the first sign-in on a device. The answer stays on the device through sign-out; deleting the account removes it.
  *
  * What is asked: an age band, never a date of birth. Under 13: no account (the student can keep using StudyFlow as a guest on
  * their own device). 13 to 17: they tick that a parent or guardian knows and agrees. 18 and over: nothing more.

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { confirmAction } from '../lib/confirm';
 import {
   Calculator,
   BookOpen,
@@ -386,10 +387,13 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
 
                   {grades.length > 1 && (
                     <button
-                      onClick={() => deleteCourseGrade(course.id)}
+                      onClick={async () => {
+                        const ok = await confirmAction({ title: `Delete ${course.courseCode}?`, body: 'Its assessments and scores are deleted too. This cannot be undone.', confirmLabel: 'Delete course' });
+                        if (ok) deleteCourseGrade(course.id);
+                      }}
                       className="text-zinc-600 dark:text-zinc-400 hover:text-rose-500 transition-colors p-1"
-                      title={`Delete ${course.courseCode} from portfolio`}
-                      aria-label={`Delete ${course.courseCode} from portfolio`}
+                      title={`Delete course ${course.courseCode}`}
+                      aria-label={`Delete course ${course.courseCode}`}
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
