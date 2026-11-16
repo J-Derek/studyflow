@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
+import { BrandMark } from './BrandMark';
 import {
   LayoutDashboard,
   CheckSquare,
   Calendar as CalendarIcon,
   Timer,
-  GraduationCap,
   Cloud,
   Sun,
   Moon,
@@ -99,9 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, o
         {/* Brand header and collapse control */}
         <div className={cn('flex items-center', collapsed ? 'flex-col gap-2' : 'justify-between gap-2.5 px-2 py-1.5')}>
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="h-8 w-8 shrink-0 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-bold shadow-2xs">
-              <GraduationCap className="h-4 w-4" />
-            </div>
+            <BrandMark className="h-8 w-8 shrink-0" />
             {!collapsed && (
               <div className="min-w-0">
                 <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 tracking-tight">StudyFlow</span>
@@ -257,7 +255,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, o
                   {displayName}
                 </p>
                 <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 truncate">
-                  {isAnonymous ? 'Not signed in' : userEmail || 'Cloud Student'}
+                  {isAnonymous ? 'Not signed in' : userEmail || 'Signed in'}
                 </p>
               </div>
               <span className="sr-only">, edit profile</span>
