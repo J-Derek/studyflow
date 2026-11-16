@@ -13,6 +13,7 @@ function lazy<K extends keyof Mod>(name: K) {
 }
 
 export const syncAssignmentToFirestore = lazy('syncAssignmentToFirestore');
+export const updateAssignmentFieldsInFirestore = lazy('updateAssignmentFieldsInFirestore');
 export const deleteAssignmentFromFirestore = lazy('deleteAssignmentFromFirestore');
 export const syncSessionToFirestore = lazy('syncSessionToFirestore');
 export const deleteSessionFromFirestore = lazy('deleteSessionFromFirestore');
