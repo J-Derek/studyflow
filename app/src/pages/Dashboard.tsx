@@ -54,11 +54,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
       previousCount.current = assignments.length;
       if (!madeJustNow) return;
       setJustSaved(newest.title);
-      const t = window.setTimeout(() => setJustSaved(null), 10000);
-      return () => window.clearTimeout(t);
+      return;
     }
     previousCount.current = assignments.length;
   }, [assignments]);
+  // The line goes after ten seconds. Its own timer, so a later change to the list cannot cancel it and leave it standing.
+  useEffect(() => {
+    if (!justSaved) return;
+    const t = window.setTimeout(() => setJustSaved(null), 10000);
+    return () => window.clearTimeout(t);
+  }, [justSaved]);
   const openAdd = () => (onOpenAddModal ? onOpenAddModal() : setIsModalOpen(true));
 
   // Statistics Computations
@@ -111,12 +116,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {isAnonymous && !guestNoticeDismissed && assignments.some((a) => !a.sample) && (
-        <div role="note" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
-          <p>Your assignments are saved to a guest account. Sign in with Google so you keep them if you clear this browser or switch phones.</p>
+      {isAnonymous && !guestNoticeDismissed && !justSaved && assignments.some((a) => !a.sample) && (
+        <div role="note" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-surface-light dark:bg-surface-dark px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
+          <p>Your deadlines are saved on this device only. Sign in with Google to keep them if you clear this browser or switch phones.</p>
           <div className="flex items-center gap-2 shrink-0">
             {onOpenBackup && (
-              <button type="button" onClick={onOpenBackup} className="px-3 py-1.5 min-h-[44px] rounded-md bg-amber-900 dark:bg-amber-200 text-white dark:text-amber-950 font-medium text-xs cursor-pointer">Sign in with Google</button>
+              <button type="button" onClick={onOpenBackup} className="px-3 py-1.5 min-h-[44px] rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium text-xs cursor-pointer">Sign in with Google</button>
             )}
             <button type="button" onClick={dismissGuestNotice} className="px-3 py-1.5 min-h-[44px] rounded-md text-xs font-medium cursor-pointer hover:underline">Not now</button>
           </div>

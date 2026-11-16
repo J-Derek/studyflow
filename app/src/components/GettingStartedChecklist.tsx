@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   CheckCircle2, 
   Circle, 
@@ -29,6 +29,9 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
     dismissOnboarding,
     setActiveTab 
   } = useStudyFlowStore();
+
+  // One quiet line until the student asks for the steps
+  const [open, setOpen] = useState(false);
 
   const steps = [
     {
@@ -80,20 +83,31 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
 
   return (
     <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark p-4 md:p-5 transition-colors shadow-2xs">
-      <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800/80">
+      <div className={`flex items-center justify-between ${open ? 'pb-3 border-b border-zinc-100 dark:border-zinc-800/80' : ''}`}>
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
-              Getting Started Checklist
+              Getting started
             </h2>
             <span className="tabular-nums text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
               {completedCount} / {steps.length} completed
             </span>
           </div>
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-            Four things worth doing in your first week.
-          </p>
+          {open && (
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
+              Four things worth doing in your first week.
+            </p>
+          )}
         </div>
+
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="ml-auto mr-1 px-2 min-h-[44px] text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline cursor-pointer"
+        >
+          {open ? 'Hide steps' : 'Show steps'}
+        </button>
 
         <button
           onClick={dismissOnboarding}
@@ -105,6 +119,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
         </button>
       </div>
 
+      {open && (<>
       {/* Progress Bar */}
       <div className="mt-3 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
         <div 
@@ -156,6 +171,7 @@ export const GettingStartedChecklist: React.FC<GettingStartedChecklistProps> = (
           );
         })}
       </div>
+      </>)}
     </div>
   );
 };

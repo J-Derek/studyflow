@@ -31,7 +31,8 @@ test.describe('guest notice', () => {
       })
     );
     const notice = page.getByRole('note');
-    await expect(notice).toContainText('saved to a guest account');
+    // the green "Saved" line shows first (about 10 seconds); the guest note follows it
+    await expect(notice).toContainText('saved on this device only', { timeout: 20_000 });
 
     await notice.getByRole('button', { name: 'Not now' }).click();
     await expect(page.getByRole('note')).toHaveCount(0);

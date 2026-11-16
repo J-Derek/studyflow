@@ -15,7 +15,12 @@ async function start(page: Page, theme: 'light' | 'dark'): Promise<void> {
 
 const openers: Array<[string, (p: Page) => Promise<void>]> = [
   ['help', async (p) => { await p.getByRole('button', { name: 'Help', exact: true }).click(); }],
-  ['sign-in', async (p) => { await p.getByRole('button', { name: /^Sign in to keep your data/ }).first().click(); }],
+  ['sign-in', async (p) => {
+    const signIn = p.getByRole('button', { name: /^Sign in to keep your data/ });
+    // On a wide screen the sidebar has this button; otherwise it is a step in the folded checklist
+    if ((await signIn.count()) === 0) await p.getByRole('button', { name: 'Show steps' }).click();
+    await signIn.first().click();
+  }],
   ['profile', async (p) => { await p.getByRole('button', { name: /edit profile/i }).first().click(); }],
   ['add assignment', async (p) => { await p.getByRole('button', { name: 'Add assignment' }).first().click(); }],
   ['command palette', async (p) => { await p.keyboard.press('Control+k'); }]
