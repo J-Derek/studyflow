@@ -9,11 +9,12 @@ const ready = async (page: Page) => {
   await page.waitForFunction(() => !!(window as unknown as Partial<W>).__store?.getState().userId);
 };
 
-test('the first screen says in one line what StudyFlow is for, above the one thing to do', async ({ page }) => {
+test('the first screen makes one plain promise, above the one thing to do', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 740 });
   await ready(page);
   const intro = page.getByTestId('what-is-studyflow');
-  await expect(intro).toHaveText('StudyFlow keeps your deadlines, weekly timetable, focus timer and grades in one place.');
+  await expect(intro).toContainText('Never miss a deadline.');
+  await expect(intro).toContainText('Add what is due and StudyFlow shows how many days are left.');
   const heading = page.getByRole('heading', { name: 'What is your next deadline?' });
   expect((await intro.boundingBox())!.y).toBeLessThan((await heading.boundingBox())!.y);
 });
@@ -89,4 +90,25 @@ test.describe('timetable at a narrower desktop width', () => {
     await page.getByRole('button', { name: 'Add a block' }).click();
     await expect(page.getByRole('dialog', { name: 'Add a block' })).toBeVisible();
   });
+});
+
+test('three short steps show how it works, and "Try an example" fills in a sample the student can change', async ({ page }) => {
+  await ready(page);
+  await page.setViewportSize({ width: 1024, height: 768 });
+  const steps = page.getByTestId('how-it-works').getByRole('listitem');
+  await expect(steps).toContainText(['Add a deadline: a title and a date is enough.', 'Today shows how many days are left.', 'Start a focus block on it and tick it off.']);
+
+  const title = page.getByLabel('What is due?');
+  await expect(title).toHaveValue('');
+  await page.getByRole('button', { name: 'Try an example' }).click();
+  await expect(title).toHaveValue('Chemistry CAT 1');
+  await expect(page.getByTestId('example-hint')).toHaveText('This is an example. Change it to your own deadline, then save.');
+  // once there is a title the example button goes away
+  await expect(page.getByRole('button', { name: 'Try an example' })).toHaveCount(0);
+
+  // the sample can be changed and saved like any deadline
+  await title.fill('Biology lab report');
+  await page.getByRole('button', { name: /Save deadline/ }).click();
+  await expect(page.getByRole('heading', { name: 'Next up' })).toBeVisible();
+  await expect(page.getByText('Biology lab report').first()).toBeVisible();
 });
