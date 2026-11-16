@@ -167,7 +167,7 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
     <div data-testid="first-screen" className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark p-4 sm:p-5 md:p-6 transition-colors shadow-2xs">
       <div data-testid="what-is-studyflow" className="mb-4 space-y-1">
         <div className="flex items-start justify-between gap-3">
-          <p className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">{t('first.promise')}</p>
+          <p className="font-display text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">{t('first.promise')}</p>
           <LanguageToggle className="shrink-0" />
         </div>
         <p className="text-sm text-zinc-700 dark:text-zinc-300">{t('first.intro')}</p>
