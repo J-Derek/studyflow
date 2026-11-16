@@ -9,10 +9,9 @@ import {
   Sliders
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import type { Assessment } from '../types';
 import { GradingEditor } from '../components/GradingEditor';
 import { LIMITS } from '../utils/limits';
-import { percentageToGpa, calculateCoursePercentage, clampScore } from '../utils/academicCalculations';
+import { percentageToGpa, calculateCoursePercentage, whatIfProjection } from '../utils/academicCalculations';
 import { gradeLabel, overallResult, targetLabel, targetOptions } from '../utils/gradingScale';
 
 export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
@@ -22,6 +21,8 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
   const [selectedCourseId, setSelectedCourseId] = useState<string>(grades[0]?.id || '');
   const [simulatedFinalScore, setSimulatedFinalScore] = useState<number>(85);
   const [showAddCourseModal, setShowAddCourseModal] = useState<boolean>(false);
+  // Which score box was just given a number outside 0 to 100 (it is held to the nearest end, and the student is told)
+  const [outOfRange, setOutOfRange] = useState<{ id: string; to: number } | null>(null);
 
   // Form state for adding new course
   const [newCode, setNewCode] = useState('');
@@ -38,28 +39,10 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
   const { value: termGpa, totalCredits, hasData: hasGpa } = overall;
   const selectedCourse = grades.find((c) => c.id === selectedCourseId) || grades[0];
 
-  // Simulation calculations for selected course
-  let simCoursePct = 0;
-  let upcomingAssessment: Assessment | undefined;
-
-  if (selectedCourse) {
-    let earnedSoFar = 0;
-    let gradedWeight = 0;
-
-    selectedCourse.assessments.forEach((a) => {
-      const score = clampScore(a.score ?? undefined);
-      if (score !== undefined) {
-        earnedSoFar += (score * a.weight) / 100;
-        gradedWeight += a.weight;
-      } else if (!upcomingAssessment) {
-        upcomingAssessment = a;
-      }
-    });
-
-    const simulatedEarned = earnedSoFar + (simulatedFinalScore * (upcomingAssessment ? upcomingAssessment.weight : 0)) / 100;
-    const simTotalGradedWeight = gradedWeight + (upcomingAssessment ? upcomingAssessment.weight : 0);
-    simCoursePct = simTotalGradedWeight > 0 ? (simulatedEarned / simTotalGradedWeight) * 100 : 0;
-  }
+  // What-if for the selected course: a score on the next assessment that has none yet
+  const projection = selectedCourse ? whatIfProjection(selectedCourse, simulatedFinalScore) : null;
+  const simCoursePct = projection?.pct ?? 0;
+  const upcomingAssessment = projection?.upcoming;
 
   const handleCreateCourse = (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,7 +180,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
               <input
                 type="range"
                 aria-label="Score on the next assessment, percent"
-                min="50"
+                min="0"
                 max="100"
                 value={simulatedFinalScore}
                 onChange={(e) => setSimulatedFinalScore(Number(e.target.value))}
@@ -205,8 +188,8 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
               />
 
               <div className="flex justify-between text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
+                <span>0%</span>
                 <span>50%</span>
-                <span>75%</span>
                 <span>85%</span>
                 <span>100%</span>
               </div>
@@ -215,7 +198,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
             {/* Projected Result Callout */}
             <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-850 border border-zinc-200/80 dark:border-zinc-800 text-center space-y-1">
               <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
-                Projected Course Grade
+                If you score {simulatedFinalScore}%
               </p>
               <div className="flex items-center justify-center gap-2">
                 <span className="text-3xl tabular-nums font-semibold text-zinc-900 dark:text-white ">
@@ -225,6 +208,14 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                   {gradeLabel(scale, simCoursePct)}
                 </span>
               </div>
+              {projection && (
+                <p data-testid="what-if-basis" className="text-xs text-zinc-700 dark:text-zinc-300">
+                  {projection.upcoming
+                    ? `Counts the ${projection.basedOnWeight}% of the course that is graded or being tried here.`
+                    : `Based on all ${projection.basedOnWeight}% of the course, which is already graded.`}
+                  {projection.restUngradedWeight > 0 ? ` The other ${projection.restUngradedWeight}% has no score yet and is not in this number.` : ''}
+                </p>
+              )}
               <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
                 {scale === 'us4' ? `Grade points at this score: ${percentageToGpa(simCoursePct).toFixed(1)} · ` : ''}Your target: {targetLabel(scale, selectedCourse.targetLetter)}
               </p>
@@ -332,8 +323,8 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
 
                   <div className="space-y-1">
                     {course.assessments.map((a) => (
+                      <React.Fragment key={a.id}>
                       <div
-                        key={a.id}
                         className="flex items-center justify-between p-1.5 rounded-md bg-zinc-50/60 dark:bg-zinc-850/60 text-xs"
                       >
                         <div className="flex items-center gap-1.5">
@@ -351,6 +342,8 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                             placeholder="—"
                             onChange={(e) => {
                               const val = e.target.value === '' ? undefined : Number(e.target.value);
+                              if (val !== undefined && Number.isFinite(val) && (val > 100 || val < 0)) setOutOfRange({ id: a.id, to: val > 100 ? 100 : 0 });
+                              else setOutOfRange((cur) => (cur?.id === a.id ? null : cur));
                               updateAssessmentScore(course.id, a.id, val);
                             }}
                             className="min-h-[44px] md:min-h-0 w-16 md:w-14 px-1.5 py-0.5 text-right tabular-nums text-xs font-semibold rounded border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -358,6 +351,12 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                           <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">%</span>
                         </div>
                       </div>
+                      {outOfRange?.id === a.id && (
+                        <p role="status" data-testid="score-range-note" className="px-1.5 pb-1 text-xs text-zinc-700 dark:text-zinc-300">
+                          Scores go from 0 to 100, so {a.name} was set to {outOfRange.to}.
+                        </p>
+                      )}
+                      </React.Fragment>
                     ))}
                   </div>
                 </div>
