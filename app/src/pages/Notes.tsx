@@ -14,50 +14,6 @@ const formatDate = (iso: string) => {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 };
 
-/** Rough word-count badge shown on each note card. */
-const wordCount = (body: string) => {
-  const words = body.trim().split(/\s+/).filter(Boolean).length;
-  if (words === 0) return null;
-  return words >= 1000 ? `${(words / 1000).toFixed(1)}k` : String(words);
-};
-
-/** A single note card in the grid — extracted for reuse between pinned / unpinned sections. */
-const NoteCard: React.FC<{
-  note: Note;
-  onOpen: () => void;
-  onTogglePin: () => void;
-}> = ({ note: n, onOpen, onTogglePin }) => (
-  <li className="relative">
-    <button
-      type="button"
-      onClick={onOpen}
-      className={`w-full h-full flex flex-col items-start justify-start text-left p-4 pr-14 rounded-xl border bg-surface-light dark:bg-surface-dark hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors cursor-pointer ${
-        n.pinned ? 'border-brand-gold/40 dark:border-amber-700/50' : 'border-zinc-200/80 dark:border-zinc-800/80'
-      }`}
-    >
-      <span className="flex w-full flex-wrap items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
-        {n.course && <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">{n.course}</span>}
-        <span>{formatDate(n.editedAt)}</span>
-        {n.body && wordCount(n.body) && (
-          <span className="ml-auto tabular-nums text-zinc-500 dark:text-zinc-500 text-xs">{wordCount(n.body)} w</span>
-        )}
-      </span>
-      <span className="block mt-1.5 font-serif text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">{n.title}</span>
-      {n.body && <span className="block mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap [overflow-wrap:anywhere] line-clamp-4">{plainText(n.body, NOTE_FORMAT)}</span>}
-    </button>
-    <button
-      type="button"
-      aria-pressed={n.pinned}
-      aria-label={n.pinned ? `Unpin note ${n.title}` : `Pin note ${n.title}`}
-      title={n.pinned ? 'Unpin' : 'Pin to top'}
-      onClick={onTogglePin}
-      className="absolute top-1 right-1 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
-    >
-      <Pin className={`h-4 w-4 ${n.pinned ? 'fill-current text-brand-gold dark:text-amber-400' : ''}`} aria-hidden="true" />
-    </button>
-  </li>
-);
-
 export const NotesPage: React.FC = () => {
   const { notes, drafts, assignments, grades, addNote, updateNote, deleteNote, restoreNote } = useStudyFlowStore();
   const [query, setQuery] = useState('');
@@ -121,7 +77,7 @@ export const NotesPage: React.FC = () => {
     <div className="space-y-6 animate-fade-in pb-16">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-zinc-900 dark:text-zinc-50">Notes</h1>
+          <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Notes</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Keep what you learn in one place, by course.</p>
         </div>
         <button
@@ -185,32 +141,34 @@ export const NotesPage: React.FC = () => {
       ) : visible.length === 0 ? (
         writings.length === 0 && <p className="text-sm text-zinc-600 dark:text-zinc-400 py-6 text-center">No notes match. Try a different word or course.</p>
       ) : (
-        <>
-          {/* Pinned notes */}
-          {visible.some((n) => n.pinned) && (
-            <div className="space-y-2">
-              <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider px-0.5">Pinned</h2>
-              <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {visible.filter((n) => n.pinned).map((n) => (
-                  <NoteCard key={n.id} note={n} onOpen={() => setOpen({ id: n.id })} onTogglePin={() => updateNote(n.id, { pinned: !n.pinned }, { touch: false })} />
-                ))}
-              </ul>
-            </div>
-          )}
-          {/* Regular notes */}
-          {visible.some((n) => !n.pinned) && (
-            <div className="space-y-2">
-              {visible.some((n) => n.pinned) && (
-                <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider px-0.5">Notes</h2>
-              )}
-              <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {visible.filter((n) => !n.pinned).map((n) => (
-                  <NoteCard key={n.id} note={n} onOpen={() => setOpen({ id: n.id })} onTogglePin={() => updateNote(n.id, { pinned: !n.pinned }, { touch: false })} />
-                ))}
-              </ul>
-            </div>
-          )}
-        </>
+        <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {visible.map((n) => (
+            <li key={n.id} className="relative">
+              <button
+                type="button"
+                onClick={() => setOpen({ id: n.id })}
+                className="w-full h-full flex flex-col items-start justify-start text-left p-4 pr-14 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors cursor-pointer"
+              >
+                <span className="flex w-full flex-wrap items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                  {n.course && <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">{n.course}</span>}
+                  <span>{formatDate(n.editedAt)}</span>
+                </span>
+                <span className="block mt-1.5 font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">{n.title}</span>
+                {n.body && <span className="block mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap [overflow-wrap:anywhere] line-clamp-4">{plainText(n.body, NOTE_FORMAT)}</span>}
+              </button>
+              <button
+                type="button"
+                aria-pressed={n.pinned}
+                aria-label={n.pinned ? `Unpin note ${n.title}` : `Pin note ${n.title}`}
+                title={n.pinned ? 'Unpin' : 'Pin to top'}
+                onClick={() => updateNote(n.id, { pinned: !n.pinned }, { touch: false })}
+                className="absolute top-1 right-1 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+              >
+                <Pin className={`h-4 w-4 ${n.pinned ? 'fill-current text-blue-700 dark:text-blue-400' : ''}`} aria-hidden="true" />
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
 
       {writings.length > 0 && (
@@ -237,7 +195,7 @@ export const NotesPage: React.FC = () => {
                     {courseCode(assignment.course) && <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">{courseCode(assignment.course)}</span>}
                     <span>{formatDate(draft.editedAt)}</span>
                   </span>
-                  <span className="block mt-1.5 font-serif text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">
+                  <span className="block mt-1.5 font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">
                     From Assignments: {assignment.title}
                   </span>
                   <span className="block mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap [overflow-wrap:anywhere] line-clamp-4">{plainText(draft.body)}</span>

@@ -1,5 +1,4 @@
 import React, { useEffect, useId, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { answerAgeRequest, subscribeAgeRequest } from '../lib/ageGate';
 import { decideAge, type AgeChoice } from '../utils/ageGate';
 import { useDialog } from '../lib/useDialog';
@@ -49,25 +48,12 @@ export const AgeGateDialog: React.FC = () => {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto bg-surface-light dark:bg-surface-dark border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-5 space-y-4"
       >
-        <div className="flex items-center justify-between gap-3 pb-2 border-b border-zinc-100 dark:border-zinc-800">
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              type="button"
-              onClick={cancel}
-              aria-label="Go back"
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[38px] rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-xs font-medium shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back</span>
-            </button>
-            <h2 id={titleId} className="text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-              Before you sign in
-            </h2>
-          </div>
+        <div>
+          <h2 id={titleId} className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Before you sign in</h2>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+            We ask your age so we can look after younger students properly. We do not ask for your date of birth and we do not check it.
+          </p>
         </div>
-        <p className="text-xs text-zinc-600 dark:text-zinc-400">
-          We ask your age so we can look after younger students properly. We do not ask for your date of birth and we do not check it.
-        </p>
 
         <fieldset className="space-y-1.5">
           <legend className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-1">How old are you?</legend>

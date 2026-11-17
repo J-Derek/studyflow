@@ -150,7 +150,7 @@ All commands run from `app/`. CI (`.github/workflows/ci.yml`) runs the first fou
 - No compliance claim is made. Passing automated checks is not the same as being WCAG-conformant or secure against every attack.
 
 ### Deploying
-Firestore rules and indexes deploy from this repository with the Firebase CLI in CI (job `deploy-rules`, `main` only, needs a `FIREBASE_SERVICE_ACCOUNT` secret). Never paste rules into the console. Ship the app version first, then the rules.
+Firestore rules deploy from this repository with the Firebase CLI. Today this is done by hand (`npx firebase deploy --only firestore:rules --config ../firebase.json --project studyflow-app-8f038` from `app/`); the CI job `deploy-rules` takes over once a `FIREBASE_SERVICE_ACCOUNT` secret is added. Never paste rules into the console. When new rules allow something new, deploy the rules before the app version that needs them. Selling or handing over the project: see `docs/HANDOVER.md`.
 
 ---
 
@@ -159,7 +159,7 @@ Firestore rules and indexes deploy from this repository with the Firebase CLI in
 - [x] **Phase 1: Production MVP** — Deployed live on Vercel.
 - [x] **Phase 2: UI/UX Audit & Anti-Slop Redesign** — plain copy, no invented statistics, honest status indicators.
 - [x] **Phase 3: Front-End Remediations** — editable profile, week-switching timetable, what-if calculator, responsive navigation.
-- [x] **Phase 4A: Backend Hardening & Automated Test Suites** — rules emulator suite, account-isolation suite, pure-logic suites, timer refactor, CI. *Open:* the new rules are not yet deployed to the real Firebase project.
+- [x] **Phase 4A: Backend Hardening & Automated Test Suites** — rules emulator suite, account-isolation suite, pure-logic suites, timer refactor, CI.
 - [ ] **Phase 4B: Vercel preview (4B-1) and production domain (4B-2)** — preview deploys work and routing is verified there; no custom domain bound yet.
 - [x] **Phase 4C: Accessibility and performance** (automated part) — axe-core clean, keyboard and dialog tests, Lighthouse mobile run. *Open:* manual screen-reader pass.
 - [x] **Phase 5: GitHub Push & Release Tagging** — [github.com/J-Derek/studyflow](https://github.com/J-Derek/studyflow).
@@ -169,5 +169,5 @@ Firestore rules and indexes deploy from this repository with the Firebase CLI in
 
 ## 👥 Team & Governance
 
-- **Product Owner**: 21
-- **Built with AI coding assistants; every change is reviewed by the product owner
+- **Owner**: Derrick Macharia. All rights reserved (see `LICENSE`; third-party licences in `THIRD-PARTY-NOTICES.md`).
+- Built with AI coding assistants; every change is reviewed by the owner.

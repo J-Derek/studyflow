@@ -19,7 +19,7 @@ StudyFlow is a study planner. This page explains, in plain words, what it keeps 
 
 - **Google Firebase** (Authentication and Firestore) stores your account and your plan. Only your own account can read it; this is enforced by security rules that are tested automatically. The project owner can see it through the Firebase console.
 - **Vercel** hosts the website and keeps ordinary server logs (such as your IP address, browser and the time).
-- Both are companies outside Kenya, so your data is processed abroad. Data location: to be confirmed by the project owner before launch.
+- Both are companies outside Kenya, so your data is processed abroad. Your plan is stored by Google Cloud Firestore in the United States. Vercel is a US company and serves the website from data centres in several countries.
 
 ## How long we keep it
 

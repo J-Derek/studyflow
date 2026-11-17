@@ -35,7 +35,9 @@ What I found (secondary sources, not the Act's text):
   preserving" and follow data minimisation, which is why StudyFlow asks only for an age band and a tick, not a birth date or ID.
 - **Registration with the ODPC.** Small controllers (turnover under KES 5 million **and** fewer than ten staff) are exempt from mandatory registration, **except**
   for listed purposes where registration is required whatever the size. One law-firm source says the list includes education. **I could not confirm the
-  list.** Whether a free study planner counts as "education", and whether StudyFlow must register, is the first question for the lawyer.
+  list** from that source, but the ODPC's own FAQ (read 2026-11-17, [odpc.go.ke/faqs](https://www.odpc.go.ke/faqs/)) lists "provision of education" among the purposes
+  that must register whatever the size, with a micro/small fee of KSh 4,000 (renewal KSh 2,000 every 24 months). Whether a free study planner counts as
+  "education" is still the first question for the lawyer, but registering is the safe default, and a buyer will ask.
 - Data subjects' rights (access, correction, deletion, objection, portability): the app gives download (Your account), edit (Edit profile) and delete (Delete my account).
   A written contact for requests is **missing** (section 5).
 

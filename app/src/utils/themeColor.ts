@@ -27,6 +27,6 @@ export function syncThemeColor(
   // Create clean, unambiguous single meta tag
   const meta = doc.createElement('meta') as HTMLMetaElement;
   meta.name = 'theme-color';
-  meta.content = dark ? '#090A0C' : '#FAF7F2';
+  meta.content = dark ? '#090A0C' : '#F8F9FA';
   doc.head.appendChild(meta as unknown as Node);
 }

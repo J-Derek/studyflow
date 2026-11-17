@@ -16,7 +16,6 @@ import { CourseSuggestions } from './components/CourseSuggestions';
 import { SyncErrorToast } from './components/SyncErrorToast';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { InitialLoader } from './components/InitialLoader';
 import { NotFoundPage } from './pages/NotFound';
 import { LEGAL_TABS } from './store/studyFlowStore';
 import { useStudyFlowStore, getTabFromPath } from './store/studyFlowStore';
@@ -84,7 +83,7 @@ export function App() {
     document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
     const meta = document.createElement('meta');
     meta.name = 'theme-color';
-    meta.content = isDark ? '#0D0F14' : '#FAF7F2';
+    meta.content = isDark ? '#090A0C' : '#F8F9FA';
     document.head.appendChild(meta);
   }, [theme]);
 
@@ -126,9 +125,6 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-canvas-light dark:bg-canvas-dark text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row font-sans transition-colors duration-150">
-      {/* Branded Initial Loader & Splash Screen */}
-      <InitialLoader />
-
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:px-3 focus:py-2 focus:rounded-md focus:bg-zinc-900 focus:text-white dark:focus:bg-zinc-100 dark:focus:text-zinc-900 text-sm font-medium"
@@ -149,7 +145,7 @@ export function App() {
       />
 
       {/* Main App Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-x-clip">
+      <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
         {/* Top Header Bar (Desktop & Mobile) */}
         <Header
           onOpenAddModal={() => setIsAddModalOpen(true)}
@@ -164,7 +160,7 @@ export function App() {
 
         {/* Page Content Viewport with Accessible Suspense Fallback. A page that crashes shows a calm screen here and
             the menus around it keep working; going to another page tries again (the key). */}
-        <main id="main" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-4 pb-24 md:p-8 md:pb-8 focus:outline-none">
+        <main id="main" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 focus:outline-none">
           <ErrorBoundary key={activeTab} scope="page">
           <Suspense
             fallback={

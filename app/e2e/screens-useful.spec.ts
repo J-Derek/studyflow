@@ -21,7 +21,7 @@ test('an empty Timetable shows only the add-a-class card, with no empty week col
   await ready(page, '/calendar');
   await expect(page.getByText('Your weekly class schedule is empty')).toBeVisible();
   await expect(page.getByRole('button', { name: '+ Add Block' })).toHaveCount(0);
-  await expect(page.getByText('What do the labels mean?')).toHaveCount(0);
+  await expect(page.getByTestId('legend')).toHaveCount(0);
   await page.getByRole('button', { name: 'Add a block' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 });

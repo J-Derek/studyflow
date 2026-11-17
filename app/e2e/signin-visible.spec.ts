@@ -9,9 +9,9 @@ for (const [name, width, height] of [['desktop', 1280, 800], ['phone', 375, 800]
     await page.waitForFunction(() => !!(window as unknown as { __store?: { getState: () => { userId: string | null } } }).__store?.getState().userId);
 
     const buttons = page.getByRole('button', { name: 'Sign in with Google' });
-    // top bar (always) and the first-run card on the Today screen
+    // the top bar always has one (and the sidebar too on wide screens); the Today screen itself stays quiet
     await expect(buttons.first()).toBeVisible();
-    expect(await buttons.count()).toBeGreaterThanOrEqual(2);
+    expect(await buttons.count()).toBeGreaterThanOrEqual(1);
     for (let i = 0; i < (await buttons.count()); i++) {
       if (await buttons.nth(i).isVisible()) {
         const box = (await buttons.nth(i).boundingBox())!;
