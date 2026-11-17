@@ -9,7 +9,7 @@
     @apply font-display;
   }
   body {
-    @apply bg-canvas-light dark:bg-canvas-dark text-zinc-900 dark:text-zinc-100 antialiased font-sans min-h-screen selection:bg-blue-100 selection:text-blue-900 dark:selection:bg-blue-950 dark:selection:text-blue-200;
+    @apply bg-canvas-light dark:bg-canvas-dark text-zinc-900 dark:text-zinc-100 antialiased font-sans min-h-screen selection:bg-amber-100 selection:text-amber-900 dark:selection:bg-amber-950/40 dark:selection:text-amber-200;
   }
 }
 
@@ -22,7 +22,7 @@ textarea:focus-visible,
 summary:focus-visible,
 [role='button']:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid #1d4ed8 !important;
+  outline: 2px solid #1A2A4A !important;
   outline-offset: 2px;
 }
 .dark a:focus-visible,
@@ -151,6 +151,20 @@ summary:focus-visible,
 .sf-glow { box-shadow: 0 0 0 1px rgb(245 158 11 / 0.22), 0 0 10px 0 rgb(245 158 11 / 0.22); animation: sf-glow 3.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .sf-ring, .sf-flame, .sf-flame-core, .sf-glow, .sf-aura::before, .sf-aura::after { animation: none !important; }
+}
+
+@keyframes sf-splash {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-sf-splash {
+  animation: sf-splash 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* The writing space prints its own copy of the text (see components/WritingSpace). On screen it is hidden; when printing, only it shows. */

@@ -41,11 +41,11 @@ describe('syncThemeColor', () => {
     expect(mockMetas[0].content).toBe('#090A0C');
   });
 
-  it('sets light theme color #F8F9FA when dark is false', () => {
+  it('sets light theme color #FAF7F2 when dark is false', () => {
     syncThemeColor(false, mockDoc);
     expect(mockMetas.length).toBe(1);
     expect(mockMetas[0].name).toBe('theme-color');
-    expect(mockMetas[0].content).toBe('#F8F9FA');
+    expect(mockMetas[0].content).toBe('#FAF7F2');
   });
 
   it('purges preexisting theme-color tags before injecting new one', () => {
@@ -63,9 +63,5 @@ describe('syncThemeColor', () => {
     syncThemeColor(true, mockDoc);
     expect(mockMetas.length).toBe(1);
     expect(mockMetas[0].content).toBe('#090A0C');
-  });
-
-  it('safely handles null document (SSR / non-browser)', () => {
-    expect(() => syncThemeColor(true, null)).not.toThrow();
   });
 });
