@@ -15,8 +15,13 @@ describe('getTabFromPath', () => {
 
   it('says "notfound" for any other address instead of quietly showing Today', () => {
     expect(getTabFromPath('/nope')).toBe('notfound');
-    expect(getTabFromPath('/assignments/123')).toBe('notfound');
+    expect(getTabFromPath('/assignments/123/more')).toBe('notfound');
     expect(getTabFromPath('/__/auth/handler')).toBe('notfound');
+  });
+
+  it("gives an assignment's own page to the Assignments tab", () => {
+    expect(getTabFromPath('/assignments/123')).toBe('assignments');
+    expect(getTabFromPath('/assignments/abc-DEF/')).toBe('assignments');
   });
 
   it('round-trips the six pages', () => {

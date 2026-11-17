@@ -39,7 +39,7 @@ for (const [name, width, height] of [['phone', 375, 760], ['desktop', 1280, 800]
   });
 }
 
-test('a short note can be added to an assignment and is shown afterwards', async ({ page }) => {
+test('a note can be added to an assignment on its page and is shown on its card afterwards', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => !!(window as unknown as { __store?: { getState: () => { userId: string | null } } }).__store?.getState().userId);
   await page.getByPlaceholder(/Problem Set 2/).fill('Lab report');
@@ -47,13 +47,10 @@ test('a short note can be added to an assignment and is shown afterwards', async
   await page.getByPlaceholder(/CS 101/).first().fill('PHY 210');
   await page.getByRole('button', { name: /Save deadline/ }).click();
 
-  await page.getByRole('button', { name: 'Edit', exact: true }).click();
-  await page.getByRole('dialog').getByPlaceholder(/lecturer said/).fill('Include the error analysis. Lecturer wants graphs in colour.');
-  await page.getByRole('dialog').getByRole('button', { name: /Save changes/ }).click();
-  await expect(page.getByText('Include the error analysis.').first()).toBeVisible(); // on Today
-
-  await page.getByRole('link', { name: 'Assignments' }).first().click().catch(() => undefined);
   await page.goto('/assignments');
-  await expect(page.getByText('Include the error analysis.').first()).toBeVisible(); // on Assignments
-  await expect(page.getByRole('button', { name: /edit note for Lab report/i })).toBeVisible();
+  await page.getByRole('button', { name: /Add notes to Lab report/ }).click();
+  await page.getByRole('textbox', { name: 'Notes' }).fill('Include the error analysis. Lecturer wants graphs in colour.');
+  await page.getByRole('button', { name: 'All assignments' }).click();
+  await expect(page.getByText('Include the error analysis.').first()).toBeVisible(); // on the card
+  await expect(page.getByRole('button', { name: /open notes for Lab report/i })).toBeVisible();
 });

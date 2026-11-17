@@ -53,6 +53,7 @@ import { rollRepeats } from '../utils/repeat';
 import { newPeriodId, planArchive, type CarryChoice } from '../utils/periods';
 import { MAX_DRAFT_BODY, type AssignmentFieldChanges } from '../services/firestoreMappers';
 import { normalizeAssessments } from '../utils/assessments';
+import { notifyPathChange } from '../lib/route';
 
 export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'courses' | 'notes';
 
@@ -66,7 +67,8 @@ export type AppTab = NavigationTab | LegalTab | 'notfound';
 export function getTabFromPath(path: string): AppTab {
   const clean = path.replace(/\/$/, '').toLowerCase();
   if (clean === '' || clean === '/') return 'dashboard';
-  if (clean === '/assignments') return 'assignments';
+  // An assignment's own page (/assignments/<id>) belongs to the Assignments tab.
+  if (clean === '/assignments' || /^\/assignments\/[^/]+$/.test(clean)) return 'assignments';
   if (clean === '/calendar') return 'calendar';
   if (clean === '/timer') return 'timer';
   // "Grades" became "Courses"; the old address (bookmarks, links, the sitemap) still lands on the right page.
@@ -496,6 +498,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           if (window.location.pathname !== targetPath) {
             window.history.pushState({ tab }, '', targetPath);
           }
+          notifyPathChange(); // the Assignments tab follows the path (list or one assignment's page)
         }
       },
 

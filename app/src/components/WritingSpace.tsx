@@ -1,60 +1,24 @@
-import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import type { Assignment } from '../types';
-import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useDialog } from '../lib/useDialog';
 import { MAX_DRAFT_BODY } from '../services/firestoreMappers';
 import { MiniMarkdown } from './MiniMarkdown';
 import { FormatButtons } from './FormatToolbar';
 import { useFormatting } from '../lib/useFormatting';
 import { ExportButtons } from './ExportButtons';
-
-const AUTOSAVE_MS = 1000;
+import { useDraftText } from '../lib/useDraftText';
 
 /**
- * The writing space for one assignment: a plain text box with a few formatting buttons, a preview, automatic saving (one second after the
- * student stops typing, and again when they close it), and export to Word or PDF. The text is kept like a note: on this device and in the
- * account. Formatting is a small Markdown subset (see utils/miniMarkdown); nothing the student types is ever treated as HTML.
+ * The full-screen view of an assignment's notes: a plain text box with a few formatting buttons, a preview, automatic saving (one second
+ * after the student stops typing, and again when they close it), and export to Word or PDF. The text is kept like a note: on this device and
+ * in the account. Formatting is a small Markdown subset (see utils/miniMarkdown); nothing the student types is ever treated as HTML.
  */
 export const WritingSpace: React.FC<{ assignment: Assignment; onClose: () => void }> = ({ assignment, onClose }) => {
-  const { drafts, saveDraft } = useStudyFlowStore();
-  const stored = drafts.find((d) => d.id === assignment.id)?.body ?? '';
-  const [text, setText] = useState(stored);
-  const [status, setStatus] = useState<'saved' | 'saving'>('saved');
+  const { text, change, flush, status, wordCount } = useDraftText(assignment.id);
   const [mobileTab, setMobileTab] = useState<'write' | 'preview'>('write');
   const areaRef = useRef<HTMLTextAreaElement>(null);
-  const textRef = useRef(text);
-  const savedRef = useRef(stored);
-  const timer = useRef<number | undefined>(undefined);
   const titleId = useId();
-
-  const flush = useCallback(() => {
-    window.clearTimeout(timer.current);
-    if (textRef.current !== savedRef.current) {
-      savedRef.current = textRef.current;
-      saveDraft(assignment.id, textRef.current);
-    }
-    setStatus('saved');
-  }, [assignment.id, saveDraft]);
-
-  const change = (next: string) => {
-    const clipped = next.slice(0, MAX_DRAFT_BODY);
-    setText(clipped);
-    textRef.current = clipped;
-    setStatus('saving');
-    window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(flush, AUTOSAVE_MS);
-  };
-
-  // Closing (or the page leaving) saves what is typed so far.
-  useEffect(() => {
-    const onHide = () => flush();
-    window.addEventListener('pagehide', onHide);
-    return () => {
-      window.removeEventListener('pagehide', onHide);
-      flush();
-    };
-  }, [flush]);
 
   const close = () => {
     flush();
@@ -63,8 +27,6 @@ export const WritingSpace: React.FC<{ assignment: Assignment; onClose: () => voi
   const dialogRef = useDialog(true, close);
 
   const format = useFormatting(areaRef, text, change);
-
-  const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
 
   return (
     <>

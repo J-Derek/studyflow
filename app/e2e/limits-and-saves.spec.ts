@@ -26,14 +26,14 @@ async function open(page: Page, path: string) {
 const ASSIGNMENT = { title: 'Lab report', course: 'PHY 210', dueDate: '2030-01-15', priority: 'medium', status: 'pending', progress: 0 };
 
 test.describe('limits on what can be typed', () => {
-  test('the assignment dialog limits title, course, notes and the due date', async ({ page }) => {
+  test("the assignment dialog limits title, course and the due date (notes are on the assignment's page)", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await open(page, '/assignments');
     await page.getByRole('button', { name: 'Add assignment' }).first().click();
     const dialog = page.getByRole('dialog');
     await expect(dialog.getByPlaceholder('e.g. Problem Set 2')).toHaveAttribute('maxlength', '250');
     await expect(dialog.getByPlaceholder('e.g. CS 101 or Physics')).toHaveAttribute('maxlength', '200');
-    await expect(dialog.locator('textarea')).toHaveAttribute('maxlength', '2000');
+    await expect(dialog.locator('textarea')).toHaveCount(0);
     await expect(dialog.getByLabel('Due date')).toHaveAttribute('min', '2000-01-01');
     await expect(dialog.getByLabel('Due date')).toHaveAttribute('max', '2100-12-31');
   });

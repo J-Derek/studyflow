@@ -14,7 +14,13 @@ async function open(page: Page, path = '/assignments'): Promise<void> {
   await page.evaluate(() =>
     (window as unknown as W).__store.getState().addAssignment({ title: 'Contract law essay', course: 'LAW 101', dueDate: '2030-01-15', priority: 'medium', status: 'pending', progress: 0 })
   );
-  await page.getByRole('button', { name: 'Write for "Contract law essay"' }).click();
+  await openFullScreen(page);
+}
+
+/** The assignment's notes open full screen from its own page. */
+async function openFullScreen(page: Page): Promise<void> {
+  await page.getByRole('group', { name: 'Open details for "Contract law essay"' }).getByText('LAW 101').click();
+  await page.getByRole('button', { name: 'Full screen' }).click();
   await expect(page.getByTestId('writing-space')).toBeVisible();
 }
 
@@ -50,7 +56,7 @@ test('write, format, autosave, close, and find it again after a reload', async (
   await page.waitForFunction(() => !(window as unknown as W).__store.getState().isSyncing);
   await page.reload();
   await page.waitForFunction(() => !!(window as unknown as Partial<W>).__store?.getState().userId);
-  await page.getByRole('button', { name: 'Write for "Contract law essay"' }).click();
+  await page.getByRole('button', { name: 'Full screen' }).click(); // the reload kept the assignment's page
   await expect(area(page)).toHaveValue('Final text kept');
 });
 
