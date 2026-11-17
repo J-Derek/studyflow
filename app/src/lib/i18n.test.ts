@@ -28,8 +28,8 @@ describe('translate', () => {
     }
   });
 
-  it('keeps the same punctuation shape in both languages for the three steps', () => {
-    for (const k of ['first.step1', 'first.step2', 'first.step3'] as const) {
+  it('keeps the same punctuation shape in both languages for the promise and the example hint', () => {
+    for (const k of ['first.promise', 'first.exampleHint'] as const) {
       expect(STRINGS[k].sw.endsWith('.')).toBe(STRINGS[k].en.endsWith('.'));
     }
   });

@@ -20,15 +20,6 @@ export const STRINGS = {
   'nav.notes': { en: 'Notes', sw: 'Maelezo' },
 
   'first.promise': { en: 'Never miss a deadline.', sw: 'Usikose tarehe ya mwisho.' },
-  'first.intro': {
-    en: 'Add what is due and StudyFlow shows how many days are left. Then plan your week and start a focus timer.',
-    sw: 'Weka kinachotakiwa, StudyFlow ikuonyeshe siku zilizobaki. Kisha panga wiki yako na uanze kuzingatia.'
-  },
-  'first.step1': { en: 'Add a deadline: a title and a date is enough.', sw: 'Weka tarehe ya mwisho: kichwa na tarehe vinatosha.' },
-  'first.step2': { en: 'Today shows how many days are left.', sw: 'Leo inaonyesha siku zilizobaki.' },
-  'first.step3': { en: 'Start a focus block on it and tick it off.', sw: 'Anza kipindi cha kuzingatia, kisha tia alama ukimaliza.' },
-  'first.heading': { en: 'What is your next deadline?', sw: 'Ni lini tarehe yako ijayo?' },
-  'first.subtitle': { en: 'A title and a date is enough.', sw: 'Kichwa na tarehe vinatosha.' },
   'first.whatDue': { en: 'What is due?', sw: 'Nini kinatakiwa?' },
   'first.placeholder': { en: 'e.g. Problem Set 2 or Chapter 4 Summary', sw: 'mf. Zoezi la 2 au Muhtasari wa Sura ya 4' },
   'first.tryExample': { en: 'Try an example', sw: 'Jaribu mfano' },
