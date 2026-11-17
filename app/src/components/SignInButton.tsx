@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Loader2 } from 'lucide-react';
 import { GoogleIcon } from './GoogleIcon';
 import { friendlyAuthMessage, signInOrLinkWithGoogle, warmUpGoogleSignIn } from '../lib/authActions';
-import { isFinishingSignIn, subscribeFinishingSignIn } from '../lib/signInProgress';
+import { getSignInProgress, isFinishingSignIn, subscribeFinishingSignIn, subscribeSignInProgress } from '../lib/signInProgress';
 
 /** If a finished sign-in somehow leaves this button on screen, it comes back after this long. */
 const STAY_BUSY_MS = 20_000;
@@ -31,7 +31,10 @@ export const SignInButton: React.FC<SignInButtonProps> = ({ variant = 'block', e
   const [pressed, setPressed] = useState(false);
   // After the sign-in reload the page starts as a guest page again until the account has loaded: stay busy through that too.
   const finishing = useSyncExternalStore(subscribeFinishingSignIn, isFinishingSignIn, () => false);
-  const busy = pressed || finishing;
+  // Just before that reload the device is cleared and this button is drawn again from scratch, without its "pressed" state.
+  // The "moving your work" step is still running then, so stay busy for it too: no "Sign in with Google" flash before the reload.
+  const moving = useSyncExternalStore(subscribeSignInProgress, () => getSignInProgress() !== null, () => false);
+  const busy = pressed || finishing || moving;
   const [error, setError] = useState<string | null>(null);
   const releaseTimer = useRef<number | undefined>(undefined);
 

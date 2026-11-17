@@ -5,7 +5,6 @@ import { deleteAllFiles } from '../lib/localFiles';
 import React, { useState } from 'react';
 import { 
   X, 
-  ArrowLeft,
   HelpCircle, 
   CheckSquare, 
   Calendar, 
@@ -144,21 +143,12 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
         {/* Header */}
         <div className="p-4 md:p-5 border-b border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Go back"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[38px] rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-xs font-medium mr-1"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back</span>
-            </button>
             <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
               <HelpCircle className="h-4 w-4" />
             </div>
             <div>
               <h2 id="help-modal-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                Help & Guide
+                Help
               </h2>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">
                 A quick tour of what is here

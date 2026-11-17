@@ -32,12 +32,14 @@ test('a student can change the timer lengths with Apply, and they stick', async 
   await expect(page.getByRole('button', { name: /Short Break \(60m\)/ })).toBeVisible();
 });
 
-test('Cancel puts the saved lengths back', async ({ page }) => {
+test('Cancel puts the saved lengths back and folds the panel', async ({ page }) => {
   await page.goto('/timer');
   await ready(page);
   await page.getByText('Change timer lengths').click();
   await page.getByLabel('Focus', { exact: true }).fill('99');
   await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByLabel('Focus', { exact: true })).toBeHidden();
+  await page.getByText('Change timer lengths').click();
   await expect(page.getByLabel('Focus', { exact: true })).toHaveValue('25');
   await expect(page.getByRole('timer')).toHaveText('25:00');
 });
@@ -82,11 +84,21 @@ test('a length outside the limits says what it will become, before Apply', async
   await expect(page.getByText(/^Focus can be 1 to/)).toHaveCount(0);
 });
 
-test('the disabled Apply and Cancel buttons stay readable', async ({ page }) => {
+test('the close button folds the panel away', async ({ page }) => {
   await page.goto('/timer');
   await ready(page);
   await page.getByText('Change timer lengths').click();
-  for (const name of ['Apply', 'Cancel']) {
+  await expect(page.getByLabel('Focus', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Close timer lengths' }).click();
+  await expect(page.getByLabel('Focus', { exact: true })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Close timer lengths' })).toHaveCount(0);
+});
+
+test('the disabled Apply button stays readable', async ({ page }) => {
+  await page.goto('/timer');
+  await ready(page);
+  await page.getByText('Change timer lengths').click();
+  for (const name of ['Apply']) {
     const button = page.getByRole('button', { name, exact: true });
     await expect(button).toBeDisabled();
     const opacity = await button.evaluate((el) => getComputedStyle(el).opacity);

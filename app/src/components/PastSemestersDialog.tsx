@@ -54,22 +54,9 @@ export const PastSemestersDialog: React.FC<{ onClose: () => void }> = ({ onClose
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-xl max-h-[calc(100dvh-2rem)] overflow-y-auto bg-surface-light dark:bg-surface-dark border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-5 space-y-4"
       >
-        <div className="flex items-center justify-between gap-3 pb-2 border-b border-zinc-100 dark:border-zinc-800">
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              type="button"
-              onClick={open ? () => setOpenId(null) : onClose}
-              aria-label={open ? `Back to all past ${word}s` : "Go back"}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[38px] rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-xs font-medium shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back</span>
-            </button>
-            <h2 id={titleId} className="text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100 truncate min-w-0">
-              {open ? open.name : `Past ${word}s`}
-            </h2>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="flex items-center justify-center min-h-[40px] min-w-[40px] rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer shrink-0">
+        <div className="flex items-start justify-between gap-3">
+          <h2 id={titleId} className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{open ? open.name : `Past ${word}s`}</h2>
+          <button type="button" onClick={onClose} aria-label="Close" className="flex items-center justify-center min-h-[44px] min-w-[44px] -mt-2 -mr-2 rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">
             <X className="h-4 w-4" />
           </button>
         </div>

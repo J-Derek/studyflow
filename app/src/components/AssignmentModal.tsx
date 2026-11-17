@@ -4,7 +4,7 @@ import { kindOf } from '../utils/kinds';
 import { RepeatToggle } from './RepeatToggle';
 import { progressInfo } from '../utils/progress';
 import React, { useId, useState } from 'react';
-import { X, ArrowLeft, Calendar, Clock, BookOpen, AlertCircle } from 'lucide-react';
+import { X, Calendar, Clock, BookOpen, AlertCircle } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Priority, Assignment, AssignmentKind, Repeat } from '../types';
 
@@ -22,9 +22,11 @@ interface AssignmentModalProps {
   assignmentToEdit?: Assignment | null;
   /** For a new item: the due date to start with (for example the day tapped on the calendar). */
   initialDueDate?: string;
+  /** For a new item: the title to start with (for example what the student searched for and did not find). */
+  initialTitle?: string;
 }
 
-export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, assignmentToEdit, initialDueDate }) => {
+export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, assignmentToEdit, initialDueDate, initialTitle }) => {
   const { addAssignment, updateAssignment } = useStudyFlowStore();
 
   const [title, setTitle] = useState('');
@@ -52,7 +54,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
       setKind(kindOf(assignmentToEdit));
       setRepeat(assignmentToEdit.repeat);
     } else {
-      setTitle('');
+      setTitle(initialTitle ?? '');
       setCourse('');
       setDueDate(initialDueDate && isDateInRange(initialDueDate) ? initialDueDate : localDateISO());
       setDueTime('23:59');
@@ -62,7 +64,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
       setKind('assignment');
       setRepeat(undefined);
     }
-  }, [assignmentToEdit, isOpen, initialDueDate]);
+  }, [assignmentToEdit, isOpen, initialDueDate, initialTitle]);
 
   const dialogRef = useDialog(isOpen, onClose);
 
@@ -120,29 +122,18 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         className="bg-surface-light dark:bg-surface-dark rounded-xl w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto shadow-2xl border border-zinc-200 dark:border-zinc-800 transition-colors"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-zinc-100 dark:border-zinc-800">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Go back"
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[38px] rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-xs font-medium shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back</span>
-            </button>
-            <div className="min-w-0">
-              <h2 id="assignment-modal-title" className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm truncate">
-                {assignmentToEdit ? 'Edit assignment' : 'New assignment'}
-              </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">Add the title, course and due date</p>
-            </div>
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800">
+          <div>
+            <h2 id="assignment-modal-title" className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">
+              {assignmentToEdit ? 'Edit assignment' : 'New assignment'}
+            </h2>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">Add the title, course and due date</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="p-2 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0"
+            className="p-2 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>

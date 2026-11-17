@@ -14,7 +14,6 @@ import {
   Download,
   Database,
   ArrowRight,
-  ArrowLeft,
   Sparkles
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
@@ -179,16 +178,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         aria-label="Search and commands"
       >
         {/* Search Input Bay */}
-        <div className="flex items-center px-3.5 py-3 border-b border-zinc-200/80 dark:border-zinc-800/80 gap-2.5">
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Back"
-            className="sm:hidden flex items-center justify-center p-1.5 -ml-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <Search className="h-4 w-4 text-zinc-600 dark:text-zinc-400 shrink-0 hidden sm:block" />
+        <div className="flex items-center px-3.5 py-3 border-b border-zinc-200/80 dark:border-zinc-800/80 gap-3">
+          <Search className="h-4 w-4 text-zinc-600 dark:text-zinc-400 shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -204,14 +195,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-xs tabular-nums rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
             ESC
           </kbd>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close search"
-            className="sm:hidden text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer px-1 py-1"
-          >
-            Cancel
-          </button>
         </div>
 
         {/* Command Results List */}

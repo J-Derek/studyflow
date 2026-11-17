@@ -25,7 +25,7 @@ import { dueSoonTone } from '../utils/deadlineEmphasis';
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export const CalendarPage: React.FC = () => {
-  const { sessions, assignments, grades, addSession, updateSession, deleteSession } = useStudyFlowStore();
+  const { sessions, assignments, addSession, updateSession, deleteSession } = useStudyFlowStore();
 
   // Week or month, which month is shown, the day whose list is open, and the deadline being added or edited from a day.
   // Kept on this device, so a student who prefers Month does not land back on Week every visit.
@@ -93,31 +93,6 @@ export const CalendarPage: React.FC = () => {
   const clashing = useMemo(() => clashingIds(sessions), [sessions]);
   const timesInvalid = toMinutes(endTime) <= toMinutes(startTime);
   const [titleMissing, setTitleMissing] = useState(false);
-
-  const courseSuggestions = useMemo(() => {
-    const list = new Set<string>();
-    grades.forEach((g) => g.courseCode && list.add(g.courseCode));
-    assignments.forEach((a) => {
-      const c = a.course.split('—')[0]?.trim();
-      if (c) list.add(c);
-    });
-    sessions.forEach((s) => {
-      const c = s.course.split('—')[0]?.trim();
-      if (c && c !== 'General') list.add(c);
-    });
-    return Array.from(list).sort();
-  }, [grades, assignments, sessions]);
-
-  const applyPreset = (type: StudySession['type'], durationMinutes: number) => {
-    setSessionType(type);
-    const [h, m] = startTime.split(':').map(Number);
-    const startMins = (h || 0) * 60 + (m || 0);
-    const endMins = Math.min(23 * 60 + 59, startMins + durationMinutes);
-    const endH = String(Math.floor(endMins / 60)).padStart(2, '0');
-    const endM = String(endMins % 60).padStart(2, '0');
-    setEndTime(`${endH}:${endM}`);
-  };
-
   const newClashes = useMemo(
     () =>
       timesInvalid
@@ -189,7 +164,7 @@ export const CalendarPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-zinc-900 dark:text-zinc-50">Timetable</h1>
+          <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Timetable</h1>
           <p className="text-xs text-zinc-600 dark:text-zinc-400 font-sans">Your weekly classes and study blocks.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap sm:justify-end">
@@ -268,12 +243,11 @@ export const CalendarPage: React.FC = () => {
           {view === 'week' && weekOffset !== 0 && (
             <button
               onClick={() => setWeekOffset(0)}
-              className="inline-flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 px-2.5 py-1 rounded-lg border border-amber-300 dark:border-amber-700/60 bg-amber-50/70 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-950/50 text-xs font-medium transition"
+              className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs transition"
               title="Return to current week"
               aria-label="Return to current week"
             >
-              <RotateCcw className="h-3 w-3" />
-              <span className="hidden sm:inline">Current week</span>
+              <RotateCcw className="h-3.5 w-3.5" />
             </button>
           )}
           
@@ -570,55 +544,6 @@ export const CalendarPage: React.FC = () => {
                   onChange={(e) => setCourse(e.target.value)}
                   className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
                 />
-                <datalist id="course-suggestions">
-                  {courseSuggestions.map((c) => (
-                    <option key={c} value={c} />
-                  ))}
-                </datalist>
-              </div>
-
-              {/* Quick Duration & Type Presets */}
-              <div>
-                <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">
-                  Quick Presets
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('lecture', 60)}
-                    className="px-2 py-1 rounded text-2xs font-medium border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition"
-                  >
-                    1h Lecture
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('lab', 120)}
-                    className="px-2 py-1 rounded text-2xs font-medium border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition"
-                  >
-                    2h Lab
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('study', 45)}
-                    className="px-2 py-1 rounded text-2xs font-medium border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition"
-                  >
-                    45m Study
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('review', 90)}
-                    className="px-2 py-1 rounded text-2xs font-medium border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition"
-                  >
-                    1.5h Review
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('exam', 180)}
-                    className="px-2 py-1 rounded text-2xs font-medium border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition"
-                  >
-                    3h Exam
-                  </button>
-                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

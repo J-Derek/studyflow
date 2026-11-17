@@ -29,8 +29,8 @@ const illustration = (page: Page, kind: string) => page.locator(`svg[data-illust
 const SCREENS: Array<[string, string, string[]]> = [
   ['Assignments', '/assignments', ['assignments']],
   ['Notes', '/notes', ['notes']],
-  ['Timetable', '/calendar', ['timetable']],
-  ['Today', '/', ['assignments', 'sunrise']]
+  ['Timetable', '/calendar', ['timetable']]
+  // Today's first screen is only the add form now (quiet-first-screen.spec.ts), so it has no empty lists to illustrate.
 ];
 
 for (const [name, path, kinds] of SCREENS) {

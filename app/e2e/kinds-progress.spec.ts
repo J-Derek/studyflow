@@ -58,7 +58,7 @@ test('the add dialog asks what it is; the kind shows as a badge, survives a relo
 
 test('the first-deadline card on an empty Today asks what it is too', async ({ page }) => {
   await ready(page, '/');
-  const card = page.getByRole('heading', { name: 'What is your next deadline?' }).locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]');
+  const card = page.getByTestId('first-screen');
   await card.getByPlaceholder(/Problem Set 2/).fill('CAT 1');
   await card.getByRole('button', { name: 'More options' }).click();
   await card.getByPlaceholder('e.g. CS 101 or Physics').fill('ACS 443');
@@ -184,6 +184,5 @@ test('the keys: kinds on Assignments, class colours on the Timetable, each class
   const [a, b] = [await edge(lecture), await edge(exam)];
   expect(a).not.toBe(b);
   const cal = page.getByTestId('legend');
-  await cal.getByText('What do the labels mean?').click();
   for (const label of ['Lecture', 'Lab', 'Study', 'Review', 'Exam']) await expect(cal).toContainText(label);
 });

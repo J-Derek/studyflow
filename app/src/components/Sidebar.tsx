@@ -1,23 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrandMark } from './BrandMark';
 import {
   LayoutDashboard,
   CheckSquare,
   Calendar as CalendarIcon,
   Timer,
+  Cloud,
+  Sun,
+  Moon,
+  Monitor,
   Award,
   NotebookPen,
   PanelLeftClose,
-  PanelLeftOpen,
-  LogIn
+  PanelLeftOpen
 } from 'lucide-react';
 import { useStudyFlowStore, getPathFromTab } from '../store/studyFlowStore';
 import { useAccountView } from '../store/useAccountView';
+import { friendlyAuthMessage, signInOrLinkWithGoogle } from '../lib/authActions';
 import { cn } from '../utils/formatters';
 import { AccountMenu } from './AccountMenu';
 import { useI18n } from '../lib/i18n';
+import { LanguageToggle } from './LanguageToggle';
 import { Avatar } from './Avatar';
-import { signInOrLinkWithGoogle, friendlyAuthMessage } from '../lib/authActions';
+import { SignInButton } from './SignInButton';
 
 interface SidebarProps {
   onOpenBackup?: () => void;
@@ -28,22 +33,25 @@ interface SidebarProps {
   onToggleCollapsed?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  onOpenBackup,
-  onOpenProfile,
-  onOpenHelp,
-  collapsed = false,
-  onToggleCollapsed
-}) => {
-  const { activeTab, setActiveTab, user, assignments, customPhotoUrl } = useStudyFlowStore();
+export const Sidebar: React.FC<SidebarProps> = ({ onOpenBackup, onOpenProfile, onOpenHelp, collapsed = false, onToggleCollapsed }) => {
+  const {
+    activeTab,
+    setActiveTab,
+    user,
+    assignments,
+    customPhotoUrl,
+    theme,
+    themeMode,
+    setTheme,
+    setThemeMode
+  } = useStudyFlowStore();
   const account = useAccountView();
   const { t } = useI18n();
   const isAnonymous = !account.signedIn;
   const userEmail = account.email;
   const userPhotoUrl = account.photoUrl;
-  const displayName = isAnonymous ? (user.name || 'Guest') : user.name;
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
 
-  const [isAuthLoading, setIsAuthLoading] = React.useState(false);
   const handleGoogleAuth = async () => {
     try {
       setIsAuthLoading(true);
@@ -58,25 +66,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const pendingCount = assignments.filter((a) => a.status !== 'completed').length;
 
   const navItems = [
-    { id: 'dashboard'   as const, label: t('nav.today'),       icon: LayoutDashboard },
+    { id: 'dashboard' as const, label: t('nav.today'), icon: LayoutDashboard },
     { id: 'assignments' as const, label: t('nav.assignments'), icon: CheckSquare, badge: pendingCount },
-    { id: 'calendar'    as const, label: t('nav.timetable'),   icon: CalendarIcon },
-    { id: 'timer'       as const, label: t('nav.timer'),       icon: Timer },
-    { id: 'courses'     as const, label: t('nav.courses'),     icon: Award },
-    { id: 'notes'       as const, label: t('nav.notes'),       icon: NotebookPen },
+    { id: 'calendar' as const, label: t('nav.timetable'), icon: CalendarIcon },
+    { id: 'timer' as const, label: t('nav.timer'), icon: Timer },
+    { id: 'courses' as const, label: t('nav.courses'), icon: Award },
+    { id: 'notes' as const, label: t('nav.notes'), icon: NotebookPen }
   ];
 
-  // SR labels survive collapse
-  const srLabel = (text: string) => <span className={collapsed ? 'sr-only' : undefined}>{text}</span>;
+  // Labels stay in the page for screen readers when the sidebar is collapsed.
+  const label = (text: string) => <span className={collapsed ? 'sr-only' : undefined}>{text}</span>;
+  const displayName = isAnonymous ? 'Guest' : user.name;
 
-  const toggleBtn = onToggleCollapsed && (
+  const toggle = onToggleCollapsed && (
     <button
       type="button"
       onClick={onToggleCollapsed}
       aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       aria-expanded={!collapsed}
       title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-      className="h-8 w-8 shrink-0 flex items-center justify-center rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+      className="h-8 w-8 shrink-0 flex items-center justify-center rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
     >
       {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
     </button>
@@ -85,152 +94,185 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       className={cn(
-        'hidden md:flex flex-col shrink-0 border-r border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark sticky top-0 h-screen z-30 select-none transition-[width] duration-150',
-        collapsed ? 'w-16 p-2' : 'w-56 p-3'
+        'hidden md:flex flex-col shrink-0 border-r border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark sticky top-0 h-screen justify-between z-30 select-none transition-[width] duration-150',
+        collapsed ? 'w-16 p-2' : 'w-60 p-3.5'
       )}
     >
-      {/* ── TOP: logo + collapse toggle ── */}
-      <div
-        className={cn(
-          'flex items-center mb-4',
-          collapsed ? 'flex-col gap-2 items-center' : 'justify-between gap-2 px-1 pt-1'
-        )}
-      >
-        <div className="flex items-center min-w-0">
-          {collapsed ? (
-            <>
-              <BrandMark variant="icon" className="h-8 w-8 shrink-0" />
-              <span className="sr-only">StudyFlow</span>
-            </>
-          ) : (
-            <BrandMark variant="full" className="h-7 w-auto max-w-[150px] shrink-0" />
-          )}
+      <div className={cn(collapsed ? 'space-y-3 flex flex-col items-center' : 'space-y-3.5')}>
+        {/* Brand header and collapse control */}
+        <div className={cn('flex items-center', collapsed ? 'flex-col gap-2' : 'justify-between gap-2.5 px-2 py-1.5')}>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <BrandMark className="h-8 w-8 shrink-0" />
+            {!collapsed && (
+              <div className="min-w-0">
+                <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 tracking-tight">StudyFlow</span>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">Study planner</p>
+              </div>
+            )}
+            {collapsed && <span className="sr-only">StudyFlow</span>}
+          </div>
+          {toggle}
         </div>
-        {toggleBtn}
-      </div>
 
-      {/* ── NAV LINKS ── */}
-      <nav
-        className={cn('flex-1 overflow-y-auto', collapsed ? 'flex flex-col items-center space-y-1' : 'space-y-0.5')}
-        aria-label="Main navigation"
-      >
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          const showBadge = (item.badge ?? 0) > 0;
-          return (
-            <a
-              key={item.id}
-              href={getPathFromTab(item.id)}
-              onClick={(e) => { e.preventDefault(); setActiveTab(item.id); }}
-              aria-current={isActive ? 'page' : undefined}
-              title={collapsed ? item.label : undefined}
+        {/* Theme: one switcher. Signed-in students have it in their account menu; guests (no menu) get it here. */}
+        {isAnonymous && (collapsed ? (
+          <button
+            type="button"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            className="h-9 w-9 flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+        ) : (
+          <div className="p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800/90 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center">
+            <button
+              onClick={() => setTheme('light')}
               className={cn(
-                'relative flex items-center rounded-lg text-xs font-medium transition-colors duration-150',
-                collapsed ? 'h-9 w-9 justify-center' : 'w-full justify-between px-2.5 py-2',
-                isActive
-                  ? 'bg-zinc-100 dark:bg-zinc-800/90 text-zinc-950 dark:text-zinc-100 font-semibold border border-zinc-200/70 dark:border-zinc-700/70 shadow-2xs'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/60 dark:hover:bg-zinc-800/50'
+                'flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium transition-colors duration-150',
+                themeMode === 'light'
+                  ? 'bg-surface-light text-zinc-900 shadow-2xs border border-zinc-200/60'
+                  : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
               )}
             >
-              <span className="flex items-center gap-2.5">
-                <Icon
-                  className={cn(
-                    collapsed ? 'h-4 w-4' : 'h-3.5 w-3.5',
-                    isActive ? 'text-brand-navy dark:text-brand-gold' : 'text-zinc-500 dark:text-zinc-400'
-                  )}
-                />
-                {srLabel(item.label)}
-              </span>
-              {showBadge && (
-                <span
-                  className={cn(
-                    'tabular-nums rounded font-semibold text-[10px] leading-none',
-                    collapsed
-                      ? 'absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 flex items-center justify-center'
-                      : 'px-1.5 py-0.5',
-                    isActive
-                      ? 'bg-brand-navy dark:bg-brand-gold text-white dark:text-zinc-900'
-                      : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
-                  )}
-                >
-                  {item.badge}
-                </span>
+              <Sun className={cn('h-3 w-3', themeMode === 'light' ? 'text-amber-500 fill-amber-500' : 'text-zinc-600 dark:text-zinc-400')} />
+              <span>Light</span>
+            </button>
+            <button
+              onClick={() => setTheme('dark')}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium transition-colors duration-150',
+                themeMode === 'dark'
+                  ? 'bg-zinc-900 text-zinc-100 shadow-2xs border border-zinc-700/80'
+                  : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
               )}
-            </a>
-          );
-        })}
-      </nav>
-
-      {/* ── BOTTOM: account strip ── */}
-      <div className={cn('mt-3 pt-3 border-t border-zinc-200/60 dark:border-zinc-800/60', collapsed ? 'flex flex-col items-center gap-2' : '')}>
-        {!isAnonymous ? (
-          /* Signed-in: avatar + account menu */
-          <div className={cn('flex', collapsed ? 'justify-center' : 'px-0.5')}>
-            <AccountMenu
-              placement="up"
-              onOpenProfile={onOpenProfile}
-              onOpenBackup={onOpenBackup}
-              onOpenHelp={onOpenHelp}
-            />
+            >
+              <Moon className={cn('h-3 w-3', themeMode === 'dark' ? 'text-blue-400 fill-blue-400' : 'text-zinc-600 dark:text-zinc-400')} />
+              <span>Dark</span>
+            </button>
+            <button
+              onClick={() => setThemeMode('system')}
+              aria-pressed={themeMode === 'system'}
+              title="Match this device's light or dark setting"
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium transition-colors duration-150',
+                themeMode === 'system'
+                  ? 'bg-surface-light dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs border border-zinc-200/60 dark:border-zinc-700/80'
+                  : 'text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+              )}
+            >
+              <Monitor className="h-3 w-3" />
+              <span>Device</span>
+            </button>
           </div>
-        ) : collapsed ? (
-          /* Guest + collapsed: avatar icon → opens profile */
+        ))}
+
+        {!collapsed && <LanguageToggle className="mx-2 self-start" />}
+
+        {/* Navigation Links */}
+        <nav className={cn('pt-1', collapsed ? 'space-y-1 flex flex-col items-center' : 'space-y-0.5')}>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            const showBadge = item.badge !== undefined && item.badge > 0;
+            return (
+              <a
+                key={item.id}
+                href={getPathFromTab(item.id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveTab(item.id);
+                }}
+                aria-current={isActive ? 'page' : undefined}
+                title={collapsed ? item.label : undefined}
+                className={cn(
+                  'relative flex items-center rounded-lg text-xs font-medium transition-colors duration-150 group',
+                  collapsed ? 'h-9 w-9 justify-center' : 'w-full justify-between px-2.5 py-1.5',
+                  isActive
+                    ? 'bg-zinc-100 dark:bg-zinc-800/90 text-zinc-950 dark:text-zinc-100 font-semibold border border-zinc-200/70 dark:border-zinc-700/70 shadow-2xs'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/60 dark:hover:bg-zinc-800/50'
+                )}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Icon className={cn(collapsed ? 'h-4 w-4' : 'h-3.5 w-3.5', isActive ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-600 dark:text-zinc-400')} />
+                  {label(item.label)}
+                </div>
+                {showBadge && (
+                  <span
+                    className={cn(
+                      'text-xs tabular-nums rounded font-medium',
+                      collapsed ? 'absolute -top-1 -right-1 min-w-4 h-4 px-1 flex items-center justify-center text-[11px] leading-none' : 'px-1.5 py-0.5',
+                      isActive ? 'bg-blue-600 text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
+                    )}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </a>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Account: signed-in students see just their picture, which opens a details panel. */}
+      {!isAnonymous ? (
+        <div className={cn('flex', collapsed ? 'justify-center' : 'px-1')}>
+          <AccountMenu placement="up" onOpenProfile={onOpenProfile} onOpenBackup={onOpenBackup} onOpenHelp={onOpenHelp} />
+        </div>
+      ) : collapsed ? (
+        <div className="flex flex-col items-center gap-2">
           <button
             type="button"
             onClick={onOpenProfile}
-            title={`${displayName} — tap to edit profile`}
+            title="Edit profile"
             className="rounded-full hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <Avatar
-              name={displayName}
-              photoUrl={customPhotoUrl || userPhotoUrl}
-              isGuest={isAnonymous && !customPhotoUrl}
-              className="h-8 w-8"
-            />
+            <Avatar name={displayName} photoUrl={customPhotoUrl || userPhotoUrl} isGuest={isAnonymous && !customPhotoUrl} className="h-8 w-8" />
             <span className="sr-only">{displayName}, edit profile</span>
           </button>
-        ) : (
-          /* Guest + expanded: identity row + single quiet sign-in link */
-          <div className="px-0.5 space-y-2">
-            {/* Identity row */}
+          <button
+            type="button"
+            onClick={() => {
+              if (onOpenBackup) onOpenBackup();
+              else handleGoogleAuth();
+            }}
+            disabled={isAuthLoading}
+            aria-label="Sign in to keep your data"
+            title="Sign in to keep your data"
+            className="h-9 w-9 flex items-center justify-center rounded-lg text-blue-600 dark:text-blue-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 cursor-pointer"
+          >
+            <Cloud className="h-4 w-4" />
+          </button>
+        </div>
+      ) : (
+        <div className="p-2.5 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/70 dark:border-zinc-800/80 rounded-xl space-y-2 transition-colors">
+          <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={onOpenProfile}
-              className="w-full flex items-center gap-2.5 hover:opacity-80 transition-opacity cursor-pointer text-left min-h-[44px] group"
               title="Edit profile"
+              className="flex items-center gap-2 overflow-hidden text-left hover:opacity-80 transition-opacity cursor-pointer group flex-1 min-w-0"
             >
-              <Avatar
-                name={displayName}
-                photoUrl={customPhotoUrl || userPhotoUrl}
-                isGuest={isAnonymous && !customPhotoUrl}
-                className="h-8 w-8 shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-brand-navy dark:group-hover:text-brand-gold transition-colors">
+              <Avatar name={displayName} photoUrl={customPhotoUrl || userPhotoUrl} isGuest={isAnonymous && !customPhotoUrl} className="h-8 w-8" />
+              <div className="truncate flex-1 min-w-0">
+                <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {displayName}
                 </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                  {isAnonymous ? 'Not signed in' : (userEmail || 'Signed in')}
+                <p className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 truncate">
+                  {isAnonymous ? 'Not signed in' : userEmail || 'Signed in'}
                 </p>
               </div>
+              <span className="sr-only">, edit profile</span>
             </button>
-
-            {/* Quiet sign-in nudge — not a full Google button, just a text link */}
-            {isAnonymous && (
-              <button
-                type="button"
-                onClick={() => onOpenBackup ? onOpenBackup() : handleGoogleAuth()}
-                disabled={isAuthLoading}
-                className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg border border-zinc-200/80 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                <LogIn className="h-3.5 w-3.5 shrink-0 text-brand-navy dark:text-brand-gold" />
-                <span>{isAuthLoading ? 'Signing in…' : 'Sign in to sync'}</span>
-              </button>
-            )}
           </div>
-        )}
-      </div>
+
+          {/* Guests sign in here */}
+          <div className="pt-2 border-t border-zinc-200/60 dark:border-zinc-700/60">
+            <SignInButton errorPlacement="above" />
+          </div>
+        </div>
+      )}
     </aside>
   );
 };

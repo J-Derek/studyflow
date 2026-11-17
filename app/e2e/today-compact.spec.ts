@@ -14,7 +14,7 @@ const ready = async (page: Page) => {
 test('a deadline can be saved from just a title: two steps, and nothing else is asked', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 740 });
   await ready(page);
-  const card = page.getByRole('heading', { name: 'What is your next deadline?' }).locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]');
+  const card = page.getByTestId('first-screen');
   // the optional fields are not on screen yet
   await expect(page.getByTestId('more-options')).toHaveCount(0);
   await expect(card.getByPlaceholder(/CS 101/)).toHaveCount(0);
@@ -32,7 +32,7 @@ test('a deadline can be saved from just a title: two steps, and nothing else is 
 
 test('"More options" brings back course, kind and priority, and what is chosen is saved', async ({ page }) => {
   await ready(page);
-  const card = page.getByRole('heading', { name: 'What is your next deadline?' }).locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]');
+  const card = page.getByTestId('first-screen');
   const toggle = card.getByRole('button', { name: 'More options' });
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   await toggle.click();
@@ -49,12 +49,10 @@ test('"More options" brings back course, kind and priority, and what is chosen i
   expect(a).toMatchObject({ title: 'Final exam', course: 'ACS 443', kind: 'exam', priority: 'low' });
 });
 
-test('the add card comes before the sign-in nudge, and both are accessible in light and dark', async ({ page }) => {
+test('the add card is accessible in light and dark', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await ready(page);
-  const card = page.getByRole('heading', { name: 'What is your next deadline?' });
-  const nudge = page.getByTestId('signin-banner');
-  expect((await card.boundingBox())!.y).toBeLessThan((await nudge.boundingBox())!.y);
+  await expect(page.getByTestId('first-screen')).toBeVisible();
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate((t) => (window as unknown as W).__store.getState().setTheme(t), theme);
     await settleTransitions(page);

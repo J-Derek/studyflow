@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Play,
   Pause,
   RotateCcw,
-  CheckCircle,
   Volume2,
   VolumeX,
   CloudRain,
@@ -14,7 +13,6 @@ import {
   Music2,
   Moon,
   Headphones,
-  Link2,
   X
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
@@ -76,7 +74,9 @@ const LengthsForm: React.FC<{
   timerStatus: 'idle' | 'running' | 'paused' | string;
   signedIn: boolean;
   onApply: (lengths: { focusDuration: number; shortBreakDuration: number; longBreakDuration: number }, restartCurrent: boolean) => void;
-}> = ({ settings, timerStatus, signedIn, onApply }) => {
+  /** Folds the panel away. */
+  onClose: () => void;
+}> = ({ settings, timerStatus, signedIn, onApply, onClose }) => {
   const saved = [toMinutes(settings.focusDuration), toMinutes(settings.shortBreakDuration), toMinutes(settings.longBreakDuration)];
   const [draft, setDraft] = useState<string[]>(saved);
   const savedKey = saved.join('/');
@@ -130,7 +130,14 @@ const LengthsForm: React.FC<{
             Restart with the new length
           </button>
         )}
-        <button type="button" disabled={!changed} onClick={() => setDraft(saved)} className={`${btn} text-zinc-700 dark:text-zinc-300`}>
+        <button
+          type="button"
+          onClick={() => {
+            setDraft(saved);
+            onClose();
+          }}
+          className={`${btn} text-zinc-700 dark:text-zinc-300`}
+        >
           Cancel
         </button>
         <button type="button" onClick={() => setDraft(['25', '5', '15'])} className="min-h-[44px] px-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
@@ -158,37 +165,24 @@ export const FocusTimerPage: React.FC = () => {
     resetTimer,
     setSoundscape,
     setSoundscapeVolume,
-    isAnonymous,
-    assignments,
-    grades
+    isAnonymous
   } = useStudyFlowStore();
 
   const timerMode = timer.mode;
-  // Which sound is being chosen: the one for focus blocks or the one for breaks.
+  // Which sound is being chosen: the one for focus blocks or the one for breaks. It follows the timer mode; a switch by hand
+  // lasts until the mode changes (by a tap or when a block ends), and then the card follows the mode again.
   const [pickedTarget, setPickedTarget] = useState<'focus' | 'break' | null>(null);
+  const [lengthsOpen, setLengthsOpen] = useState(false);
   const [pickedInMode, setPickedInMode] = useState(timer.mode);
   if (pickedInMode !== timer.mode) {
     setPickedInMode(timer.mode);
     setPickedTarget(null);
   }
-
-  // Session linkage: link this focus session to a specific assignment
-  const [linkedAssignmentId, setLinkedAssignmentId] = useState<string>('');
-  const [showLinkPicker, setShowLinkPicker] = useState(false);
-
-  const pendingAssignments = useMemo(
-    () => assignments.filter((a) => a.status !== 'completed').sort((a, b) => a.dueDate.localeCompare(b.dueDate)),
-    [assignments]
-  );
-  const linkedAssignment = pendingAssignments.find((a) => a.id === linkedAssignmentId) ?? null;
-
   const soundTarget: 'focus' | 'break' = pickedTarget ?? (timer.mode === 'focus' ? 'focus' : 'break');
   const chosenSound = soundTarget === 'focus' ? soundscape : breakSoundscape;
   const soundIsPlayingNow = timer.status === 'running' && (timer.mode === 'focus') === (soundTarget === 'focus');
   const timerIsRunning = timer.status === 'running';
   const timerSecondsLeft = remainingSeconds(timer, nowMs);
-  // suppress unused warning
-  void grades;
 
   // Keeps the screen on while a block runs (Screen Wake Lock), and asks again when the tab comes back
   useEffect(() => {
@@ -287,7 +281,7 @@ export const FocusTimerPage: React.FC = () => {
     <div className="space-y-6 animate-fade-in pb-16 max-w-2xl mx-auto">
       {/* Header */}
       <div className="text-center space-y-1">
-        <h1 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
           Focus timer
         </h1>
         <p className="text-xs text-zinc-600 dark:text-zinc-400 font-sans">
@@ -337,56 +331,46 @@ export const FocusTimerPage: React.FC = () => {
       {/* Circular Laboratory Gauge Display */}
       <div className="bg-surface-light dark:bg-surface-dark p-8 md:p-10 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex flex-col items-center justify-center relative overflow-hidden transition-colors">
         <div className="relative w-60 h-60 md:w-68 md:h-68 flex items-center justify-center">
-          {/* Base SVG Ring with brand gradient */}
+          {/* Base SVG Ring */}
           <svg className="w-full h-full transform -rotate-90" aria-hidden="true">
-            <defs>
-              <linearGradient id="sf-focus-ring" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#C19B45" />
-                <stop offset="100%" stopColor="#1A2A4A" />
-              </linearGradient>
-              <linearGradient id="sf-break-ring" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#34d399" />
-                <stop offset="100%" stopColor="#059669" />
-              </linearGradient>
-            </defs>
             <circle
               cx="50%"
               cy="50%"
               r={radius}
-              className="text-zinc-100 dark:text-zinc-800"
+              className="text-zinc-100 dark:text-zinc-850"
               strokeWidth="4"
               stroke="currentColor"
               fill="transparent"
             />
-            {/* Dynamic Progress Circle — brand gold→navy for focus, emerald for breaks */}
+            {/* Dynamic Progress Circle */}
             <circle
               cx="50%"
               cy="50%"
               r={radius}
-              stroke={timerMode === 'focus' ? 'url(#sf-focus-ring)' : 'url(#sf-break-ring)'}
-              strokeWidth="6"
+              className={`transition-[stroke-dashoffset] duration-500 ${
+                timerMode === 'focus'
+                  ? 'text-blue-600 dark:text-blue-500'
+                  : timerMode === 'shortBreak'
+                  ? 'text-emerald-500'
+                  : 'text-blue-400'
+              }`}
+              strokeWidth="5"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
+              stroke="currentColor"
               fill="transparent"
-              className="transition-[stroke-dashoffset] duration-500"
             />
           </svg>
 
           {/* Inner Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="font-mono text-5xl md:text-6xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums ">
+            <span className="font-display text-5xl md:text-6xl font-medium text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums ">
               <span role="timer" aria-live="off" aria-label={`${timerMode === 'focus' ? 'Focus' : 'Break'} timer`}>{formatTimeLeft(timerSecondsLeft)}</span>
             </span>
             <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 mt-2">
               {timerMode === 'focus' ? 'Focus' : 'Break'}
             </span>
-            {/* Linked assignment mini badge inside ring */}
-            {linkedAssignment && timerMode === 'focus' && (
-              <span className="mt-1.5 max-w-[160px] px-2 py-0.5 rounded-full bg-brand-gold/10 dark:bg-amber-900/30 border border-brand-gold/30 dark:border-amber-700/50 text-xs font-medium text-amber-800 dark:text-amber-200 truncate">
-                {linkedAssignment.title}
-              </span>
-            )}
           </div>
         </div>
 
@@ -419,78 +403,33 @@ export const FocusTimerPage: React.FC = () => {
             </span>
           )}
 
-          <button
-            onClick={() => {
-              confetti({
-                particleCount: 80,
-                spread: 70,
-                origin: { y: 0.6 },
-                disableForReducedMotion: true
-              });
-            }}
-            className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700/80 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition active:scale-95"
-            title="Test Milestone Celebration"
-            aria-label="Test milestone celebration"
-          >
-            <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-          </button>
         </div>
-
-        {/* Assignment linkage row */}
-        {timerMode === 'focus' && (
-          <div className="mt-5 w-full max-w-xs">
-            {!showLinkPicker ? (
-              <button
-                type="button"
-                onClick={() => setShowLinkPicker(true)}
-                className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-xs text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 dark:hover:border-amber-700/60 hover:text-zinc-800 dark:hover:text-zinc-200 transition"
-              >
-                <Link2 className="h-3 w-3" />
-                {linkedAssignment ? (
-                  <span className="truncate max-w-[200px]">Linked: {linkedAssignment.title}</span>
-                ) : (
-                  'Link to an assignment'
-                )}
-              </button>
-            ) : (
-              <div className="relative">
-                <select
-                  aria-label="Link this session to an assignment"
-                  value={linkedAssignmentId}
-                  onChange={(e) => { setLinkedAssignmentId(e.target.value); setShowLinkPicker(false); }}
-                  autoFocus
-                  className="w-full pr-8 pl-3 py-1.5 rounded-lg border border-brand-gold/50 dark:border-amber-700/60 bg-surface-light dark:bg-zinc-900 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-brand-gold/60"
-                >
-                  <option value="">— No link —</option>
-                  {pendingAssignments.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.title} · {a.dueDate}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => setShowLinkPicker(false)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-                  aria-label="Close picker"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Tab-inactive Accuracy Badge */}
         
       </div>
 
       {/* Timer lengths */}
-      <details className="mx-auto w-full max-w-md rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark">
-        <summary className="cursor-pointer select-none px-4 min-h-[44px] flex items-center text-sm font-medium text-zinc-800 dark:text-zinc-200">
+      <details
+        open={lengthsOpen}
+        onToggle={(e) => setLengthsOpen(e.currentTarget.open)}
+        className="relative mx-auto w-full max-w-md rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark"
+      >
+        <summary className="cursor-pointer select-none px-4 pr-14 min-h-[44px] flex items-center text-sm font-medium text-zinc-800 dark:text-zinc-200">
           Change timer lengths
         </summary>
-        <LengthsForm key={`${timerSettings.focusDuration}/${timerSettings.shortBreakDuration}/${timerSettings.longBreakDuration}`} settings={timerSettings} timerStatus={timer.status} signedIn={!isAnonymous} onApply={(lengths, restartCurrent) => updateTimerSettings(lengths, { restartCurrent })} />
+        {lengthsOpen && (
+          <button
+            type="button"
+            onClick={() => setLengthsOpen(false)}
+            aria-label="Close timer lengths"
+            title="Close"
+            className="absolute top-0 right-0 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
+        <LengthsForm key={`${timerSettings.focusDuration}/${timerSettings.shortBreakDuration}/${timerSettings.longBreakDuration}`} settings={timerSettings} timerStatus={timer.status} signedIn={!isAnonymous} onApply={(lengths, restartCurrent) => updateTimerSettings(lengths, { restartCurrent })} onClose={() => setLengthsOpen(false)} />
       </details>
 
       {/* AMBIENT SOUNDSCAPES DEEP WORK AUDIO (Web Audio Synthesizer) */}

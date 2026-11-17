@@ -7,9 +7,7 @@ import {
   Trash2, 
   Edit3, 
   CheckSquare,
-  PenLine,
-  Flame,
-  Repeat
+  PenLine
 } from 'lucide-react';
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
@@ -28,7 +26,7 @@ import { orderAssignmentsList } from '../utils/assignmentOrder';
 const OWN_CONTROLS = 'button, a, input, label, select, textarea';
 
 export const AssignmentsPage: React.FC = () => {
-  const { assignments, toggleAssignmentComplete, deleteAssignment, restoreAssignment, toggleSubtask, addSubtask, setActiveTab } = useStudyFlowStore();
+  const { assignments, toggleAssignmentComplete, deleteAssignment, restoreAssignment, toggleSubtask, addSubtask } = useStudyFlowStore();
   // The last deleted assignment stays recoverable for a few seconds.
   const [justDeleted, setJustDeleted] = useState<Assignment | null>(null);
   useEffect(() => {
@@ -42,10 +40,11 @@ export const AssignmentsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
-  const [selectedKind, setSelectedKind] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  // A search that found nothing can become a new assignment with that title.
+  const [newTitle, setNewTitle] = useState<string | undefined>(undefined);
   // The assignment whose writing space is open.
   const [writing, setWriting] = useState<Assignment | null>(null);
 
@@ -55,7 +54,7 @@ export const AssignmentsPage: React.FC = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCourse, selectedPriority, selectedKind, selectedStatus]);
+  }, [searchQuery, selectedCourse, selectedPriority, selectedStatus]);
 
   // Extract unique courses
   const courses = useMemo(() => {
@@ -73,7 +72,6 @@ export const AssignmentsPage: React.FC = () => {
 
       const matchesCourse = selectedCourse === 'all' || a.course === selectedCourse;
       const matchesPriority = selectedPriority === 'all' || a.priority === selectedPriority;
-      const matchesKind = selectedKind === 'all' || kindOf(a) === selectedKind;
       const matchesStatus =
         selectedStatus === 'all'
           ? true
@@ -81,9 +79,9 @@ export const AssignmentsPage: React.FC = () => {
           ? a.status === 'completed'
           : a.status !== 'completed';
 
-      return matchesSearch && matchesCourse && matchesPriority && matchesKind && matchesStatus;
+      return matchesSearch && matchesCourse && matchesPriority && matchesStatus;
     }));
-  }, [assignments, searchQuery, selectedCourse, selectedPriority, selectedKind, selectedStatus]);
+  }, [assignments, searchQuery, selectedCourse, selectedPriority, selectedStatus]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAssignments.length / ITEMS_PER_PAGE));
   const paginatedAssignments = useMemo(() => {
@@ -111,7 +109,7 @@ export const AssignmentsPage: React.FC = () => {
   return (
     <div className="space-y-5 animate-fade-in pb-16">
       <div>
-        <h1 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-zinc-900 dark:text-zinc-50">Assignments</h1>
+        <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Assignments</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Everything due, in one list.</p>
       </div>
 
@@ -184,24 +182,6 @@ export const AssignmentsPage: React.FC = () => {
                 <option value="low">Low priority</option>
               </select>
             </div>
-
-            {/* Type/Kind filter */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-zinc-600 dark:text-zinc-400 tabular-nums text-xs">Type:</span>
-              <select
-                aria-label="Filter by type"
-                value={selectedKind}
-                onChange={(e) => setSelectedKind(e.target.value)}
-                className="min-h-[44px] md:min-h-0 px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
-              >
-                <option value="all">All types</option>
-                <option value="assignment">Assignments</option>
-                <option value="exam">Exams</option>
-                <option value="test">Tests & Quizzes</option>
-                <option value="reading">Readings</option>
-                <option value="project">Projects</option>
-              </select>
-            </div>
           </div>
 
           <div className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
@@ -223,10 +203,26 @@ export const AssignmentsPage: React.FC = () => {
               {assignments.length === 0 ? 'No assignments yet' : 'No assignments match filters'}
             </h2>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto mt-0.5">
-              {assignments.length === 0 
-                ? 'Add a problem set, paper, exam or reading to start tracking deadlines.' 
-                : 'Adjust your search filters or click "New Assignment" to add an assignments milestone.'}
+              {assignments.length === 0
+                ? 'Add a problem set, paper, exam or reading to start tracking deadlines.'
+                : 'Nothing matches. Try another search or filter.'}
             </p>
+            {assignments.length > 0 && searchQuery.trim() !== '' && (
+              <div className="mt-4 flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingAssignment(null);
+                    setNewTitle(searchQuery.trim().slice(0, LIMITS.assignmentTitle));
+                    setModalOpen(true);
+                  }}
+                  className="px-3.5 py-1.5 min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs cursor-pointer inline-flex items-center gap-1.5 max-w-full"
+                >
+                  <Plus className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">Add “{searchQuery.trim()}” as an assignment</span>
+                </button>
+              </div>
+            )}
             {assignments.length === 0 && (
               <div className="mt-4 flex items-center justify-center gap-2">
                 <button
@@ -256,7 +252,7 @@ export const AssignmentsPage: React.FC = () => {
                 onKeyDown={(e) => openFromKey(e, asg)}
                 className={`p-3.5 cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-400 transition-[background-color] duration-200 motion-reduce:transition-none hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 flex flex-col gap-2.5 ${
                   // finished: a muted background and the struck-through title; no fading, which dropped its text below 4.5:1 contrast
-                  isCompleted ? 'bg-zinc-50 dark:bg-zinc-900/60' : ''
+                  isCompleted ? 'bg-zinc-50 dark:bg-zinc-900/60 border-l-4 border-l-emerald-600 dark:border-l-emerald-500' : ''
                 }`}
               >
                 {/* Main Assignment Row */}
@@ -296,12 +292,6 @@ export const AssignmentsPage: React.FC = () => {
                           Sample
                         </span>
                       )}
-                      {asg.repeat?.every === 'week' && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0" title="Repeats weekly">
-                          <Repeat className="h-2.5 w-2.5" />
-                          <span className="hidden sm:inline">Weekly</span>
-                        </span>
-                      )}
 
                     </div>
                   </div>
@@ -314,7 +304,7 @@ export const AssignmentsPage: React.FC = () => {
                     </span>
 
                     {/* Progress: a percentage from the checklist ticks, or the simple status in words when there is no checklist */}
-                    {progress.mode === 'checklist' ? (
+                    {isCompleted ? null : progress.mode === 'checklist' ? (
                       <div
                         className="hidden lg:flex items-center gap-1.5 tabular-nums text-xs text-zinc-600 dark:text-zinc-400"
                         title={progress.note}
@@ -333,7 +323,13 @@ export const AssignmentsPage: React.FC = () => {
                       </span>
                     )}
 
-                    {/* Due Date — clean monospace */}
+                    {/* Due date, or "Done" once it is finished: "9d overdue" on finished work was wrong */}
+                    {isCompleted ? (
+                      <span data-testid="done-badge" className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:text-emerald-300">
+                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        Done
+                      </span>
+                    ) : (
                     <span
                       className={`tabular-nums text-xs  ${
                         isUrgent && !isCompleted
@@ -343,20 +339,10 @@ export const AssignmentsPage: React.FC = () => {
                     >
                       {label}
                     </span>
+                    )}
 
-                    {/* Edit, Focus and Delete Actions */}
+                    {/* Edit and Delete Actions */}
                     <div className="flex items-center gap-1">
-                      {!isCompleted && (
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab('timer')}
-                          className="min-h-[44px] min-w-[44px] -my-3 inline-flex items-center justify-center rounded text-zinc-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition"
-                          title={`Focus (25m) on "${asg.title}"`}
-                          aria-label={`Start timer for "${asg.title}"`}
-                        >
-                          <Flame className="h-3.5 w-3.5" />
-                        </button>
-                      )}
                       <button
                         onClick={() => handleEdit(asg)}
                         className="min-h-[44px] min-w-[44px] -my-3 inline-flex items-center justify-center rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
@@ -532,8 +518,12 @@ export const AssignmentsPage: React.FC = () => {
 
       <AssignmentModal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setNewTitle(undefined);
+        }}
         assignmentToEdit={editingAssignment}
+        initialTitle={newTitle}
       />
 
       {writing && <WritingSpace assignment={writing} onClose={() => setWriting(null)} />}
