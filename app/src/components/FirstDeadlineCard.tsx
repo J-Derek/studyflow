@@ -165,28 +165,10 @@ export const FirstDeadlineCard: React.FC<FirstDeadlineCardProps> = ({ onSuccessF
 
   return (
     <div data-testid="first-screen" className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark p-4 sm:p-5 md:p-6 transition-colors shadow-2xs">
-      <div data-testid="what-is-studyflow" className="mb-4 space-y-1">
-        <div className="flex items-start justify-between gap-3">
-          <p className="font-display text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">{t('first.promise')}</p>
-          <LanguageToggle className="shrink-0" />
-        </div>
-        <p className="text-sm text-zinc-700 dark:text-zinc-300">{t('first.intro')}</p>
-      </div>
-      <ol data-testid="how-it-works" className="mb-4 hidden sm:grid gap-2 sm:grid-cols-3 text-xs text-zinc-700 dark:text-zinc-300">
-        {(['first.step1', 'first.step2', 'first.step3'] as const).map((key, i) => (
-          <li key={key} className="flex items-start gap-2 rounded-lg bg-zinc-100/70 dark:bg-zinc-800/50 px-3 py-2">
-            <span aria-hidden="true" className="tabular-nums font-semibold text-zinc-900 dark:text-zinc-100">{i + 1}</span>
-            <span>{t(key)}</span>
-          </li>
-        ))}
-      </ol>
-      <div className="space-y-1 mb-4">
-        <h2 className="text-lg md:text-xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
-          {t('first.heading')}
-        </h2>
-        <p className="hidden sm:block text-xs text-zinc-600 dark:text-zinc-400">
-          {t('first.subtitle')}
-        </p>
+      {/* A first-time student reads one line, then types. No paragraph, no steps: the form explains itself. */}
+      <div data-testid="what-is-studyflow" className="mb-4 flex items-start justify-between gap-3">
+        <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">{t('first.promise')}</h2>
+        <LanguageToggle className="shrink-0" />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">

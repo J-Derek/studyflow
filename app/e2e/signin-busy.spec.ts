@@ -56,10 +56,13 @@ test('signing in to an existing account never shows "Sign in with Google" again 
   const watch = () => {
     let last = '';
     setInterval(() => {
-      // Once the account has loaded the banner folds away (aria-hidden, no height) but its button stays in the page: that is not visible, so it does not count.
-      const banner = document.querySelector('[data-testid="signin-banner"]');
-      const b = banner && banner.getAttribute('aria-hidden') !== 'true' ? banner.querySelector('button') : null;
-      const t = b ? (b.textContent ?? '').trim() : '(gone)';
+      // Only the app's own page: the init script also runs in Google's sign-in pop-up, which has "Sign in" buttons of its own.
+      if (location.pathname.includes('/emulator/') || location.pathname.startsWith('/__/auth')) return;
+      // The sign-in button in the top bar. Once the account has loaded it is replaced by the account menu.
+      const b = Array.from(document.querySelectorAll('header button')).find((x) => /Sign(ing)? in/.test(x.textContent ?? '')) ?? null;
+      // the top-bar button holds a short and a long label (one shows per screen size), so read what it says, not the raw text
+      const raw = b ? (b.textContent ?? '') : '';
+      const t = !b ? '(gone)' : /Signing in/.test(raw) ? 'Signing in…' : 'Sign in with Google';
       if (t !== last) {
         last = t;
         (window as unknown as { reportLabel?: (t: string) => void }).reportLabel?.(t);
@@ -68,10 +71,10 @@ test('signing in to an existing account never shows "Sign in with Google" again 
   };
   await page.addInitScript(watch);
   await page.evaluate(watch);
-  await expect(page.getByTestId('signin-banner').getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
+  await expect(page.locator('header').getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
 
   const secondPopup = chooseAccount(page, email);
-  await page.getByTestId('signin-banner').getByRole('button', { name: 'Sign in with Google' }).click();
+  await page.locator('header').getByRole('button', { name: 'Sign in with Google' }).click();
   await continueThroughAgeGate(page);
   await secondPopup;
   await page.waitForFunction((e) => (window as unknown as W).__store?.getState().userEmail === e, email, { timeout: 30_000 });

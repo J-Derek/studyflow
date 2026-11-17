@@ -22,7 +22,6 @@ import { WritingSpace } from '../components/WritingSpace';
 import { celebrate } from '../components/CelebrateBurst';
 import { kindOf } from '../utils/kinds';
 import { selectPendingDeadlines } from '../utils/calendarMonth';
-import { SignInButton } from '../components/SignInButton';
 import { GettingStartedChecklist } from '../components/GettingStartedChecklist';
 
 interface DashboardProps {
@@ -87,8 +86,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const currentDayOfWeek = new Date().getDay();
   const todaysSessions = sessions.filter((s) => s.dayOfWeek === currentDayOfWeek);
 
-  // Shown to a guest with nothing saved yet. It folds away (rather than vanishing) when they sign in.
-  const showSignInBanner = isAnonymous && assignments.length === 0;
+  // A brand-new student sees only the add form: no zero numbers and no empty lists until there is something to show.
+  const brandNew = assignments.length === 0 && grades.length === 0 && pomodorosCompleted === 0;
+  const showLists = assignments.length > 0 || todaysSessions.length > 0;
 
   return (
     <div className="space-y-6 animate-fade-in pb-16">
@@ -136,21 +136,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {assignments.length === 0 && (
         <FirstDeadlineCard />
       )}
-
-      {/* First visit: make signing in obvious for students who already use StudyFlow elsewhere */}
-      <div
-        data-testid="signin-banner"
-        aria-hidden={!showSignInBanner}
-        inert={!showSignInBanner}
-        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark px-4 overflow-hidden transition-[max-height,opacity,margin,padding,border-width] duration-300 ease-out motion-reduce:transition-none ${
-          showSignInBanner ? 'py-3 max-h-60 opacity-100' : 'max-h-0 opacity-0 !py-0 !mt-0 !border-0'
-        }`}
-      >
-        <p className="text-sm text-zinc-700 dark:text-zinc-300">Already use StudyFlow on another device? Sign in to see your plan here.</p>
-        <div className="sm:w-60 shrink-0">
-          <SignInButton />
-        </div>
-      </div>
 
       {/* One dominant thing first: what is due next. Everything else is quiet. */}
       {justSaved && (
@@ -204,7 +189,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </section>
       )}
 
-      <dl className="flex flex-wrap gap-x-10 gap-y-4 px-1">
+      {!brandNew && <dl className="flex flex-wrap gap-x-10 gap-y-4 px-1">
         <div>
           <dt className="text-sm text-zinc-600 dark:text-zinc-400">To do</dt>
           <dd className="font-display tabular-nums text-3xl font-semibold text-zinc-900 dark:text-zinc-50">{pendingAssignments.length}</dd>
@@ -221,7 +206,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <dt className="text-sm text-zinc-600 dark:text-zinc-400">{scale === 'us4' ? 'Projected GPA' : 'Average so far'}</dt>
           <dd className="font-display tabular-nums text-3xl font-semibold text-zinc-900 dark:text-zinc-50">{overall.hasData ? overall.value : '—'}<span className="ml-2 text-sm font-normal font-sans text-zinc-600 dark:text-zinc-400">{overall.hasData ? (overall.standing ?? overall.unit) : 'Add graded work in Grades'}</span></dd>
         </div>
-      </dl>
+      </dl>}
 
       {assignments.length > 0 && !assignments.some((a) => !a.sample && a.status === 'completed') && <GettingStartedChecklist
         onOpenAddModal={onOpenAddModal || (() => setIsModalOpen(true))}
@@ -230,7 +215,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
 
       {/* Main Content Split: Upcoming assignments and today's classes */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {showLists && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: upcoming assignments (2 cols) */}
         <div className="lg:col-span-2 space-y-3">
           <div className="flex items-center justify-between pb-1">
@@ -389,7 +374,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             )}
           </div>
         </div>
-      </div>
+      </div>}
 
       <AssignmentModal
         isOpen={isModalOpen || (!!editing && editingStillExists)}

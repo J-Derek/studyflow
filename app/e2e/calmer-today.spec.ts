@@ -12,11 +12,9 @@ const ready = async (page: Page) => {
 test('the first screen makes one plain promise, above the one thing to do', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 740 });
   await ready(page);
-  const intro = page.getByTestId('what-is-studyflow');
-  await expect(intro).toContainText('Never miss a deadline.');
-  await expect(intro).toContainText('Add what is due and StudyFlow shows how many days are left.');
-  const heading = page.getByRole('heading', { name: 'What is your next deadline?' });
-  expect((await intro.boundingBox())!.y).toBeLessThan((await heading.boundingBox())!.y);
+  const promise = page.getByTestId('first-screen').getByRole('heading', { name: 'Never miss a deadline.' });
+  const field = page.getByLabel('What is due?');
+  expect((await promise.boundingBox())!.y).toBeLessThan((await field.boundingBox())!.y);
 });
 
 test('after the first save there is one message at a time, and the checklist is folded', async ({ page }) => {
@@ -92,11 +90,9 @@ test.describe('timetable at a narrower desktop width', () => {
   });
 });
 
-test('three short steps show how it works, and "Try an example" fills in a sample the student can change', async ({ page }) => {
+test('"Try an example" fills in a sample the student can change', async ({ page }) => {
   await ready(page);
   await page.setViewportSize({ width: 1024, height: 768 });
-  const steps = page.getByTestId('how-it-works').getByRole('listitem');
-  await expect(steps).toContainText(['Add a deadline: a title and a date is enough.', 'Today shows how many days are left.', 'Start a focus block on it and tick it off.']);
 
   const title = page.getByLabel('What is due?');
   await expect(title).toHaveValue('');
