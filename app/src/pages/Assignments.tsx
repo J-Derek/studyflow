@@ -7,7 +7,9 @@ import {
   Trash2, 
   Edit3, 
   CheckSquare,
-  PenLine
+  PenLine,
+  Flame,
+  Repeat
 } from 'lucide-react';
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
@@ -26,7 +28,7 @@ import { orderAssignmentsList } from '../utils/assignmentOrder';
 const OWN_CONTROLS = 'button, a, input, label, select, textarea';
 
 export const AssignmentsPage: React.FC = () => {
-  const { assignments, toggleAssignmentComplete, deleteAssignment, restoreAssignment, toggleSubtask, addSubtask } = useStudyFlowStore();
+  const { assignments, toggleAssignmentComplete, deleteAssignment, restoreAssignment, toggleSubtask, addSubtask, setActiveTab } = useStudyFlowStore();
   // The last deleted assignment stays recoverable for a few seconds.
   const [justDeleted, setJustDeleted] = useState<Assignment | null>(null);
   useEffect(() => {
@@ -40,6 +42,7 @@ export const AssignmentsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
+  const [selectedKind, setSelectedKind] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
@@ -52,7 +55,7 @@ export const AssignmentsPage: React.FC = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCourse, selectedPriority, selectedStatus]);
+  }, [searchQuery, selectedCourse, selectedPriority, selectedKind, selectedStatus]);
 
   // Extract unique courses
   const courses = useMemo(() => {
@@ -70,6 +73,7 @@ export const AssignmentsPage: React.FC = () => {
 
       const matchesCourse = selectedCourse === 'all' || a.course === selectedCourse;
       const matchesPriority = selectedPriority === 'all' || a.priority === selectedPriority;
+      const matchesKind = selectedKind === 'all' || kindOf(a) === selectedKind;
       const matchesStatus =
         selectedStatus === 'all'
           ? true
@@ -77,9 +81,9 @@ export const AssignmentsPage: React.FC = () => {
           ? a.status === 'completed'
           : a.status !== 'completed';
 
-      return matchesSearch && matchesCourse && matchesPriority && matchesStatus;
+      return matchesSearch && matchesCourse && matchesPriority && matchesKind && matchesStatus;
     }));
-  }, [assignments, searchQuery, selectedCourse, selectedPriority, selectedStatus]);
+  }, [assignments, searchQuery, selectedCourse, selectedPriority, selectedKind, selectedStatus]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAssignments.length / ITEMS_PER_PAGE));
   const paginatedAssignments = useMemo(() => {
@@ -180,6 +184,24 @@ export const AssignmentsPage: React.FC = () => {
                 <option value="low">Low priority</option>
               </select>
             </div>
+
+            {/* Type/Kind filter */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-zinc-600 dark:text-zinc-400 tabular-nums text-xs">Type:</span>
+              <select
+                aria-label="Filter by type"
+                value={selectedKind}
+                onChange={(e) => setSelectedKind(e.target.value)}
+                className="min-h-[44px] md:min-h-0 px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
+              >
+                <option value="all">All types</option>
+                <option value="assignment">Assignments</option>
+                <option value="exam">Exams</option>
+                <option value="test">Tests & Quizzes</option>
+                <option value="reading">Readings</option>
+                <option value="project">Projects</option>
+              </select>
+            </div>
           </div>
 
           <div className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
@@ -274,6 +296,12 @@ export const AssignmentsPage: React.FC = () => {
                           Sample
                         </span>
                       )}
+                      {asg.repeat?.every === 'week' && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0" title="Repeats weekly">
+                          <Repeat className="h-2.5 w-2.5" />
+                          <span className="hidden sm:inline">Weekly</span>
+                        </span>
+                      )}
 
                     </div>
                   </div>
@@ -316,8 +344,19 @@ export const AssignmentsPage: React.FC = () => {
                       {label}
                     </span>
 
-                    {/* Edit and Delete Actions */}
+                    {/* Edit, Focus and Delete Actions */}
                     <div className="flex items-center gap-1">
+                      {!isCompleted && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('timer')}
+                          className="min-h-[44px] min-w-[44px] -my-3 inline-flex items-center justify-center rounded text-zinc-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition"
+                          title={`Focus (25m) on "${asg.title}"`}
+                          aria-label={`Start timer for "${asg.title}"`}
+                        >
+                          <Flame className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       <button
                         onClick={() => handleEdit(asg)}
                         className="min-h-[44px] min-w-[44px] -my-3 inline-flex items-center justify-center rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"

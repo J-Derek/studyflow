@@ -81,7 +81,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
         <div className="p-4 md:p-5 flex flex-col justify-between">
           <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{scale === 'us4' ? 'Projected GPA' : 'Average so far'}</span>
           <div className="my-2.5 flex items-baseline gap-2">
-            <span className="text-3xl md:text-4xl tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+            <span className={`text-3xl md:text-4xl tabular-nums font-semibold tracking-tight ${hasGpa ? 'text-brand-gold dark:text-amber-400' : 'text-zinc-900 dark:text-zinc-50'}`}>
               {hasGpa ? termGpa : '—'}
             </span>
             {hasGpa && <span className="text-xs text-zinc-600 dark:text-zinc-400">{overall.unit}</span>}
@@ -193,6 +193,39 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                 <span>85%</span>
                 <span>100%</span>
               </div>
+
+              {/* Progress bar toward target */}
+              {selectedCourse && (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
+                    <span>Current progress toward target <strong className="text-zinc-800 dark:text-zinc-200">{targetLabel(scale, selectedCourse.targetLetter)}</strong></span>
+                    <span className="tabular-nums">{simCoursePct.toFixed(1)}%</span>
+                  </div>
+                  <div className="relative h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                    {/* Target threshold marker */}
+                    {(() => {
+                      const targetThreshold = (() => {
+                        const letter = selectedCourse.targetLetter;
+                        const thresholds: Record<string, number> = { 'A+':97,'A':93,'A-':90,'B+':87,'B':83,'B-':80,'C+':77,'C':73,'C-':70,'D':60 };
+                        return thresholds[letter] ?? 70;
+                      })();
+                      return (
+                        <>
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${simCoursePct >= targetThreshold ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-brand-gold dark:bg-amber-400'}`}
+                            style={{ width: `${Math.min(100, simCoursePct)}%` }}
+                          />
+                          <div
+                            className="absolute top-0 bottom-0 w-0.5 bg-zinc-900/50 dark:bg-zinc-100/50"
+                            style={{ left: `${targetThreshold}%` }}
+                            title={`Target: ${targetLabel(scale, selectedCourse.targetLetter)}`}
+                          />
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Projected Result Callout */}
