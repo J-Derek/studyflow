@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // StudyFlow brand palette — sourced from logo-ref.png
+        // StudyFlow brand palette — sourced from official brand mark
         canvas: {
           light: '#FAF7F2',   // warm cream parchment (logo background tone)
           dark: '#0D0F14',    // deep obsidian for night sessions

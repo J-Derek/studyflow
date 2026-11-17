@@ -70,7 +70,7 @@ export const InitialLoader: React.FC<InitialLoaderProps> = ({ durationMs = 1800 
         {/* Logo Image */}
         <div className="relative mb-6">
           <img
-            src={isDark ? '/logo/logo-dark.webp' : '/logo/logo.webp'}
+            src={isDark ? '/logo/logo-dark.webp' : '/logo/logo-transparent.webp'}
             alt="StudyFlow"
             className="w-72 sm:w-84 h-auto drop-shadow-sm transition-transform duration-700 hover:scale-[1.02]"
             draggable={false}
