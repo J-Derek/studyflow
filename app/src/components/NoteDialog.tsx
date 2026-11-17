@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { BookOpen, Pencil, Pin, PinOff, Trash2, X } from 'lucide-react';
+import { BookOpen, Maximize2, Minimize2, Pencil, Pin, PinOff, Trash2, X } from 'lucide-react';
 import type { Note } from '../types';
 import { useDialog } from '../lib/useDialog';
 import { NOTE_FORMAT } from '../utils/miniMarkdown';
@@ -41,6 +41,8 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
   const [pinned, setPinned] = useState(note?.pinned ?? false);
   const [askDiscard, setAskDiscard] = useState(false);
   const [reading, setReading] = useState(false);
+  // Writing full screen: the same editor, filling the window. Escape steps back out of it before it would close the note.
+  const [full, setFull] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   // The same formatting buttons as the writing space for assignments.
   const format = useFormatting(bodyRef, body, (next) => setBody(next.slice(0, NOTE_BODY_MAX)));
@@ -55,7 +57,8 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
     else onClose();
   };
   // The full-screen reader has its own focus handling while it is open.
-  const dialogRef = useDialog(!reading, requestClose);
+  const dialogRef = useDialog(!reading, full ? () => setFull(false) : requestClose);
+  const isFull = full && mode === 'edit';
 
   const save = () => {
     if (!canSave) return;
@@ -77,8 +80,8 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
-      onClick={requestClose}
+      className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center ${isFull ? 'p-0' : 'p-4'}`}
+      onClick={isFull ? undefined : requestClose}
     >
       <div
         ref={dialogRef}
@@ -86,7 +89,12 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
         aria-modal="true"
         aria-labelledby="note-dialog-title"
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl max-h-[calc(100dvh-2rem)] overflow-y-auto bg-surface-light dark:bg-surface-dark border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-5 space-y-4"
+        data-fullscreen={isFull || undefined}
+        className={`bg-surface-light dark:bg-surface-dark overflow-y-auto ${
+          isFull
+            ? 'w-full h-[100dvh] flex flex-col gap-4 p-4 md:p-8'
+            : 'w-full max-w-xl max-h-[calc(100dvh-2rem)] border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-5 space-y-4'
+        }`}
       >
         <div className="flex items-start justify-between gap-3">
           <h2 id="note-dialog-title" className="text-base font-semibold text-zinc-900 dark:text-zinc-50 break-words min-w-0">
@@ -167,7 +175,8 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
               />
             </div>
 
-            <div className="space-y-1">
+            {/* Full screen is for writing: the course and pin fields wait (their values are kept) until the student steps back out. */}
+            <div className={isFull ? 'hidden' : 'space-y-1'}>
               <label htmlFor="note-course" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 Course (optional)
               </label>
@@ -187,12 +196,25 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
               </datalist>
             </div>
 
-            <div className="space-y-1">
+            <div className={isFull ? 'flex-1 min-h-0 flex flex-col gap-1' : 'space-y-1'}>
               <label htmlFor="note-body" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 Note
               </label>
               <div role="toolbar" aria-label="Formatting" className="flex flex-wrap items-center gap-1 -ml-1">
                 <FormatButtons onFormat={format} />
+                <span className="flex-1" />
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setFull((v) => !v)}
+                  aria-pressed={full}
+                  aria-label={full ? 'Exit full screen' : 'Full screen'}
+                  title={full ? 'Exit full screen (Esc)' : 'Full screen'}
+                  className="flex items-center justify-center gap-1.5 min-h-[44px] px-2.5 rounded-md text-sm text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+                >
+                  {full ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Maximize2 className="h-4 w-4" aria-hidden="true" />}
+                  <span className="hidden sm:inline">{full ? 'Exit full screen' : 'Full screen'}</span>
+                </button>
               </div>
               <textarea
                 id="note-body"
@@ -202,7 +224,7 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
                 maxLength={NOTE_BODY_MAX}
                 placeholder="Write here. Use the buttons for headings, bold, italic and lists. A link to slides or a reading becomes clickable when you view the note."
                 onChange={(e) => setBody(e.target.value)}
-                className={`${field} py-2 resize-y`}
+                className={`${field} py-2 ${isFull ? 'flex-1 resize-none text-base leading-relaxed' : 'resize-y'}`}
               />
               {body.length > NOTE_BODY_MAX * 0.8 && (
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">
@@ -211,7 +233,7 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
               )}
             </div>
 
-            <label className="flex items-center gap-2 min-h-[44px] text-sm text-zinc-800 dark:text-zinc-200 cursor-pointer">
+            <label className={`${isFull ? 'hidden' : 'flex'} items-center gap-2 min-h-[44px] text-sm text-zinc-800 dark:text-zinc-200 cursor-pointer`}>
               <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} className="h-4 w-4" />
               <span>Pin to the top</span>
             </label>
