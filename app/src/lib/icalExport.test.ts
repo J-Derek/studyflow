@@ -189,3 +189,27 @@ describe('one month for the calendar', () => {
     expect(dates.length).toBeGreaterThanOrEqual(4);
   });
 });
+
+describe('one-off blocks and semester dates in the export', () => {
+  const exam = lecture({ id: 'x1', title: 'Algorithms final', type: 'exam', dayOfWeek: 3, date: '2026-12-02', startTime: '09:00', endTime: '12:00' });
+  const base = { timeZone: 'Africa/Nairobi', semesterStart: '2026-09-07', semesterEnd: '2026-11-27', now: NOW };
+  it('exports a dated block once, on its date, even after the semester ends', () => {
+    const ics = generateICalendarFeed([exam], base);
+    expect(ics).toContain('DTSTART;TZID=Africa/Nairobi:20261202T090000');
+    expect(ics).toContain('DTEND;TZID=Africa/Nairobi:20261202T120000');
+    const { events } = parse(ics);
+    expect(events).toHaveLength(1);
+    expect(events[0].isRecurring()).toBe(false);
+  });
+  it('a month file holds a dated block only when its date is in that month', () => {
+    expect(parse(generateICalendarFeed([exam], monthIcsOptions(2026, 12, base))).events).toHaveLength(1);
+    expect(parse(generateICalendarFeed([exam], monthIcsOptions(2026, 11, base))).events).toHaveLength(0);
+  });
+  it('a month file runs weekly classes only inside the semester', () => {
+    const nov = monthIcsOptions(2026, 11, base);
+    expect(nov.semesterStart).toBe('2026-11-01');
+    expect(nov.semesterEnd).toBe('2026-11-27');
+    // December is after the semester: no weekly classes at all
+    expect(parse(generateICalendarFeed([lecture()], monthIcsOptions(2026, 12, base))).events).toHaveLength(0);
+  });
+});

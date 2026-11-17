@@ -86,6 +86,14 @@ describe('sessionToDoc', () => {
     const doc = sessionToDoc({ id: 's', title: 't', course: 'c', dayOfWeek: 1, startTime: '09:00', endTime: '10:00', type: 'lecture' });
     expect('color' in doc).toBe(false);
   });
+  it('keeps the date of a one-off block, and leaves it out for a weekly one', () => {
+    const exam = { id: 's', title: 't', course: 'c', dayOfWeek: 3, startTime: '09:00', endTime: '12:00', type: 'exam' as const, date: '2026-11-18' };
+    expect(sessionToDoc(exam).date).toBe('2026-11-18');
+    expect(docToSession('s', sessionToDoc(exam)).date).toBe('2026-11-18');
+    expect('date' in sessionToDoc({ ...exam, date: undefined })).toBe(false);
+    expect(docToSession('s', { ...sessionToDoc(exam), date: 'next week' }).date).toBeUndefined();
+    expect(docToSession('s', { ...sessionToDoc(exam), date: 20261118 }).date).toBeUndefined();
+  });
 });
 
 import { docToGrade, gradeToDoc } from './firestoreMappers';

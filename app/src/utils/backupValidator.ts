@@ -134,6 +134,7 @@ function isValidSession(item: unknown): item is StudySession {
   if (typeof s.startTime !== 'string' || !TIME_RE.test(s.startTime)) return false;
   if (typeof s.endTime !== 'string' || !TIME_RE.test(s.endTime)) return false;
   if (!['lecture', 'lab', 'study', 'review', 'exam'].includes(s.type as string)) return false;
+  if (s.date !== undefined && (typeof s.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s.date))) return false;
 
   return true;
 }
@@ -205,6 +206,7 @@ function cleanSession(x: StudySession): StudySession {
     startTime: x.startTime,
     endTime: x.endTime,
     type: x.type,
+    ...(x.date ? { date: x.date } : {}),
     ...(typeof x.color === 'string' ? { color: x.color.slice(0, 50) } : {}),
     ...archivedTag(x.archivedPeriod)
   };

@@ -267,4 +267,14 @@ describe('backupValidator', () => {
     expect(validateBackupJson('').success).toBe(false);
     expect(validateBackupJson('{ broken json').success).toBe(false);
   });
+
+  it('keeps the date of a one-off block and refuses a bad one', () => {
+    const withDate = JSON.parse(JSON.stringify(sampleValidPayload));
+    withDate.ledger.sessions[0] = { ...withDate.ledger.sessions[0], type: 'exam', date: '2026-12-02' };
+    const ok = validateBackupJson(JSON.stringify(withDate));
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data.ledger.sessions[0].date).toBe('2026-12-02');
+    withDate.ledger.sessions[0].date = '2 Dec';
+    expect(validateBackupJson(JSON.stringify(withDate)).success).toBe(false);
+  });
 });

@@ -112,7 +112,7 @@ export const PastSemestersDialog: React.FC<{ onClose: () => void }> = ({ onClose
                       <ul className="space-y-1">
                         {it.sessions.map((s) => (
                           <li key={s.id} className="text-sm text-zinc-800 dark:text-zinc-200">
-                            {s.title} <span className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">· {DAY[s.dayOfWeek]} {s.startTime} - {s.endTime} · {CLASS_TYPE_META[s.type]?.label ?? s.type}</span>
+                            {s.title} <span className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">· {DAY[s.dayOfWeek]}{s.date ? ` ${s.date}` : ''} {s.startTime} - {s.endTime} · {CLASS_TYPE_META[s.type]?.label ?? s.type}</span>
                           </li>
                         ))}
                       </ul>

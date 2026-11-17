@@ -5,7 +5,7 @@ import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useDialog } from '../lib/useDialog';
 import { exportMonth, exportTimetable } from '../lib/exportTimetable';
-import { clashingIds, findClashes, toMinutes } from '../utils/timetable';
+import { clashingIds, findClashes, isOneOff, toMinutes } from '../utils/timetable';
 import type { StudySession } from '../types';
 import { Legend } from '../components/Legend';
 import { CLASS_TYPE_META } from '../utils/kinds';
@@ -17,15 +17,27 @@ import { DaySheet } from '../components/DaySheet';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { KindBadge } from '../components/KindBadge';
 import { BusyWeekNotice } from '../components/BusyWeekNotice';
-import { classesOn, deadlinesByDate, monthLabel, monthSummary, selectPendingDeadlines } from '../utils/calendarMonth';
+import { classesOn, dayOfWeekOf, deadlinesByDate, inTerm, meetsOn, monthLabel, monthSummary, selectPendingDeadlines, type Term } from '../utils/calendarMonth';
+import { SemesterDatesDialog } from '../components/SemesterDatesDialog';
 import { kindOf } from '../utils/kinds';
 import { readCalendarView, saveCalendarView, type CalendarView } from '../utils/calendarView';
 import { dueSoonTone } from '../utils/deadlineEmphasis';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** "7 Sep 2026" */
+const shortDate = (iso: string) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${d} ${SHORT_MONTHS[m - 1]} ${y}`;
+};
 
 export const CalendarPage: React.FC = () => {
   const { sessions, assignments, addSession, updateSession, deleteSession } = useStudyFlowStore();
+  const semesterStart = useStudyFlowStore((s) => s.user.semesterStart);
+  const semesterEnd = useStudyFlowStore((s) => s.user.semesterEnd);
+  // Weekly classes show only inside the semester; with no dates set they show every week.
+  const term = useMemo<Term>(() => ({ start: semesterStart, end: semesterEnd }), [semesterStart, semesterEnd]);
+  const [semesterOpen, setSemesterOpen] = useState(false);
 
   // Week or month, which month is shown, the day whose list is open, and the deadline being added or edited from a day.
   // Kept on this device, so a student who prefers Month does not land back on Week every visit.
@@ -60,6 +72,10 @@ export const CalendarPage: React.FC = () => {
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:30');
   const [sessionType, setSessionType] = useState<StudySession['type']>('lecture');
+  // The date of a one-off block (exam or review), "YYYY-MM-DD".
+  const [date, setDate] = useState('');
+  const [dateMissing, setDateMissing] = useState(false);
+  const oneOff = isOneOff(sessionType);
 
   const weekDays = useMemo(() => {
     const now = new Date();
@@ -90,18 +106,24 @@ export const CalendarPage: React.FC = () => {
     return `${first.monthName} ${first.dateNumber} – ${last.monthName} ${last.dateNumber}`;
   }, [weekDays]);
 
-  const clashing = useMemo(() => clashingIds(sessions), [sessions]);
+  const clashing = useMemo(() => clashingIds(sessions, term), [sessions, term]);
+  // This week is wholly outside the semester, so its weekly classes are hidden: say so, or the empty week looks like lost data.
+  const weekOutsideTerm = useMemo(
+    () => (term.start || term.end ? weekDays.every((d) => !inTerm(d.date, term)) && sessions.some((s) => !s.date) : false),
+    [weekDays, term, sessions]
+  );
   const timesInvalid = toMinutes(endTime) <= toMinutes(startTime);
   const [titleMissing, setTitleMissing] = useState(false);
   const newClashes = useMemo(
     () =>
-      timesInvalid
+      timesInvalid || (oneOff && !date)
         ? []
         : findClashes(
             sessions.filter((s) => s.id !== editingId),
-            { dayOfWeek, startTime, endTime }
+            oneOff ? { dayOfWeek: dayOfWeekOf(date), date, startTime, endTime } : { dayOfWeek, startTime, endTime },
+            term
           ),
-    [sessions, editingId, dayOfWeek, startTime, endTime, timesInvalid]
+    [sessions, editingId, dayOfWeek, date, oneOff, startTime, endTime, timesInvalid, term]
   );
 
   const closeModal = () => {
@@ -110,7 +132,10 @@ export const CalendarPage: React.FC = () => {
   };
   const dialogRef = useDialog(modalOpen, closeModal);
 
-  const openAdd = (day?: number) => {
+  /** The date a weekday falls on in the week shown: where the date picker of an exam or review starts. */
+  const dateInShownWeek = (day: number) => weekDays.find((d) => d.dayNumber === day)?.date ?? todayISO;
+
+  const openAdd = (day?: number, onDate?: string) => {
     setEditingId(null);
     setTitle('');
     setCourse('');
@@ -118,7 +143,9 @@ export const CalendarPage: React.FC = () => {
     setEndTime('11:30');
     setSessionType('lecture');
     if (day !== undefined) setDayOfWeek(day);
+    setDate(onDate ?? (day !== undefined ? dateInShownWeek(day) : todayISO));
     setTitleMissing(false);
+    setDateMissing(false);
     setModalOpen(true);
   };
 
@@ -127,10 +154,13 @@ export const CalendarPage: React.FC = () => {
     setTitle(session.title);
     setCourse(session.course);
     setDayOfWeek(session.dayOfWeek);
+    // An exam or review saved before blocks had dates starts on its weekday in the week shown.
+    setDate(session.date ?? dateInShownWeek(session.dayOfWeek));
     setStartTime(session.startTime);
     setEndTime(session.endTime);
     setSessionType(session.type);
     setTitleMissing(false);
+    setDateMissing(false);
     setModalOpen(true);
   };
 
@@ -140,9 +170,15 @@ export const CalendarPage: React.FC = () => {
       setTitleMissing(true);
       return;
     }
+    if (oneOff && !date) {
+      setDateMissing(true);
+      return;
+    }
     if (timesInvalid) return;
 
-    const data = { title: title.trim(), course: course.trim() || 'General', dayOfWeek, startTime, endTime, type: sessionType };
+    // A one-off block keeps its date (and that date's weekday); a weekly one has none, so an exam changed to a lecture loses it.
+    const when = oneOff ? { dayOfWeek: dayOfWeekOf(date), date } : { dayOfWeek, date: undefined };
+    const data = { title: title.trim(), course: course.trim() || 'General', ...when, startTime, endTime, type: sessionType };
     if (editingId) updateSession(editingId, data);
     else addSession(data);
     closeModal();
@@ -151,7 +187,8 @@ export const CalendarPage: React.FC = () => {
   const handleDeleteEditing = async () => {
     if (!editingId) return;
     const id = editingId;
-    if (!(await confirmAction({ title: 'Delete this block?', body: 'It is removed from every week of your timetable.', confirmLabel: 'Delete block' }))) return;
+    const once = sessions.find((s) => s.id === id)?.date;
+    if (!(await confirmAction({ title: 'Delete this block?', body: once ? 'It is removed from your timetable.' : 'It is removed from every week of your timetable.', confirmLabel: 'Delete block' }))) return;
     deleteSession(id);
     closeModal();
   };
@@ -284,6 +321,20 @@ export const CalendarPage: React.FC = () => {
         </div>
       )}
 
+      {!(semesterStart && semesterEnd) && (
+        <p className="text-xs text-zinc-600 dark:text-zinc-400">
+          <button
+            type="button"
+            onClick={() => setSemesterOpen(true)}
+            className="font-medium text-zinc-800 dark:text-zinc-200 underline underline-offset-2 hover:text-zinc-950 dark:hover:text-white min-h-[44px] md:min-h-0 cursor-pointer"
+          >
+            Set semester dates
+          </button>{' '}
+          so weekly classes stop when the semester ends.
+        </p>
+      )}
+      <SemesterDatesDialog open={semesterOpen} onClose={() => setSemesterOpen(false)} />
+
       <BusyWeekNotice assignments={assignments} />
 
       {dueSoon.length > 0 && (
@@ -323,7 +374,20 @@ export const CalendarPage: React.FC = () => {
       )}
 
       {view === 'month' && (
-        <MonthGrid year={monthCursor.year} month={monthCursor.month} sessions={sessions} deadlines={deadlines} today={todayISO} onSelectDay={setSelectedDate} />
+        <MonthGrid year={monthCursor.year} month={monthCursor.month} sessions={sessions} term={term} deadlines={deadlines} today={todayISO} onSelectDay={setSelectedDate} />
+      )}
+
+      {view === 'week' && weekOutsideTerm && (
+        <p className="text-xs text-zinc-600 dark:text-zinc-400">
+          Outside your semester ({[term.start && `from ${shortDate(term.start)}`, term.end && `to ${shortDate(term.end)}`].filter(Boolean).join(' ')}), so weekly classes are hidden.{' '}
+          <button
+            type="button"
+            onClick={() => setSemesterOpen(true)}
+            className="font-medium text-zinc-800 dark:text-zinc-200 underline underline-offset-2 hover:text-zinc-950 dark:hover:text-white min-h-[44px] md:min-h-0 cursor-pointer"
+          >
+            Change dates
+          </button>
+        </p>
       )}
 
       {/* The week: one column per day */}
@@ -332,7 +396,7 @@ export const CalendarPage: React.FC = () => {
         <div className="grid grid-cols-1 xl:grid-cols-7 divide-y xl:divide-y-0 xl:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 xl:min-h-[500px]">
           {weekDays.map((day) => {
             const daySessions = sessions
-              .filter((s) => s.dayOfWeek === day.dayNumber)
+              .filter((s) => meetsOn(s, day.date, term))
               .sort((a, b) => toMinutes(a.startTime) - toMinutes(b.startTime));
 
             return (
@@ -399,7 +463,7 @@ export const CalendarPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={async () => {
-                              const ok = await confirmAction({ title: `Delete ${session.title}?`, body: 'It is removed from every week of your timetable.', confirmLabel: 'Delete block' });
+                              const ok = await confirmAction({ title: `Delete ${session.title}?`, body: session.date ? 'It is removed from your timetable.' : 'It is removed from every week of your timetable.', confirmLabel: 'Delete block' });
                               if (ok) deleteSession(session.id);
                             }}
                             className="hidden [@media(hover:hover)]:block absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition p-1 hover:text-rose-600 dark:hover:text-rose-400"
@@ -437,7 +501,7 @@ export const CalendarPage: React.FC = () => {
 
                 {/* Quick Add slot button */}
                 <button
-                  onClick={() => openAdd(day.dayNumber)}
+                  onClick={() => openAdd(day.dayNumber, day.date)}
                   className="min-h-[44px] md:min-h-0 mt-3 w-full py-1 rounded-md border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 text-xs tabular-nums transition"
                 >
                   + Add block
@@ -451,7 +515,7 @@ export const CalendarPage: React.FC = () => {
 
       <DaySheet
         date={selectedDate}
-        classes={selectedDate ? classesOn(sessions, selectedDate) : []}
+        classes={selectedDate ? classesOn(sessions, selectedDate, term) : []}
         deadlines={selectedDate ? (deadlines.get(selectedDate) ?? []) : []}
         onClose={() => setSelectedDate(null)}
         onAddDeadline={(date) => {
@@ -459,8 +523,9 @@ export const CalendarPage: React.FC = () => {
           setDeadlineDialog({ date });
         }}
         onAddClass={(dow) => {
+          const onDate = selectedDate ?? undefined;
           setSelectedDate(null);
-          openAdd(dow);
+          openAdd(dow, onDate);
         }}
         onEditDeadline={(a) => {
           setSelectedDate(null);
@@ -547,23 +612,45 @@ export const CalendarPage: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    Day of Week
-                  </label>
-                  <select
-                    aria-label="Day of the week"
-                    value={dayOfWeek}
-                    onChange={(e) => setDayOfWeek(Number(e.target.value))}
-                    className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
-                  >
-                    {DAYS.map((d, i) => (
-                      <option key={d} value={(i + 1) % 7}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {oneOff ? (
+                  <div>
+                    <label htmlFor="block-date" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                      Date
+                    </label>
+                    <input
+                      id="block-date"
+                      type="date"
+                      aria-required="true"
+                      aria-invalid={dateMissing || undefined}
+                      aria-describedby="block-when-help"
+                      value={date}
+                      onChange={(e) => {
+                        setDate(e.target.value);
+                        if (e.target.value) setDateMissing(false);
+                      }}
+                      className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                      Day of Week
+                    </label>
+                    <select
+                      aria-label="Day of the week"
+                      aria-describedby="block-when-help"
+                      value={dayOfWeek}
+                      onChange={(e) => setDayOfWeek(Number(e.target.value))}
+                      className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                    >
+                      {DAYS.map((d, i) => (
+                        <option key={d} value={(i + 1) % 7}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
@@ -583,6 +670,14 @@ export const CalendarPage: React.FC = () => {
                   </select>
                 </div>
               </div>
+              <p id="block-when-help" className="-mt-1.5 text-xs text-zinc-600 dark:text-zinc-400">
+                {oneOff ? 'Exams and reviews happen once, on this date.' : 'Repeats every week.'}
+              </p>
+              {oneOff && dateMissing && (
+                <p role="alert" className="text-xs font-medium text-rose-700 dark:text-rose-300">
+                  Pick the date it happens on.
+                </p>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

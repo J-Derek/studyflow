@@ -68,7 +68,7 @@ const CourseDetail: React.FC<{ course: CourseGrade; onBack: () => void }> = ({ c
             {summary.classes.map((s) => (
               <li key={s.id} className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-200">
                 <Clock className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" aria-hidden="true" />
-                <span className="tabular-nums">{DAY[s.dayOfWeek]} {s.startTime} - {s.endTime}</span>
+                <span className="tabular-nums">{DAY[s.dayOfWeek]}{s.date ? ` ${s.date}` : ''} {s.startTime} - {s.endTime}</span>
                 <span className="text-zinc-600 dark:text-zinc-400">· {CLASS_TYPE_META[s.type]?.label ?? s.type}</span>
               </li>
             ))}

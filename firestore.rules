@@ -23,7 +23,7 @@ service cloud.firestore {
     // /users/{userId}/drafts/{assignmentId}
     //   id (= assignment id), body (Markdown, up to 200000 characters), format ('markdown'), editedAt (ISO text), updatedAt (server time)
     //
-    // /users/{userId}/sessions/{id}          (weekly timetable blocks)
+    // /users/{userId}/sessions/{id}          (timetable blocks: weekly, or once on `date`)
     //   id, title, course, dayOfWeek (0..6), startTime, endTime, type,
     //   updatedAt (server time), color?, sample? (bool)
     //
@@ -214,8 +214,10 @@ service cloud.firestore {
     function isValidSession(data) {
       return data.keys().hasAll(['id', 'title', 'course', 'dayOfWeek', 'startTime', 'endTime', 'type', 'updatedAt']) &&
              data.keys().hasOnly([
-               'id', 'title', 'course', 'dayOfWeek', 'startTime', 'endTime', 'type', 'color', 'updatedAt', 'sample', 'archivedPeriod', 'archived'
+               'id', 'title', 'course', 'dayOfWeek', 'startTime', 'endTime', 'type', 'date', 'color', 'updatedAt', 'sample', 'archivedPeriod', 'archived'
              ]) &&
+             // A one-off block (exam or review) has the date it happens on; without one the block repeats weekly.
+             (!('date' in data) || validDate(data.date)) &&
              optionalString(data, 'archivedPeriod', 1, 60) &&
              data.archived is bool &&
              validString(data.id, 1, 100) &&

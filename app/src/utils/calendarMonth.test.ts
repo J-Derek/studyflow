@@ -177,3 +177,35 @@ describe('monthRange', () => {
     expect(monthRange(2026, 12)).toEqual({ from: '2026-12-01', to: '2026-12-31' });
   });
 });
+
+describe('one-off blocks and semester dates', () => {
+  // 2026-11-18 is a Wednesday
+  const weekly = ses({ id: 'lec', dayOfWeek: 3 });
+  const exam = ses({ id: 'exam', type: 'exam', dayOfWeek: 3, date: '2026-11-18' });
+  const legacyExam = ses({ id: 'old', type: 'exam', dayOfWeek: 3 });
+  it('shows a dated block only on its own date', () => {
+    expect(classesOn([exam], '2026-11-18').map((s) => s.id)).toEqual(['exam']);
+    expect(classesOn([exam], '2026-11-25')).toEqual([]);
+    expect(classesOn([exam], '2026-11-11')).toEqual([]);
+  });
+  it('keeps an exam saved without a date weekly, as before', () => {
+    expect(classesOn([legacyExam], '2026-11-25').map((s) => s.id)).toEqual(['old']);
+  });
+  it('hides weekly classes outside the semester, but never a dated block', () => {
+    const term = { start: '2026-09-07', end: '2026-11-20' };
+    expect(classesOn([weekly], '2026-11-18', term).map((s) => s.id)).toEqual(['lec']);
+    expect(classesOn([weekly], '2026-11-25', term)).toEqual([]);
+    expect(classesOn([weekly], '2026-09-02', term)).toEqual([]);
+    expect(classesOn([ses({ id: 'x', type: 'exam', dayOfWeek: 3, date: '2026-12-02' })], '2026-12-02', term).map((s) => s.id)).toEqual(['x']);
+  });
+  it('uses each semester date on its own when only one is set', () => {
+    expect(classesOn([weekly], '2026-11-25', { start: '2026-11-19' }).map((s) => s.id)).toEqual(['lec']);
+    expect(classesOn([weekly], '2026-11-11', { start: '2026-11-19' })).toEqual([]);
+    expect(classesOn([weekly], '2026-11-25', { end: '2026-11-19' })).toEqual([]);
+  });
+  it('counts dated blocks and the semester in a range', () => {
+    const map = occurrencesInRange([weekly, exam], '2026-11-16', '2026-11-29', { end: '2026-11-22' });
+    expect([...map.keys()]).toEqual(['2026-11-18']);
+    expect(map.get('2026-11-18')!.map((s) => s.id).sort()).toEqual(['exam', 'lec']);
+  });
+});
