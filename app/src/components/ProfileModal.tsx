@@ -2,6 +2,7 @@ import { useDialog } from '../lib/useDialog';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   X, 
+  ArrowLeft,
   User, 
   Building2, 
   BookOpen, 
@@ -128,14 +129,31 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
         aria-modal="true"
         aria-labelledby="profile-modal-title"
       >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          aria-label="Close modal"
-          className="absolute top-3.5 right-3.5 z-10 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        {/* Sticky Top Navigation Bar: Back Button, Title, Close Button */}
+        <div className="sticky top-0 z-20 flex items-center justify-between px-3.5 py-2.5 bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Go back"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[40px] rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-xs font-medium"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </button>
+
+          <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wider">
+            Student Profile
+          </span>
+
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close modal"
+            className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
         {/* Section 1: Hero Banner */}
         <div className="bg-gradient-to-b from-brand-navy/5 via-brand-navy/3 to-transparent dark:from-brand-gold/10 dark:via-brand-gold/5 dark:to-transparent px-6 pt-7 pb-5 border-b border-zinc-100 dark:border-zinc-800/80 flex flex-col items-center text-center">

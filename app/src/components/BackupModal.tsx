@@ -2,7 +2,7 @@ import { useDialog } from '../lib/useDialog';
 import { LegalLinks } from './LegalFooter';
 import { confirmAction } from '../lib/confirm';
 import React, { useEffect, useState } from 'react';
-import { X, Download, Upload, AlertTriangle, Copy, LogOut, UserRound, CloudOff, Loader2, Check, CircleAlert, Trash2 } from 'lucide-react';
+import { X, ArrowLeft, Download, Upload, AlertTriangle, Copy, LogOut, UserRound, CloudOff, Loader2, Check, CircleAlert, Trash2 } from 'lucide-react';
 import { GoogleIcon } from './GoogleIcon';
 import { Avatar } from './Avatar';
 import { useStudyFlowStore } from '../store/studyFlowStore';
@@ -192,20 +192,31 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, onOpe
         aria-labelledby="backup-modal-title"
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 id="backup-modal-title" className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-              {isAnonymous ? 'Sign in and back up' : 'Your account'}
-            </h2>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">
-              {isAnonymous ? 'Keep your plan on every device' : 'Your plan follows you to every device you sign in on'}
-            </p>
+        <div className="flex items-center justify-between gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Go back"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[38px] rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-xs font-medium shrink-0"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </button>
+            <div className="min-w-0">
+              <h2 id="backup-modal-title" className="text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                {isAnonymous ? 'Sign in and back up' : 'Your account'}
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                {isAnonymous ? 'Keep your plan on every device' : 'Your plan follows you to every device'}
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex items-center justify-center min-h-[44px] min-w-[44px] -mt-2 -mr-2 rounded-md text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+            className="flex items-center justify-center min-h-[40px] min-w-[40px] rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer shrink-0"
           >
             <X className="h-4 w-4" />
           </button>

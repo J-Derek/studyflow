@@ -109,10 +109,16 @@ export const NoteReader: React.FC<NoteReaderProps> = ({ note, onClose, onEdit })
             <span>Back to note</span>
           </button>
         ) : (
-          <button type="button" onClick={onEdit} className={barButton}>
-            <Pencil className="h-4 w-4" aria-hidden="true" />
-            <span>Edit</span>
-          </button>
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={onClose} aria-label="Back to notes" className={barButton}>
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              <span>Back</span>
+            </button>
+            <button type="button" onClick={onEdit} className={barButton}>
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              <span>Edit</span>
+            </button>
+          </div>
         )}
         <p className="text-xs text-zinc-600 dark:text-zinc-400 truncate min-w-0">{viewing ? viewing.meta.name : note.course || 'Note'}</p>
         <button type="button" onClick={onClose} aria-label="Close reader" className={`${barButton} !px-2.5`}>

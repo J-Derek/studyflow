@@ -8,7 +8,8 @@ import {
   Moon,
   Monitor,
   LogOut,
-  ArrowRight
+  ArrowRight,
+  ArrowLeft
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useAccountView } from '../store/useAccountView';
@@ -42,6 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
     themeMode,
     setTheme,
     setThemeMode,
+    activeTab,
     setActiveTab,
     user,
     customPhotoUrl,
@@ -141,6 +143,19 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Menu className="h-4 w-4" />
             </button>
+
+            {/* Mobile Back Button (Visible when navigated to inner tabs, returns to Dashboard) */}
+            {activeTab !== 'dashboard' && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('dashboard')}
+                aria-label="Back to dashboard"
+                title="Back to dashboard"
+                className="md:hidden flex items-center justify-center h-9 w-9 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-surface-light dark:bg-zinc-850 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer shrink-0"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
 
             {/* Mobile Brand Logo (Visible ONLY on mobile where sidebar is hidden) */}
             <div

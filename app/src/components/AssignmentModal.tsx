@@ -4,7 +4,7 @@ import { kindOf } from '../utils/kinds';
 import { RepeatToggle } from './RepeatToggle';
 import { progressInfo } from '../utils/progress';
 import React, { useId, useState } from 'react';
-import { X, Calendar, Clock, BookOpen, AlertCircle } from 'lucide-react';
+import { X, ArrowLeft, Calendar, Clock, BookOpen, AlertCircle } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Priority, Assignment, AssignmentKind, Repeat } from '../types';
 
@@ -120,18 +120,29 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         className="bg-surface-light dark:bg-surface-dark rounded-xl w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto shadow-2xl border border-zinc-200 dark:border-zinc-800 transition-colors"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800">
-          <div>
-            <h2 id="assignment-modal-title" className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">
-              {assignmentToEdit ? 'Edit assignment' : 'New assignment'}
-            </h2>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Add the title, course and due date</p>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Go back"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[38px] rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-xs font-medium shrink-0"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </button>
+            <div className="min-w-0">
+              <h2 id="assignment-modal-title" className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm truncate">
+                {assignmentToEdit ? 'Edit assignment' : 'New assignment'}
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">Add the title, course and due date</p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="p-2 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            className="p-2 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0"
           >
             <X className="h-4 w-4" />
           </button>
