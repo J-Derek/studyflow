@@ -84,7 +84,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Today's Day of Week (0 = Sun, 1 = Mon, ..., 6 = Sat)
   const currentDayOfWeek = new Date().getDay();
-  const todaysSessions = sessions.filter((s) => s.dayOfWeek === currentDayOfWeek);
+  const todaysSessions = sessions
+    .filter((s) => s.dayOfWeek === currentDayOfWeek)
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  // "HH:MM" now, to mark the class that is on right now. Times are stored as "HH:MM", so text comparison works.
+  const nowClock = new Date().toTimeString().slice(0, 5);
 
   // A brand-new student sees only the add form: no zero numbers and no empty lists until there is something to show.
   const brandNew = assignments.length === 0 && grades.length === 0 && pomodorosCompleted === 0;
@@ -153,6 +157,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span aria-hidden="true">·</span>
             <span className={`tabular-nums font-medium ${nextUpDue.isUrgent ? 'text-red-600 dark:text-red-400' : ''}`}>{nextUpDue.label}</span>
             {kindOf(nextUp) !== 'assignment' && <KindBadge kind={kindOf(nextUp)} />}
+            {nextUp.subtasks && nextUp.subtasks.length > 0 && (
+              <span className="text-sm text-zinc-600 dark:text-zinc-400 tabular-nums">
+                {nextUp.subtasks.filter((s) => s.completed).length} of {nextUp.subtasks.length} steps done
+              </span>
+            )}
           </p>
           {nextUp.notes && (
             <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap line-clamp-3">{nextUp.notes}</p>
@@ -353,7 +362,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">No lecture sessions scheduled today.</p>
               </div>
             ) : (
-              todaysSessions.map((session) => (
+              todaysSessions.map((session) => {
+                const isNow = nowClock >= session.startTime && nowClock < session.endTime;
+                return (
                 <div key={session.id} className="flex items-start gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 last:border-0 last:pb-0">
                   <div className="w-14 shrink-0 text-right tabular-nums">
                     <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">{session.startTime}</span>
@@ -366,11 +377,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         {session.course}
                       </span>
                       <span className="text-xs capitalize text-zinc-600 dark:text-zinc-400 tabular-nums">{session.type}</span>
+                      {isNow && <span className="text-xs font-medium text-emerald-800 dark:text-emerald-300">Now</span>}
                     </div>
                     <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">{session.title}</h3>
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
