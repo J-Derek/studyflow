@@ -61,6 +61,12 @@ export interface StudySession {
   startTime: string; // HH:mm
   endTime: string; // HH:mm
   type: 'lecture' | 'lab' | 'study' | 'review' | 'exam';
+  /**
+   * "YYYY-MM-DD" for a block that happens once (an exam or a review): it shows only on that date, and dayOfWeek is that date's weekday.
+   * Missing means the block repeats every week on dayOfWeek (inside the semester dates, when the student has set them). Exams and reviews
+   * saved before this existed have no date and stay weekly until edited.
+   */
+  date?: string;
   /** Set when this belongs to a past semester/term (its period id). Missing means current. */
   archivedPeriod?: string;
   color?: string;

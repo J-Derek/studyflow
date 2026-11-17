@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Assignment, StudySession } from '../types';
 import { needsAttention } from '../utils/deadlineEmphasis';
-import { monthGrid } from '../utils/calendarMonth';
+import { classesOn, monthGrid, type Term } from '../utils/calendarMonth';
 import { KIND_META, kindOf } from '../utils/kinds';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -21,8 +21,9 @@ interface MonthGridProps {
   year: number;
   /** 1 to 12 */
   month: number;
-  /** Classes repeat weekly, so the count for a day only needs the weekday. */
+  /** Weekly classes count on their weekday inside the semester; an exam or review only on its own date. */
   sessions: StudySession[];
+  term?: Term;
   deadlines: Map<string, Assignment[]>;
   /** "YYYY-MM-DD" of today, so it can be marked. */
   today: string;
@@ -33,13 +34,13 @@ interface MonthGridProps {
  * A month at a glance. Each day is one big button (at least 44px tall): it shows how many classes and deadlines are on it, and opens that
  * day's list. Counts are written as numbers, so colour is never the only signal.
  */
-export const MonthGrid: React.FC<MonthGridProps> = ({ year, month, sessions, deadlines, today, onSelectDay }) => {
+export const MonthGrid: React.FC<MonthGridProps> = ({ year, month, sessions, term, deadlines, today, onSelectDay }) => {
   const rows = React.useMemo(() => monthGrid(year, month), [year, month]);
-  const perWeekday = React.useMemo(() => {
-    const counts = [0, 0, 0, 0, 0, 0, 0];
-    for (const s of sessions) counts[s.dayOfWeek % 7] = (counts[s.dayOfWeek % 7] ?? 0) + 1;
+  const perDate = React.useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const row of rows) for (const cell of row) counts.set(cell.date, classesOn(sessions, cell.date, term).length);
     return counts;
-  }, [sessions]);
+  }, [rows, sessions, term]);
 
   return (
     <div data-testid="month-grid" className="animate-fade-in motion-reduce:animate-none rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark overflow-hidden">
@@ -54,7 +55,7 @@ export const MonthGrid: React.FC<MonthGridProps> = ({ year, month, sessions, dea
         {rows.map((row) => (
           <div key={row[0]!.date} className="grid grid-cols-7 divide-x divide-zinc-200/70 dark:divide-zinc-800/70">
             {row.map((cell) => {
-              const classes = perWeekday[cell.dayOfWeek] ?? 0;
+              const classes = perDate.get(cell.date) ?? 0;
               const due = deadlines.get(cell.date) ?? [];
               const pending = due.filter((a) => a.status !== 'completed').length;
               const isToday = cell.date === today;

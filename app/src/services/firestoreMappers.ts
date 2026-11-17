@@ -149,6 +149,7 @@ export function sessionToDoc(s: StudySession): Doc {
     endTime: s.endTime,
     type: s.type
   };
+  if (s.date && DATE_RE.test(s.date)) out.date = s.date;
   if (s.color) out.color = s.color;
   if (s.sample) out.sample = true;
   Object.assign(out, archivedField(s.archivedPeriod));
@@ -166,6 +167,7 @@ export function docToSession(id: string, data: Doc): StudySession {
     startTime: typeof data.startTime === 'string' ? data.startTime : '09:00',
     endTime: typeof data.endTime === 'string' ? data.endTime : '10:00',
     type: types.find((t) => t === data.type) ?? 'study',
+    date: typeof data.date === 'string' && DATE_RE.test(data.date) ? data.date : undefined,
     color: typeof data.color === 'string' ? data.color : undefined,
     sample: data.sample === true ? true : undefined,
     ...archivedField(data.archivedPeriod)

@@ -21,7 +21,8 @@ import { BusyWeekNotice } from '../components/BusyWeekNotice';
 import { WritingSpace } from '../components/WritingSpace';
 import { celebrate } from '../components/CelebrateBurst';
 import { kindOf } from '../utils/kinds';
-import { selectPendingDeadlines } from '../utils/calendarMonth';
+import { classesOn, selectPendingDeadlines } from '../utils/calendarMonth';
+import { localDateISO } from '../utils/limits';
 import { GettingStartedChecklist } from '../components/GettingStartedChecklist';
 
 interface DashboardProps {
@@ -82,11 +83,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const nextUp = urgentAssignments[0];
   const nextUpDue = nextUp ? getDaysRemaining(nextUp.dueDate) : { label: '', isUrgent: false };
 
-  // Today's Day of Week (0 = Sun, 1 = Mon, ..., 6 = Sat)
-  const currentDayOfWeek = new Date().getDay();
-  const todaysSessions = sessions
-    .filter((s) => s.dayOfWeek === currentDayOfWeek)
-    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  // Weekly classes on today's weekday inside the semester, and any exam or review dated today (classesOn sorts by start time).
+  const todaysSessions = classesOn(sessions, localDateISO(), { start: user.semesterStart, end: user.semesterEnd });
   // "HH:MM" now, to mark the class that is on right now. Times are stored as "HH:MM", so text comparison works.
   const nowClock = new Date().toTimeString().slice(0, 5);
 

@@ -20,5 +20,8 @@ export function exportMonth(year: number, month: number): void {
   const s = useStudyFlowStore.getState();
   const sequence = s.icsExportCount;
   s.bumpIcsExport();
-  downloadICalendarFile(s.sessions, monthIcsOptions(year, month, { timeZone: s.user.timeZone, assignments: s.assignments, sequence }));
+  downloadICalendarFile(
+    s.sessions,
+    monthIcsOptions(year, month, { timeZone: s.user.timeZone, semesterStart: s.user.semesterStart, semesterEnd: s.user.semesterEnd, assignments: s.assignments, sequence })
+  );
 }

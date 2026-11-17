@@ -559,6 +559,11 @@ describe('sessions (timetable)', () => {
     await assertFails(setDoc(sDoc(asAlice(), 's4'), ses({ id: 's4', startTime: '9am' })));
     await assertFails(setDoc(sDoc(asAlice(), 's5'), ses({ id: 's5', type: 'party' })));
     await assertFails(setDoc(sDoc(asAlice(), 's6'), ses({ id: 's6', hacked: 1 })));
+  });  it('accepts the date of a one-off block (YYYY-MM-DD) and refuses anything else', async () => {
+    await assertSucceeds(setDoc(sDoc(asAlice(), 'e1'), ses({ id: 'e1', type: 'exam', dayOfWeek: 3, date: '2026-12-02' })));
+    await assertFails(setDoc(sDoc(asAlice(), 'e2'), ses({ id: 'e2', type: 'exam', date: '2 Dec 2026' })));
+    await assertFails(setDoc(sDoc(asAlice(), 'e3'), ses({ id: 'e3', type: 'exam', date: 20261202 })));
+    await assertFails(setDoc(sDoc(asAlice(), 'e4'), ses({ id: 'e4', type: 'exam', date: '2026-12-02T09:00' })));
   });
 });
 

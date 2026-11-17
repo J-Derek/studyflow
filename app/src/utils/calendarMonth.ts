@@ -3,8 +3,15 @@ import { kindOf, KIND_META } from './kinds';
 
 /**
  * The maths behind the month and week calendar. Dates are plain "YYYY-MM-DD" text in the student's own calendar (no time zones involved),
- * weeks start on Monday, and classes repeat every week on their day (the same rule the .ics export uses).
+ * weeks start on Monday, and classes repeat every week on their day (the same rule the .ics export uses), between the semester dates when
+ * the student has set them. A block with a `date` (an exam or a review) happens once, on that date only.
  */
+
+/** The semester's first and last day ("YYYY-MM-DD"). Either may be missing: then weekly classes have no limit on that side. */
+export interface Term {
+  start?: string;
+  end?: string;
+}
 export interface DayCell {
   /** "YYYY-MM-DD" */
   date: string;
@@ -62,17 +69,27 @@ export function monthGrid(year: number, month: number): DayCell[][] {
   return rows;
 }
 
-/** Classes that happen on one date (a class repeats every week on its day), earliest first. */
-export function classesOn(sessions: StudySession[], date: string): StudySession[] {
-  const dow = dayOfWeekOf(date);
-  return sessions.filter((s) => s.dayOfWeek === dow).sort((a, b) => a.startTime.localeCompare(b.startTime));
+/** True when `date` is inside the semester (or on the open side of a date that is not set). */
+export function inTerm(date: string, term?: Term): boolean {
+  return !(term?.start && date < term.start) && !(term?.end && date > term.end);
+}
+
+/** True when a block meets on `date`: a dated block on its own date, a weekly one on its weekday inside the semester. */
+export function meetsOn(s: Pick<StudySession, 'dayOfWeek' | 'date'>, date: string, term?: Term): boolean {
+  if (s.date) return s.date === date;
+  return s.dayOfWeek === dayOfWeekOf(date) && inTerm(date, term);
+}
+
+/** Classes that happen on one date, earliest first. */
+export function classesOn(sessions: StudySession[], date: string, term?: Term): StudySession[] {
+  return sessions.filter((s) => meetsOn(s, date, term)).sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
 /** Every date from `from` to `to` (both included) that has at least one class, with its classes. */
-export function occurrencesInRange(sessions: StudySession[], from: string, to: string): Map<string, StudySession[]> {
+export function occurrencesInRange(sessions: StudySession[], from: string, to: string, term?: Term): Map<string, StudySession[]> {
   const out = new Map<string, StudySession[]>();
   for (let d = from; d <= to; d = addDays(d, 1)) {
-    const list = classesOn(sessions, d);
+    const list = classesOn(sessions, d, term);
     if (list.length > 0) out.set(d, list);
   }
   return out;

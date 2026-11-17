@@ -3,9 +3,14 @@ import type { Assignment, StudySession } from '../types';
 export interface IcsOptions {
   /** IANA zone the lectures happen in, e.g. "Africa/Nairobi". Defaults to the device zone. */
   timeZone?: string;
-  /** First and last day of term, YYYY-MM-DD. Events repeat weekly between them (inclusive). */
+  /** First and last day of term, YYYY-MM-DD. Weekly classes repeat between them (inclusive). */
   semesterStart?: string;
   semesterEnd?: string;
+  /** Leave weekly classes out altogether (a month that is wholly outside the semester). */
+  skipWeekly?: boolean;
+  /** Only one-off blocks (exams, reviews) dated between these days, YYYY-MM-DD, are exported. Missing means all of them. */
+  datedFrom?: string;
+  datedTo?: string;
   /** Rises by one on every export so calendars treat re-imports as updates, not duplicates. */
   sequence?: number;
   /** Deadlines to export as events with reminders. Completed and sample ones are skipped. */
@@ -172,7 +177,13 @@ function parseTime(s: string): { h: number; m: number } | null {
  * 75 octets, and every text property is escaped.
  */
 export function generateICalendarFeed(allSessions: StudySession[], options: IcsOptions = {}): string {
-  const sessions = allSessions.filter((s) => !s.sample);
+  const own = allSessions.filter((s) => !s.sample);
+  // Weekly classes repeat inside the semester; a one-off block (an exam or a review) is one event on its own date.
+  const sessions = options.skipWeekly ? [] : own.filter((s) => !s.date);
+  const dated = own
+    .filter((s) => s.date && (!options.datedFrom || s.date >= options.datedFrom) && (!options.datedTo || s.date <= options.datedTo))
+    .map((s) => ({ s, on: parseYmd(s.date!) }))
+    .filter((x): x is { s: StudySession; on: { y: number; m: number; d: number } } => x.on !== null);
   const now = options.now ?? new Date();
   const zone = options.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const sequence = Math.max(0, Math.floor(options.sequence ?? 0));
@@ -192,6 +203,11 @@ export function generateICalendarFeed(allSessions: StudySession[], options: IcsO
   let windowTo = Date.UTC(end.y, end.m - 1, end.d) + DAY_MS;
   for (const { due } of deadlines) {
     const t = Date.UTC(due.y, due.m - 1, due.d);
+    windowFrom = Math.min(windowFrom, t - DAY_MS);
+    windowTo = Math.max(windowTo, t + 2 * DAY_MS);
+  }
+  for (const { on } of dated) {
+    const t = Date.UTC(on.y, on.m - 1, on.d);
     windowFrom = Math.min(windowFrom, t - DAY_MS);
     windowTo = Math.max(windowTo, t + 2 * DAY_MS);
   }
@@ -232,6 +248,26 @@ export function generateICalendarFeed(allSessions: StudySession[], options: IcsO
       `RRULE:FREQ=WEEKLY;BYDAY=${DAY_CODES[s.dayOfWeek]};UNTIL=${until}`,
       `SUMMARY:${escapeIcsText(`${s.title} (${s.course})`)}`,
       `DESCRIPTION:${escapeIcsText(`StudyFlow ${s.type} block for ${s.course}.`)}`,
+      `CATEGORIES:${escapeIcsText(s.type.toUpperCase())}`,
+      'STATUS:CONFIRMED',
+      'END:VEVENT'
+    );
+  }
+
+  for (const { s, on } of dated) {
+    const st = parseTime(s.startTime);
+    const en = parseTime(s.endTime);
+    if (!st || !en) continue;
+    const day = `${on.y}${pad(on.m)}${pad(on.d)}`;
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:${s.id.replace(/[^A-Za-z0-9._-]/g, '-')}@studyflow.app`,
+      `DTSTAMP:${dtstamp}`,
+      `SEQUENCE:${sequence}`,
+      `DTSTART;TZID=${zone}:${day}T${pad(st.h)}${pad(st.m)}00`,
+      `DTEND;TZID=${zone}:${day}T${pad(en.h)}${pad(en.m)}00`,
+      `SUMMARY:${escapeIcsText(`${s.title} (${s.course})`)}`,
+      `DESCRIPTION:${escapeIcsText(`StudyFlow ${s.type} for ${s.course}.`)}`,
       `CATEGORIES:${escapeIcsText(s.type.toUpperCase())}`,
       'STATUS:CONFIRMED',
       'END:VEVENT'
@@ -302,17 +338,23 @@ export function generateICalendarFeed(allSessions: StudySession[], options: IcsO
 }
 
 /**
- * The options for a calendar file of ONE month: classes repeat only between its first and last day, only deadlines due in it are listed,
- * and the file is named after it. Finished and sample work is skipped by the generator, as in the full export.
+ * The options for a calendar file of ONE month: classes repeat only between its first and last day (and inside the semester, when its dates
+ * are set), only exams, reviews and deadlines dated in it are listed, and the file is named after it. Finished and sample work is skipped by
+ * the generator, as in the full export.
  */
 export function monthIcsOptions(year: number, month: number, base: IcsOptions): IcsOptions {
   const pad2 = (n: number) => String(n).padStart(2, '0');
   const from = `${year}-${pad2(month)}-01`;
   const to = `${year}-${pad2(month)}-${pad2(new Date(Date.UTC(year, month, 0)).getUTCDate())}`;
+  const weeklyFrom = base.semesterStart && base.semesterStart > from ? base.semesterStart : from;
+  const weeklyTo = base.semesterEnd && base.semesterEnd < to ? base.semesterEnd : to;
   return {
     ...base,
-    semesterStart: from,
-    semesterEnd: to,
+    semesterStart: weeklyFrom,
+    semesterEnd: weeklyTo,
+    skipWeekly: base.skipWeekly || weeklyFrom > weeklyTo,
+    datedFrom: from,
+    datedTo: to,
     assignments: (base.assignments ?? []).filter((a) => a.dueDate >= from && a.dueDate <= to),
     fileName: `StudyFlow_${year}-${pad2(month)}.ics`
   };
