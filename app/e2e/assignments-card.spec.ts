@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
-/** The Assignments list: a card opens its details when clicked or pressed, and unfinished work comes first. */
+/** The Assignments list: a card opens its page when clicked or pressed, and unfinished work comes first. */
 type S = { userId: string | null; addAssignment: (a: object) => void; setTheme: (t: 'light' | 'dark') => void };
 type W = { __store: { getState: () => S } };
 
@@ -17,39 +17,43 @@ const seed = (page: Page, items: object[]) =>
 const card = (page: Page, title: string) => page.getByRole('group', { name: `Open details for "${title}"` });
 const editDialog = (page: Page) => page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: 'Edit Assignment' }) });
 
-test('clicking a card, or pressing Enter or Space on it, opens its details; its own buttons still do their own job', async ({ page }) => {
+test('clicking a card, or pressing Enter or Space on it, opens its page; its own buttons still do their own job', async ({ page }) => {
   await ready(page);
-  await seed(page, [{ title: 'Lab report', notes: 'Graphs on page 3', subtasks: [{ id: 's1', title: 'Draw graphs', completed: false }] }]);
+  await seed(page, [{ title: 'Lab report', subtasks: [{ id: 's1', title: 'Draw graphs', completed: false }] }]);
   const c = card(page, 'Lab report');
   await expect(c).toBeVisible();
+  const detail = page.getByRole('heading', { level: 1, name: 'Lab report' });
 
-  // a click on the card's text opens the edit dialog for that item
+  // a click on the card's text opens the assignment's own page, not a dialog
   await c.getByText('TEST 101').click();
-  await expect(editDialog(page)).toBeVisible();
-  await expect(editDialog(page).getByPlaceholder('e.g. Problem Set 2')).toHaveValue('Lab report');
-  await editDialog(page).getByRole('button', { name: 'Cancel' }).click();
-  await expect(editDialog(page)).toHaveCount(0);
+  await expect(detail).toBeVisible();
+  await expect(page).toHaveURL(/\/assignments\/[^/]+$/);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByRole('button', { name: 'All assignments' }).click();
 
   // the keyboard: the card takes focus, and Enter or Space opens it
   for (const key of ['Enter', ' ']) {
     await c.focus();
     await page.keyboard.press(key);
-    await expect(editDialog(page)).toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(editDialog(page)).toHaveCount(0);
+    await expect(detail).toBeVisible();
+    await page.goBack();
+    await expect(c).toBeVisible();
   }
 
   // the checklist box ticks without opening anything
   await page.getByRole('checkbox', { name: 'Draw graphs' }).check();
-  await expect(editDialog(page)).toHaveCount(0);
-  // the Write button opens the writing space, not the edit dialog
-  await page.getByRole('button', { name: 'Write for "Lab report"' }).click();
-  await expect(editDialog(page)).toHaveCount(0);
+  await expect(detail).toHaveCount(0);
+  // the pencil still opens the edit dialog in place
+  await page.getByRole('button', { name: 'Edit assignment "Lab report"' }).click();
+  await expect(editDialog(page)).toBeVisible();
+  await expect(editDialog(page).getByPlaceholder('e.g. Problem Set 2')).toHaveValue('Lab report');
   await page.keyboard.press('Escape');
-  // Delete deletes, and offers Undo, without opening the dialog
+  await expect(editDialog(page)).toHaveCount(0);
+  await expect(detail).toHaveCount(0);
+  // Delete deletes, and offers Undo, without opening anything
   await page.getByRole('button', { name: 'Delete assignment "Lab report"' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Deleted' })).toBeVisible();
-  await expect(editDialog(page)).toHaveCount(0);
+  await expect(detail).toHaveCount(0);
 });
 
 test('marking done from the card does not open the dialog, and a finished card passes the accessibility check in both themes', async ({ page }) => {

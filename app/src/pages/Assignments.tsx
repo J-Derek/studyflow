@@ -6,8 +6,7 @@ import {
   Circle, 
   Trash2, 
   Edit3, 
-  CheckSquare,
-  PenLine
+  CheckSquare
 } from 'lucide-react';
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
@@ -15,7 +14,9 @@ import type { Assignment, Subtask } from '../types';
 import { getDaysRemaining } from '../utils/formatters';
 import { LIMITS } from '../utils/limits';
 import { AssignmentModal } from '../components/AssignmentModal';
-import { WritingSpace } from '../components/WritingSpace';
+import { AssignmentDetail } from '../components/AssignmentDetail';
+import { assignmentIdFromPath, assignmentPath, navigate, usePath } from '../lib/route';
+import { notesPreview } from '../utils/notesPreview';
 import { KindBadge } from '../components/KindBadge';
 import { celebrate } from '../components/CelebrateBurst';
 import { kindOf } from '../utils/kinds';
@@ -26,7 +27,9 @@ import { orderAssignmentsList } from '../utils/assignmentOrder';
 const OWN_CONTROLS = 'button, a, input, label, select, textarea';
 
 export const AssignmentsPage: React.FC = () => {
-  const { assignments, toggleAssignmentComplete, deleteAssignment, restoreAssignment, toggleSubtask, addSubtask } = useStudyFlowStore();
+  const { assignments, drafts, toggleAssignmentComplete, deleteAssignment, restoreAssignment, toggleSubtask, addSubtask } = useStudyFlowStore();
+  // /assignments/<id> shows that assignment's own page; the list keeps its search and filters for the way back.
+  const openId = assignmentIdFromPath(usePath());
   // The last deleted assignment stays recoverable for a few seconds.
   const [justDeleted, setJustDeleted] = useState<Assignment | null>(null);
   useEffect(() => {
@@ -45,8 +48,6 @@ export const AssignmentsPage: React.FC = () => {
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   // A search that found nothing can become a new assignment with that title.
   const [newTitle, setNewTitle] = useState<string | undefined>(undefined);
-  // The assignment whose writing space is open.
-  const [writing, setWriting] = useState<Assignment | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
@@ -62,13 +63,18 @@ export const AssignmentsPage: React.FC = () => {
     return list;
   }, [assignments]);
 
+  // Each assignment's notes, for the card preview and for search.
+  const notesById = useMemo(() => new Map(drafts.map((d) => [d.id, d.body])), [drafts]);
+
   // Filter assignments, then order them: unfinished first (overdue, then by date, priority and time), finished last.
   const filteredAssignments = useMemo(() => {
     return orderAssignmentsList(assignments.filter((a) => {
+      const q = searchQuery.toLowerCase();
       const matchesSearch =
-        a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (a.notes && a.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+        a.title.toLowerCase().includes(q) ||
+        a.course.toLowerCase().includes(q) ||
+        (a.notes ?? '').toLowerCase().includes(q) ||
+        (notesById.get(a.id) ?? '').toLowerCase().includes(q);
 
       const matchesCourse = selectedCourse === 'all' || a.course === selectedCourse;
       const matchesPriority = selectedPriority === 'all' || a.priority === selectedPriority;
@@ -81,7 +87,7 @@ export const AssignmentsPage: React.FC = () => {
 
       return matchesSearch && matchesCourse && matchesPriority && matchesStatus;
     }));
-  }, [assignments, searchQuery, selectedCourse, selectedPriority, selectedStatus]);
+  }, [assignments, notesById, searchQuery, selectedCourse, selectedPriority, selectedStatus]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAssignments.length / ITEMS_PER_PAGE));
   const paginatedAssignments = useMemo(() => {
@@ -94,17 +100,21 @@ export const AssignmentsPage: React.FC = () => {
     setModalOpen(true);
   };
 
-  // A click anywhere on a card opens its details, unless it landed on one of the card's own buttons, boxes or links.
+  const openPage = (asg: Assignment) => navigate(assignmentPath(asg.id));
+
+  // A click anywhere on a card opens its page, unless it landed on one of the card's own buttons, boxes or links.
   const openFromCard = (e: React.MouseEvent<HTMLElement>, asg: Assignment) => {
     if ((e.target as HTMLElement).closest(OWN_CONTROLS) !== null) return;
     if ((window.getSelection()?.toString() ?? '') !== '') return; // selecting text to copy is not a tap
-    handleEdit(asg);
+    openPage(asg);
   };
   const openFromKey = (e: React.KeyboardEvent<HTMLElement>, asg: Assignment) => {
     if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
     e.preventDefault(); // Space would otherwise scroll the page
-    handleEdit(asg);
+    openPage(asg);
   };
+
+  if (openId) return <AssignmentDetail id={openId} />;
 
   return (
     <div className="space-y-5 animate-fade-in pb-16">
@@ -241,6 +251,8 @@ export const AssignmentsPage: React.FC = () => {
             const { label, isUrgent } = getDaysRemaining(asg.dueDate);
             const effectiveSubtasks: Subtask[] = asg.subtasks ?? [];
             const progress = progressInfo(asg);
+            // One kind of note: the notes on the assignment's page (an older short note shows until the page folds it in).
+            const preview = notesPreview(notesById.get(asg.id) || asg.notes || '');
 
             return (
               <div
@@ -366,32 +378,23 @@ export const AssignmentsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="pl-7 pr-2 flex items-center justify-between gap-3">
+                <div className="pl-7 pr-2">
                   <button
                     type="button"
-                    onClick={() => handleEdit(asg)}
+                    onClick={() => openPage(asg)}
                     className="text-left text-xs cursor-pointer min-h-[44px] flex items-center min-w-0"
                   >
-                    {asg.notes ? (
+                    {preview ? (
                       <>
-                        <span className="line-clamp-2 whitespace-pre-wrap text-zinc-700 dark:text-zinc-300">{asg.notes}</span>
-                        <span className="sr-only"> (edit note for {asg.title})</span>
+                        <span className="line-clamp-2 whitespace-pre-wrap text-zinc-700 dark:text-zinc-300">{preview}</span>
+                        <span className="sr-only"> (open notes for {asg.title})</span>
                       </>
                     ) : (
                       <>
-                        <span className="text-zinc-600 dark:text-zinc-400 underline-offset-2 hover:underline">Add a note</span>
+                        <span className="text-zinc-600 dark:text-zinc-400 underline-offset-2 hover:underline">Add notes</span>
                         <span className="sr-only"> to {asg.title}</span>
                       </>
                     )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setWriting(asg)}
-                    aria-label={`Write for "${asg.title}"`}
-                    className="shrink-0 inline-flex items-center gap-1.5 min-h-[44px] px-2 rounded text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
-                  >
-                    <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
-                    Write
                   </button>
                 </div>
 
@@ -525,8 +528,6 @@ export const AssignmentsPage: React.FC = () => {
         assignmentToEdit={editingAssignment}
         initialTitle={newTitle}
       />
-
-      {writing && <WritingSpace assignment={writing} onClose={() => setWriting(null)} />}
     </div>
   );
 };

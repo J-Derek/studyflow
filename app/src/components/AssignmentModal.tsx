@@ -35,7 +35,6 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
   const [dueDate, setDueDate] = useState(localDateISO());
   const [dueTime, setDueTime] = useState('23:59');
   const [priority, setPriority] = useState<Priority>('medium');
-  const [notes, setNotes] = useState('');
   const [status, setStatus] = useState<OpenStatus>('pending');
   const statusName = useId();
   const [kind, setKind] = useState<AssignmentKind>('assignment');
@@ -49,7 +48,6 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
       setDueDate(assignmentToEdit.dueDate);
       setDueTime(assignmentToEdit.dueTime || '23:59');
       setPriority(assignmentToEdit.priority);
-      setNotes(assignmentToEdit.notes || '');
       setStatus(assignmentToEdit.status === 'in_progress' ? 'in_progress' : 'pending');
       setKind(kindOf(assignmentToEdit));
       setRepeat(assignmentToEdit.repeat);
@@ -59,7 +57,6 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
       setDueDate(initialDueDate && isDateInRange(initialDueDate) ? initialDueDate : localDateISO());
       setDueTime('23:59');
       setPriority('medium');
-      setNotes('');
       setStatus('pending');
       setKind('assignment');
       setRepeat(undefined);
@@ -89,7 +86,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         priority,
         kind,
         repeat,
-        notes,
+        // Notes live on the assignment's own page; this dialog leaves them as they are.
         // With a checklist the ticks decide progress. Without one the dialog sends the simple status (the store sets the progress that goes
         // with it); a finished item stays finished until its circle on the list is un-ticked.
         ...(hasChecklist || isDone ? {} : { status })
@@ -104,8 +101,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
         kind,
         ...(repeat ? { repeat } : {}),
         status: 'pending',
-        progress: 0,
-        notes
+        progress: 0
       });
     }
 
@@ -278,20 +274,6 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
               </p>
             </div>
           )}
-
-          <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Notes (optional)
-            </label>
-            <textarea
-              rows={4}
-              maxLength={LIMITS.assignmentNotes}
-              placeholder="What to include, page numbers, what the lecturer said…"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition resize-none"
-            />
-          </div>
 
           {/* Modal Actions */}
           <div className="pt-2.5 flex items-center justify-end gap-2 border-t border-zinc-100 dark:border-zinc-800">
