@@ -30,7 +30,7 @@ export const NotFoundPage: React.FC = () => {
         <Compass className="h-7 w-7" aria-hidden="true" />
       </div>
       <div className="space-y-2">
-        <h1 className="font-display text-2xl font-semibold text-zinc-900 dark:text-zinc-50">We can’t find that page</h1>
+        <h1 className="font-serif text-2xl font-medium text-zinc-900 dark:text-zinc-50">We can’t find that page</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           The address may be mistyped or out of date. Your plan is safe; nothing was changed.
         </p>

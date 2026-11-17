@@ -185,7 +185,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
             </label>
           </div>
 
-          <h2 id="profile-modal-title" className="mt-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+          <h2 id="profile-modal-title" className="mt-3 font-serif text-lg font-medium text-zinc-900 dark:text-zinc-50 tracking-tight">
             {name.trim() || 'Student'}
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 line-clamp-1 max-w-xs">

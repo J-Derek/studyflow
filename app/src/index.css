@@ -4,9 +4,25 @@
 @tailwind utilities;
 
 @layer base {
-  h1,
+  /* Literary Academic H1 — Newsreader Serif for prestige & warmth */
+  h1 {
+    @apply font-serif font-medium tracking-tight leading-tight;
+  }
+  /* Section Headers H2 — Strong Inter for clean authority */
   h2 {
-    @apply font-display;
+    @apply font-sans font-bold tracking-tight;
+  }
+  /* Subsection Headers H3 — Inter semibold, slightly subdued */
+  h3 {
+    @apply font-sans font-semibold;
+  }
+  /* High-precision metrics: timers, GPA, counts */
+  .text-metric {
+    @apply font-mono tabular-nums;
+  }
+  /* Overline / Eyebrow categories */
+  .text-overline {
+    @apply font-mono text-xs uppercase tracking-widest font-bold;
   }
   body {
     @apply bg-canvas-light dark:bg-canvas-dark text-zinc-900 dark:text-zinc-100 antialiased font-sans min-h-screen selection:bg-amber-100 selection:text-amber-900 dark:selection:bg-amber-950/40 dark:selection:text-amber-200;

@@ -42,7 +42,7 @@ const NoteCard: React.FC<{
           <span className="ml-auto tabular-nums text-zinc-500 dark:text-zinc-500 text-xs">{wordCount(n.body)} w</span>
         )}
       </span>
-      <span className="block mt-1.5 font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">{n.title}</span>
+      <span className="block mt-1.5 font-serif text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">{n.title}</span>
       {n.body && <span className="block mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap [overflow-wrap:anywhere] line-clamp-4">{plainText(n.body, NOTE_FORMAT)}</span>}
     </button>
     <button
@@ -121,7 +121,7 @@ export const NotesPage: React.FC = () => {
     <div className="space-y-6 animate-fade-in pb-16">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Notes</h1>
+          <h1 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-zinc-900 dark:text-zinc-50">Notes</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Keep what you learn in one place, by course.</p>
         </div>
         <button
@@ -237,7 +237,7 @@ export const NotesPage: React.FC = () => {
                     {courseCode(assignment.course) && <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">{courseCode(assignment.course)}</span>}
                     <span>{formatDate(draft.editedAt)}</span>
                   </span>
-                  <span className="block mt-1.5 font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">
+                  <span className="block mt-1.5 font-serif text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">
                     From Assignments: {assignment.title}
                   </span>
                   <span className="block mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap [overflow-wrap:anywhere] line-clamp-4">{plainText(draft.body)}</span>

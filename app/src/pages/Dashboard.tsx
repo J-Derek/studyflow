@@ -175,7 +175,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div className="space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            <h1 className="font-serif text-3xl sm:text-4xl font-medium tracking-tight text-zinc-900 dark:text-zinc-50">
               <span>{timeGreeting}</span>
               {firstName && (
                 <>
@@ -326,7 +326,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </span>
           </div>
 
-          <p className="mt-2.5 font-display text-3xl md:text-5xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 break-words">
+          <p className="mt-2.5 font-serif text-3xl md:text-5xl font-medium tracking-tight text-zinc-900 dark:text-zinc-50 break-words">
             {nextUp.title}
           </p>
 
@@ -398,13 +398,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <dl className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark p-4 sm:p-5 grid grid-cols-2 lg:grid-cols-4 gap-4 divide-y sm:divide-y-0 divide-zinc-200/60 dark:divide-zinc-800/60 shadow-2xs">
         <div className="pt-2 sm:pt-0">
           <dt className="text-xs uppercase font-mono tracking-wider text-zinc-500 dark:text-zinc-400">To do</dt>
-          <dd className="font-display tabular-nums text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 mt-1">
+          <dd className="font-mono tabular-nums text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 mt-1">
             {pendingAssignments.length}
           </dd>
         </div>
         <div className="pt-2 sm:pt-0">
           <dt className="text-xs uppercase font-mono tracking-wider text-zinc-500 dark:text-zinc-400">Completed</dt>
-          <dd className="font-display tabular-nums text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 mt-1">
+          <dd className="font-mono tabular-nums text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 mt-1">
             {completionRate}%
             <span className="ml-2 text-xs font-normal font-sans text-zinc-500 dark:text-zinc-400">
               {completedAssignments} of {totalAssignments}
@@ -413,7 +413,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
         <div className="pt-2 sm:pt-0">
           <dt className="text-xs uppercase font-mono tracking-wider text-zinc-500 dark:text-zinc-400">Focus sessions</dt>
-          <dd className="font-display tabular-nums text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 mt-1">
+          <dd className="font-mono tabular-nums text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 mt-1">
             {pomodorosCompleted}
             <span className="ml-2 text-xs font-normal font-sans text-brand-gold dark:text-brand-gold font-medium">
               {pomodorosCompleted >= 7 ? '🔥 On a roll!' : pomodorosCompleted >= 3 ? '⚡ In the flow' : `about ${focusHours} h`}
@@ -424,7 +424,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <dt className="text-xs uppercase font-mono tracking-wider text-zinc-500 dark:text-zinc-400">
             {scale === 'us4' ? 'Projected GPA' : 'Average so far'}
           </dt>
-          <dd className="font-display tabular-nums text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 mt-1">
+          <dd className="font-mono tabular-nums text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 mt-1">
             {overall.hasData ? overall.value : '—'}
             <span className="ml-2 text-xs font-normal font-sans text-zinc-500 dark:text-zinc-400">
               {overall.hasData ? (overall.standing ?? overall.unit) : 'Add graded work'}

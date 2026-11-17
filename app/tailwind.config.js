@@ -46,9 +46,11 @@ export default {
         sm: ['0.9375rem', { lineHeight: '1.5rem' }],
       },
       fontFamily: {
-        display: ['"Bricolage Grotesque Variable"', '"Inter Variable"', 'sans-serif'],
+        serif: ['"Newsreader Variable"', 'Georgia', 'Cambria', 'serif'],
+        display: ['"Newsreader Variable"', 'Georgia', 'serif'],
         sans: ['"Inter Variable"', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        mono: ['SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+        mono: ['"JetBrains Mono Variable"', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+        grotesque: ['"Bricolage Grotesque Variable"', 'sans-serif'],
       }
     },
   },

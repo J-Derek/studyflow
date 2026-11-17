@@ -70,9 +70,9 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
     <div className="space-y-6 animate-fade-in pb-16">
       <div className="space-y-1">
         {embedded ? (
-          <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Grades and GPA</h2>
+          <h2 className="font-serif text-2xl font-medium text-zinc-900 dark:text-zinc-50 tracking-tight">Grades and GPA</h2>
         ) : (
-          <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Grades</h1>
+          <h1 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-zinc-900 dark:text-zinc-50">Grades</h1>
         )}
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Your courses, and what they add up to.</p>
       </div>
@@ -81,7 +81,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
         <div className="p-4 md:p-5 flex flex-col justify-between">
           <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{scale === 'us4' ? 'Projected GPA' : 'Average so far'}</span>
           <div className="my-2.5 flex items-baseline gap-2">
-            <span className={`text-3xl md:text-4xl tabular-nums font-semibold tracking-tight ${hasGpa ? 'text-brand-gold dark:text-amber-400' : 'text-zinc-900 dark:text-zinc-50'}`}>
+            <span className={`font-mono text-3xl md:text-4xl tabular-nums font-bold tracking-tight ${hasGpa ? 'text-brand-gold dark:text-amber-400' : 'text-zinc-900 dark:text-zinc-50'}`}>
               {hasGpa ? termGpa : '—'}
             </span>
             {hasGpa && <span className="text-xs text-zinc-600 dark:text-zinc-400">{overall.unit}</span>}
@@ -97,7 +97,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
             <BookOpen className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" />
           </div>
           <div className="my-2.5 flex items-baseline gap-2">
-            <span className="text-3xl md:text-4xl tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+            <span className="font-mono text-3xl md:text-4xl tabular-nums font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
               {totalCredits}
             </span>
             <span className="text-xs text-zinc-600 dark:text-zinc-400">{scale === 'us4' ? 'counted in GPA' : 'counted in your average'}</span>

@@ -111,7 +111,7 @@ export const AssignmentsPage: React.FC = () => {
   return (
     <div className="space-y-5 animate-fade-in pb-16">
       <div>
-        <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Assignments</h1>
+        <h1 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-zinc-900 dark:text-zinc-50">Assignments</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Everything due, in one list.</p>
       </div>
 

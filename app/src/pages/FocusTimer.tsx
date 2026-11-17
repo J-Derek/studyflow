@@ -287,7 +287,7 @@ export const FocusTimerPage: React.FC = () => {
     <div className="space-y-6 animate-fade-in pb-16 max-w-2xl mx-auto">
       {/* Header */}
       <div className="text-center space-y-1">
-        <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+        <h1 className="font-serif text-3xl md:text-4xl font-medium tracking-tight text-zinc-900 dark:text-zinc-50">
           Focus timer
         </h1>
         <p className="text-xs text-zinc-600 dark:text-zinc-400 font-sans">
@@ -375,7 +375,7 @@ export const FocusTimerPage: React.FC = () => {
 
           {/* Inner Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="font-display text-5xl md:text-6xl font-medium text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums ">
+            <span className="font-mono text-5xl md:text-6xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums ">
               <span role="timer" aria-live="off" aria-label={`${timerMode === 'focus' ? 'Focus' : 'Break'} timer`}>{formatTimeLeft(timerSecondsLeft)}</span>
             </span>
             <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 mt-2">
