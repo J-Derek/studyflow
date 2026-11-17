@@ -11,7 +11,6 @@ import {
   Camera, 
   Sun, 
   Moon, 
-  Monitor, 
   HelpCircle,
   ChevronDown,
   GraduationCap
@@ -41,9 +40,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
     customPhotoUrl, 
     setCustomPhoto, 
     theme, 
-    themeMode, 
-    setTheme, 
-    setThemeMode 
+    setTheme 
   } = useStudyFlowStore();
   const { t } = useI18n();
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -410,19 +407,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onO
             <button
               type="button"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="inline-flex items-center gap-2 min-h-[44px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-800 dark:text-zinc-200 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
+              className="inline-flex items-center gap-2 min-h-[44px] px-3.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-800 dark:text-zinc-200 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
             >
               {theme === 'dark' ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
               <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setThemeMode('system')}
-              aria-pressed={themeMode === 'system'}
-              className="inline-flex items-center gap-2 min-h-[44px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-800 dark:text-zinc-200 cursor-pointer aria-pressed:border-brand-gold aria-pressed:text-brand-navy dark:aria-pressed:text-brand-gold"
-            >
-              <Monitor className="h-4 w-4" aria-hidden="true" />
-              <span>{themeMode === 'system' ? 'System theme' : 'Match system'}</span>
             </button>
             {onOpenHelp && (
               <button

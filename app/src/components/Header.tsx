@@ -6,7 +6,6 @@ import {
   Bell,
   Sun,
   Moon,
-  Monitor,
   LogOut,
   ArrowRight,
   ArrowLeft
@@ -40,9 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const {
     theme,
-    themeMode,
     setTheme,
-    setThemeMode,
     activeTab,
     setActiveTab,
     user,
@@ -101,17 +98,12 @@ export const Header: React.FC<HeaderProps> = ({
   const formattedTimer = `${String(timerMins).padStart(2, '0')}:${String(timerSecs).padStart(2, '0')}`;
   const isBreak = timer.mode !== 'focus';
 
-  // Theme toggle cycle
+  // Theme toggle: toggle between light and dark only
   const cycleTheme = () => {
-    if (themeMode === 'light') setTheme('dark');
-    else if (themeMode === 'dark') setThemeMode('system');
-    else setTheme('light');
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
-  const themeIcon =
-    themeMode === 'dark' ? <Moon className="h-4 w-4" /> :
-    themeMode === 'system' ? <Monitor className="h-4 w-4" /> :
-    <Sun className="h-4 w-4" />;
-  const themeLabel = themeMode === 'dark' ? 'Dark' : themeMode === 'system' ? 'System' : 'Light';
+  const themeIcon = theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />;
+  const themeLabel = theme === 'dark' ? 'Dark' : 'Light';
 
   const handleSignOut = async () => {
     if (
