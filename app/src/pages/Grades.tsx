@@ -159,7 +159,17 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
             </select>
           </div>
 
-          {/* Simulation Slider & Live Result Box */}
+          {/* Every assessment already has a score: there is nothing to try, so say the result plainly instead of showing a slider that changes nothing. */}
+          {projection && !projection.upcoming && selectedCourse.assessments.length === 0 ? (
+            <p data-testid="what-if-no-assessments" className="text-sm text-zinc-700 dark:text-zinc-300">
+              {selectedCourse.courseCode} has no assessments yet. Use <strong>Edit grading</strong> on the course below to add them, then try a score here.
+            </p>
+          ) : projection && !projection.upcoming ? (
+            <div data-testid="what-if-all-graded" className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-850 border border-zinc-200/80 dark:border-zinc-800 text-sm text-zinc-800 dark:text-zinc-200">
+              Every assessment in {selectedCourse.courseCode} has a score, so there is nothing left to try. Your result is{' '}
+              <strong className="tabular-nums">{projection.pct.toFixed(1)}%</strong> ({gradeLabel(scale, projection.pct)}). To change it, edit a score below.
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
             <div className="md:col-span-2 space-y-3">
               <div className="flex items-center justify-between text-xs">
@@ -168,7 +178,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                   <span>
                     Simulated Score on{' '}
                     <strong className="text-zinc-900 dark:text-white">
-                      {upcomingAssessment ? upcomingAssessment.name : 'Final assessment'} ({upcomingAssessment ? upcomingAssessment.weight : 30}% weight)
+                      {upcomingAssessment?.name} ({upcomingAssessment?.weight}% weight)
                     </strong>
                   </span>
                 </label>
@@ -221,6 +231,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
               </p>
             </div>
           </div>
+          )}
         </div>
       )}
 

@@ -3,7 +3,6 @@ import {
   Play,
   Pause,
   RotateCcw,
-  CheckCircle,
   Volume2,
   VolumeX,
   CloudRain,
@@ -13,7 +12,8 @@ import {
   Music,
   Music2,
   Moon,
-  Headphones
+  Headphones,
+  X
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { formatTimeLeft } from '../utils/formatters';
@@ -74,7 +74,9 @@ const LengthsForm: React.FC<{
   timerStatus: 'idle' | 'running' | 'paused' | string;
   signedIn: boolean;
   onApply: (lengths: { focusDuration: number; shortBreakDuration: number; longBreakDuration: number }, restartCurrent: boolean) => void;
-}> = ({ settings, timerStatus, signedIn, onApply }) => {
+  /** Folds the panel away. */
+  onClose: () => void;
+}> = ({ settings, timerStatus, signedIn, onApply, onClose }) => {
   const saved = [toMinutes(settings.focusDuration), toMinutes(settings.shortBreakDuration), toMinutes(settings.longBreakDuration)];
   const [draft, setDraft] = useState<string[]>(saved);
   const savedKey = saved.join('/');
@@ -128,7 +130,14 @@ const LengthsForm: React.FC<{
             Restart with the new length
           </button>
         )}
-        <button type="button" disabled={!changed} onClick={() => setDraft(saved)} className={`${btn} text-zinc-700 dark:text-zinc-300`}>
+        <button
+          type="button"
+          onClick={() => {
+            setDraft(saved);
+            onClose();
+          }}
+          className={`${btn} text-zinc-700 dark:text-zinc-300`}
+        >
           Cancel
         </button>
         <button type="button" onClick={() => setDraft(['25', '5', '15'])} className="min-h-[44px] px-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
@@ -163,6 +172,7 @@ export const FocusTimerPage: React.FC = () => {
   // Which sound is being chosen: the one for focus blocks or the one for breaks. It follows the timer mode; a switch by hand
   // lasts until the mode changes (by a tap or when a block ends), and then the card follows the mode again.
   const [pickedTarget, setPickedTarget] = useState<'focus' | 'break' | null>(null);
+  const [lengthsOpen, setLengthsOpen] = useState(false);
   const [pickedInMode, setPickedInMode] = useState(timer.mode);
   if (pickedInMode !== timer.mode) {
     setPickedInMode(timer.mode);
@@ -393,21 +403,6 @@ export const FocusTimerPage: React.FC = () => {
             </span>
           )}
 
-          <button
-            onClick={() => {
-              confetti({
-                particleCount: 80,
-                spread: 70,
-                origin: { y: 0.6 },
-                disableForReducedMotion: true
-              });
-            }}
-            className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700/80 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition active:scale-95"
-            title="Test Milestone Celebration"
-            aria-label="Test milestone celebration"
-          >
-            <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-          </button>
         </div>
 
         {/* Tab-inactive Accuracy Badge */}
@@ -415,11 +410,26 @@ export const FocusTimerPage: React.FC = () => {
       </div>
 
       {/* Timer lengths */}
-      <details className="mx-auto w-full max-w-md rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark">
-        <summary className="cursor-pointer select-none px-4 min-h-[44px] flex items-center text-sm font-medium text-zinc-800 dark:text-zinc-200">
+      <details
+        open={lengthsOpen}
+        onToggle={(e) => setLengthsOpen(e.currentTarget.open)}
+        className="relative mx-auto w-full max-w-md rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark"
+      >
+        <summary className="cursor-pointer select-none px-4 pr-14 min-h-[44px] flex items-center text-sm font-medium text-zinc-800 dark:text-zinc-200">
           Change timer lengths
         </summary>
-        <LengthsForm key={`${timerSettings.focusDuration}/${timerSettings.shortBreakDuration}/${timerSettings.longBreakDuration}`} settings={timerSettings} timerStatus={timer.status} signedIn={!isAnonymous} onApply={(lengths, restartCurrent) => updateTimerSettings(lengths, { restartCurrent })} />
+        {lengthsOpen && (
+          <button
+            type="button"
+            onClick={() => setLengthsOpen(false)}
+            aria-label="Close timer lengths"
+            title="Close"
+            className="absolute top-0 right-0 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
+        <LengthsForm key={`${timerSettings.focusDuration}/${timerSettings.shortBreakDuration}/${timerSettings.longBreakDuration}`} settings={timerSettings} timerStatus={timer.status} signedIn={!isAnonymous} onApply={(lengths, restartCurrent) => updateTimerSettings(lengths, { restartCurrent })} onClose={() => setLengthsOpen(false)} />
       </details>
 
       {/* AMBIENT SOUNDSCAPES DEEP WORK AUDIO (Web Audio Synthesizer) */}

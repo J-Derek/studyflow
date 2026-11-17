@@ -184,6 +184,5 @@ test('the keys: kinds on Assignments, class colours on the Timetable, each class
   const [a, b] = [await edge(lecture), await edge(exam)];
   expect(a).not.toBe(b);
   const cal = page.getByTestId('legend');
-  await cal.getByText('What do the labels mean?').click();
   for (const label of ['Lecture', 'Lab', 'Study', 'Review', 'Exam']) await expect(cal).toContainText(label);
 });

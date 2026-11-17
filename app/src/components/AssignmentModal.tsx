@@ -22,9 +22,11 @@ interface AssignmentModalProps {
   assignmentToEdit?: Assignment | null;
   /** For a new item: the due date to start with (for example the day tapped on the calendar). */
   initialDueDate?: string;
+  /** For a new item: the title to start with (for example what the student searched for and did not find). */
+  initialTitle?: string;
 }
 
-export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, assignmentToEdit, initialDueDate }) => {
+export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, assignmentToEdit, initialDueDate, initialTitle }) => {
   const { addAssignment, updateAssignment } = useStudyFlowStore();
 
   const [title, setTitle] = useState('');
@@ -52,7 +54,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
       setKind(kindOf(assignmentToEdit));
       setRepeat(assignmentToEdit.repeat);
     } else {
-      setTitle('');
+      setTitle(initialTitle ?? '');
       setCourse('');
       setDueDate(initialDueDate && isDateInRange(initialDueDate) ? initialDueDate : localDateISO());
       setDueTime('23:59');
@@ -62,7 +64,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
       setKind('assignment');
       setRepeat(undefined);
     }
-  }, [assignmentToEdit, isOpen, initialDueDate]);
+  }, [assignmentToEdit, isOpen, initialDueDate, initialTitle]);
 
   const dialogRef = useDialog(isOpen, onClose);
 
