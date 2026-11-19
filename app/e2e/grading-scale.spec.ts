@@ -18,18 +18,33 @@ async function seed(page: Page): Promise<void> {
   await page.evaluate(() => {
     const s = (window as unknown as W).__store.getState();
     s.addCourseGrade({ courseCode: 'CS 301', courseName: 'Algorithms', credits: 3, targetLetter: 'A', color: '#4F46E5', assessments: [{ id: 'm', name: 'Midterm', weight: 40, score: 80 }, { id: 'f', name: 'Final', weight: 60 }] });
-    s.addCourseGrade({ courseCode: 'LAW 101', courseName: 'Contracts', credits: 3, targetLetter: 'B', color: '#0EA5E9', assessments: [{ id: 'x', name: 'Exam', weight: 100, score: 58 }] });
+    s.addCourseGrade({ courseCode: 'LAW 101', courseName: 'Contracts', credits: 3, targetLetter: 'B', color: '#0EA5E9', assessments: [{ id: 'x', name: 'Exam', weight: 50, score: 58 }, { id: 'y', name: 'CAT', weight: 50, score: 58 }] });
   });
 }
 const setScale = (page: Page, gradingScale: string) => page.evaluate((g) => (window as unknown as W).__store.getState().updateUser({ gradingScale: g }), gradingScale);
 
-test('letters and GPA are unchanged until a scale is chosen', async ({ page }) => {
+test('letters and GPA out of 4.0 on the Kenyan bands until a scale is chosen', async ({ page }) => {
   await ready(page, '/');
   await seed(page);
   await expect(page.getByText('Projected GPA').first()).toBeVisible();
   await expect(page.getByText('Average so far')).toHaveCount(0);
+  // CS 301 at 80 is an A (4.0), LAW 101 at 58 is a C (2.0): (4.0 x 3 + 2.0 x 3) / 6 = 3.00, which is Upper Second
+  await expect(page.getByText('Projected: Upper Second').first()).toBeVisible();
   await page.goto('/grades');
   await expect(page.getByText('out of 4.00')).toBeVisible();
+  await expect(page.getByText('Projected standing')).toBeVisible();
+  await expect(page.getByText('Projected: Upper Second').first()).toBeVisible();
+  await expect(page.getByText(/not your official standing/)).toBeVisible();
+  await expect(page.getByText(/honou?rs|Dean/i)).toHaveCount(0);
+});
+
+test('with fewer than three graded items the standing says there is not enough graded work yet', async ({ page }) => {
+  await ready(page, '/');
+  await page.evaluate(() => {
+    (window as unknown as W).__store.getState().addCourseGrade({ courseCode: 'CS 301', courseName: 'Algorithms', credits: 3, targetLetter: 'A', color: '#4F46E5', assessments: [{ id: 'm', name: 'Midterm', weight: 40, score: 80 }, { id: 'f', name: 'Final', weight: 60 }] });
+  });
+  await expect(page.getByText('Not enough graded work yet').first()).toBeVisible();
+  await expect(page.getByText('Projected GPA').first()).toBeVisible();
 });
 
 test('Kenyan classes: the average, the class and the course grades are worded that way, and it survives a reload', async ({ page }) => {

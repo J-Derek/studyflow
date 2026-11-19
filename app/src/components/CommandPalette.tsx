@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { exportTimetable } from '../lib/exportTimetable';
+import { localDateISO } from '../utils/limits';
 
 interface CommandItem {
   id: string;
@@ -114,7 +115,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `studyflow-data-${new Date().toISOString().split('T')[0]}.json`;
+          a.download = `studyflow-data-${localDateISO()}.json`;
           a.click();
           URL.revokeObjectURL(url);
           onClose();

@@ -26,7 +26,7 @@ test('when every assessment has a score, the what-if says the result instead of 
   await ready(page, '/grades');
   await page.evaluate(() =>
     (window as unknown as W).__store.getState().addCourseGrade({
-      courseCode: 'ACS211', courseName: 'System Analytics', credits: 4, targetLetter: 'A-', color: '#4F46E5',
+      courseCode: 'ACS211', courseName: 'System Analytics', credits: 4, targetLetter: 'A', color: '#4F46E5',
       assessments: [
         { id: 'm', name: 'Midterm exam', weight: 30, score: 21 },
         { id: 'c', name: 'Coursework', weight: 30, score: 25 },

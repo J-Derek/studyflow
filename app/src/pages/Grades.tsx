@@ -108,10 +108,10 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
         </div>
 
         <div className="p-4 md:p-5 flex flex-col justify-between">
-          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Your standing</span>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Projected standing</span>
           <div className="my-2.5">
             <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              {hasGpa && overall.standing ? overall.standing.replace('Projected: ', '') : '—'}
+              {hasGpa && overall.standing ? overall.standing : '—'}
             </span>
           </div>
           <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-600 dark:text-zinc-400">
@@ -421,12 +421,13 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
             <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Add a course</h2>
               <button
+                type="button"
                 onClick={() => setShowAddCourseModal(false)}
-                className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs tabular-nums p-1"
-                title="Close modal"
-                aria-label="Close modal"
+                className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] -m-2 rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm cursor-pointer"
+                title="Close"
+                aria-label="Close add course"
               >
-                ✕
+                <span aria-hidden="true">✕</span>
               </button>
             </div>
 

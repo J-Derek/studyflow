@@ -32,7 +32,9 @@ describe('classes', () => {
 
 describe('gradeLabel', () => {
   it('shows a letter, a percentage or a class', () => {
-    expect(gradeLabel('us4', 91)).toBe('A-');
+    expect(gradeLabel('us4', 91)).toBe('A');
+    expect(gradeLabel('us4', 64)).toBe('B');
+    expect(gradeLabel('us4', 30)).toBe('E');
     expect(gradeLabel('pct', 67.46)).toBe('67%');
     expect(gradeLabel('uk', 62)).toBe('2:1');
     expect(gradeLabel('ke', 52)).toBe('Second Class Honours (Lower)');
@@ -41,22 +43,34 @@ describe('gradeLabel', () => {
 
 describe('overallResult', () => {
   const grades = [course('a', 4, 80), course('b', 2, 50), course('c', 3, null), course('s', 9, 10, { sample: true })];
-  it('is the GPA today on the US scale, unchanged', () => {
-    const r = overallResult(grades, 'us4');
-    expect(r.value).toBe(calculateCumulativeGpa(grades).gpaString);
+  // Three graded items, so a class can be shown.
+  const enough = [...grades, course('d', 1, 70, { assessments: [{ id: 'd-1', name: 'A', weight: 50, score: 70 }, { id: 'd-2', name: 'B', weight: 50, score: 70 }] })];
+  it('is the GPA out of 4.0 on the default (Kenyan) bands, with a projected class once enough is graded', () => {
+    const r = overallResult(enough, 'us4');
+    expect(r.value).toBe(calculateCumulativeGpa(enough).gpaString);
     expect(r.unit).toBe('out of 4.00');
     expect(r.hasData).toBe(true);
-    expect(r.standing).toMatch(/^Projected: /);
-    expect(r.totalCredits).toBe(6);
+    expect(r.standing).toMatch(/^Projected: (First Class|Upper Second|Lower Second|Pass|Fail)$/);
+    expect(r.standingNote).toMatch(/not your official standing/);
+    expect(r.totalCredits).toBe(7);
+  });
+  it('says there is not enough graded work when fewer than three items are graded, and still shows the figure', () => {
+    const r = overallResult(grades, 'us4');
+    expect(r.hasData).toBe(true);
+    expect(r.value).toBe(calculateCumulativeGpa(grades).gpaString);
+    expect(r.standing).toBe('Not enough graded work yet');
+    expect(overallResult(grades, 'ke').standing).toBe('Not enough graded work yet');
+    expect(overallResult(enough, 'ke').standing).toMatch(/^Projected: /);
   });
   it('is the credit-weighted average percentage on the other scales, ignoring ungraded and sample courses', () => {
     // (80 x 4 + 50 x 2) / 6 = 70
     const uk = overallResult(grades, 'uk');
     expect(uk.value).toBe('70.0%');
     expect(uk.unit).toBe('weighted average');
-    expect(uk.standing).toBe('Projected: First');
     expect(uk.totalCredits).toBe(6);
-    expect(overallResult(grades, 'ke').standing).toBe('Projected: First Class Honours');
+    const three = [course('a', 4, 80, { assessments: [{ id: 'a1', name: 'x', weight: 50, score: 80 }, { id: 'a2', name: 'y', weight: 50, score: 80 }] }), course('b', 2, 50)];
+    expect(overallResult(three, 'uk').standing).toBe('Projected: First');
+    expect(overallResult(three, 'ke').standing).toBe('Projected: First Class Honours');
     const pct = overallResult(grades, 'pct');
     expect(pct.value).toBe('70.0%');
     expect(pct.standing).toBeNull();
@@ -72,19 +86,21 @@ describe('overallResult', () => {
 
 describe('targets', () => {
   it('offers letters on the US scale and class floors on the others, all at most 3 characters', () => {
-    expect(targetOptions('us4').map((o) => o.value)).toEqual(['A', 'A-', 'B+', 'B']);
+    expect(targetOptions('us4').map((o) => o.label)).toEqual(['A (4.0)', 'B (3.0)', 'C (2.0)', 'D (1.0)']);
     expect(targetOptions('uk').map((o) => o.value)).toEqual(['70', '60', '50', '40']);
     expect(targetOptions('ke').map((o) => o.label)).toEqual(['First Class Honours', 'Second Class Honours (Upper)', 'Second Class Honours (Lower)', 'Pass']);
     for (const s of ['us4', 'pct', 'uk', 'ke'] as const) for (const o of targetOptions(s)) expect(o.value.length).toBeLessThanOrEqual(3);
   });
   it('reads a target made on another scale, so switching scales never breaks a course', () => {
     expect(targetLabel('us4', 'A')).toBe('A');
-    expect(targetLabel('us4', '70')).toBe('C-');
+    expect(targetLabel('us4', '70')).toBe('A');
+    expect(targetLabel('us4', 'B+')).toBe('B');
+    expect(targetLabel('us4', 'A-')).toBe('A');
     expect(targetLabel('uk', '60')).toBe('2:1');
     expect(targetLabel('uk', 'A')).toBe('First');
-    expect(targetLabel('ke', 'B')).toBe('First Class Honours');
+    expect(targetLabel('ke', 'B')).toBe('Second Class Honours (Upper)');
     expect(targetLabel('pct', '60')).toBe('60%');
-    expect(targetLabel('pct', 'A')).toBe('93%');
+    expect(targetLabel('pct', 'A')).toBe('70%');
     expect(targetLabel('uk', 'junk')).toBe('First');
   });
   it('knows its scales', () => {

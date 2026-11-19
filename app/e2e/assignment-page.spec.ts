@@ -134,3 +134,35 @@ test('notes save on the page, Full screen opens them, and closing keeps the text
   await page.keyboard.press('Escape');
   await expect(space).toHaveCount(0);
 });
+
+test('a broken address says the assignment is not there instead of an error page', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await ready(page);
+  // (the dev server itself refuses to serve a malformed address on a fresh load, so go there inside the app)
+  await page.evaluate(() => {
+    window.history.pushState({}, '', '/assignments/%E0%A4%A');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+  await expect(page.getByText("This assignment isn't here")).toBeVisible();
+  await expect(page.getByText(/something went wrong/i)).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('a cold reload of an assignment address shows the assignment, never the not-found message first', async ({ page }) => {
+  await ready(page);
+  const id = await add(page, { title: 'Cold reload essay' });
+  await page.waitForFunction(() => !(window as unknown as W).__store.getState().isSyncing);
+  await page.goto(`/assignments/${id}`);
+  // from the first paint of the next load, record whether the not-found message ever appears
+  await page.addInitScript(() => {
+    const w = window as unknown as { __sawMissing: boolean };
+    w.__sawMissing = false;
+    new MutationObserver(() => {
+      if (document.body?.innerText.includes("This assignment isn't here")) w.__sawMissing = true;
+    }).observe(document, { subtree: true, childList: true, characterData: true });
+  });
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1, name: 'Cold reload essay' })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { __sawMissing?: boolean }).__sawMissing ?? false)).toBe(false);
+});

@@ -96,11 +96,11 @@ export const HelpMenuModal: React.FC<HelpMenuModalProps> = ({ isOpen, onClose })
       icon: Award,
       color: 'text-emerald-500',
       bgColor: 'bg-emerald-500/10',
-      description: 'Enter your scores as you get them. Slide a hypothetical final exam score to see how it would change your course grade. Results are projections on a 4.0 scale, so check your university\'s own scale.',
+      description: 'Enter your scores as you get them. Slide a hypothetical final exam score to see how it would change your course grade. Results are projections on a 4.0 scale (A is 70 and above, B 60 to 69, C 50 to 59, D 40 to 49, E below 40), so check your university\'s own scale.',
       bulletPoints: [
         'GPA weighted by credits',
         'What-if slider for an upcoming assessment',
-        'Honors ranges shown as projections, not official standing'
+        'Your class (First Class, Upper Second, Lower Second, Pass) is shown as a projection, not official standing'
       ],
       action: () => {
         setActiveTab('courses');

@@ -95,6 +95,28 @@ export function resetFinishingSignInForTests(): void {
 /** Fired by the sync code when the signed-in account's assignments have come from the cloud. */
 export const ACCOUNT_LOADED_EVENT = 'studyflow:account-loaded';
 
+let accountLoaded = false;
+const loadedListeners = new Set<() => void>();
+
 export function announceAccountLoaded(): void {
+  if (!accountLoaded) {
+    accountLoaded = true;
+    loadedListeners.forEach((l) => l());
+  }
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(ACCOUNT_LOADED_EVENT));
+}
+
+/** True once this page has heard the signed-in account's assignments from the cloud. */
+export function hasAccountLoaded(): boolean {
+  return accountLoaded;
+}
+
+export function subscribeAccountLoaded(listener: () => void): () => void {
+  loadedListeners.add(listener);
+  return () => loadedListeners.delete(listener);
+}
+
+export function resetAccountLoadedForTests(): void {
+  accountLoaded = false;
+  loadedListeners.clear();
 }

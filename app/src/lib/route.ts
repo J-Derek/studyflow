@@ -37,7 +37,13 @@ export function navigate(path: string): void {
 /** "/assignments/abc" -> "abc"; anything else -> null. */
 export function assignmentIdFromPath(path: string): string | null {
   const m = /^\/assignments\/([^/]+)\/?$/i.exec(path);
-  return m ? decodeURIComponent(m[1]) : null;
+  if (!m) return null;
+  try {
+    return decodeURIComponent(m[1]);
+  } catch {
+    // A broken % escape (e.g. /assignments/%E0%A4%A): keep the raw text, which matches no assignment, so the page says it isn't here.
+    return m[1];
+  }
 }
 
 export const assignmentPath = (id: string) => `/assignments/${encodeURIComponent(id)}`;
