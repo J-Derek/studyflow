@@ -392,9 +392,21 @@ export function initFirestoreSync(uid: string): () => void {
       }
       draftsSeeded = true;
 
-      const remote: Draft[] = [];
-      snapshot.forEach((d) => remote.push(docToDraft(d.id, d.data())));
-      if (isCurrentUser(uid)) useStudyFlowStore.setState({ drafts: remote });
+      // Same rule as the other lists (see mergeById): a snapshot that was worked out before this device's latest save must not put the
+      // older text back, or Full screen would open on text from before the last keystrokes.
+      const remote: { item: Draft; pendingWrite: boolean }[] = [];
+      snapshot.forEach((d) => remote.push({ item: docToDraft(d.id, d.data()), pendingWrite: d.metadata.hasPendingWrites }));
+      const apply = () => {
+        if (!isCurrentUser(uid)) return;
+        useStudyFlowStore.setState((st) => {
+          const merged = mergeById(remote, st.drafts, recentWrites.wroteJustNow);
+          const inRemote = new Set(remote.map((r) => r.item.id));
+          const justSaved = st.drafts.filter((d) => !inRemote.has(d.id) && recentWrites.wroteJustNow(d.id));
+          return { drafts: [...merged, ...justSaved] };
+        });
+      };
+      apply();
+      holdBackThenApply('drafts', remote, apply, syncGeneration);
     },
     (err) => console.warn('Firestore drafts listener warning (using offline cache):', err.message)
   );
@@ -855,6 +867,7 @@ export async function commitArchive(
 }
 
 export async function syncDraftToFirestore(uid: string, draft: Draft): Promise<void> {
+  recentWrites.note(draft.id);
   await setDoc(doc(db, 'users', uid, 'drafts', draft.id), { ...draftToDoc(draft), updatedAt: serverTimestamp() });
 }
 

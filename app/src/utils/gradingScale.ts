@@ -1,11 +1,11 @@
 import type { CourseGrade, GradingScale } from '../types';
-import { calculateCoursePercentage, calculateCumulativeGpa, getAcademicStanding, letterToTargetPercentage, percentageToLetter } from './academicCalculations';
+import { calculateCoursePercentage, calculateCumulativeGpa, countGradedItems, getAcademicStanding, GRADE_BANDS, letterToTargetPercentage, MIN_GRADED_ITEMS, NOT_ENOUGH_GRADED, percentageToLetter } from './academicCalculations';
 
 /**
  * The grading scale a student's university uses. It decides how a course percentage is shown (letter, percentage or class) and what the
  * overall figure is (GPA out of 4, or the credit-weighted average). The stored scores are always percentages; only the wording changes.
  *
- *  us4: letters and a GPA out of 4.0 (the default, and what the app always did)
+ *  us4: letters (A to E) and a GPA out of 4.0 on the Kenyan bands in GRADE_BANDS (the default; the key keeps its old name because it is stored)
  *  pct: percentages only, with the weighted average
  *  uk:  First 70+, 2:1 60 to 69, 2:2 50 to 59, Third 40 to 49
  *  ke:  Kenyan degree classes: First Class Honours 70+, Second Upper 60 to 69, Second Lower 50 to 59, Pass 40 to 49
@@ -19,7 +19,7 @@ export function isGradingScale(value: unknown): value is GradingScale {
 }
 
 export const SCALE_LABEL: Record<GradingScale, string> = {
-  us4: 'Letters and GPA out of 4.0',
+  us4: 'Letters and GPA out of 4.0 (A to E)',
   pct: 'Percentages only',
   uk: 'UK degree classes (First, 2:1, 2:2, Third)',
   ke: 'Kenyan degree classes (First Class, Second Upper, Second Lower, Pass)'
@@ -54,7 +54,7 @@ export function gradeLabel(scale: GradingScale, pct: number): string {
 
 /** What a student can aim for when adding a course. The value is at most 3 characters (the cloud's limit for `targetLetter`). */
 export function targetOptions(scale: GradingScale): { value: string; label: string }[] {
-  if (scale === 'us4') return [{ value: 'A', label: 'A (4.0)' }, { value: 'A-', label: 'A- (3.7)' }, { value: 'B+', label: 'B+ (3.3)' }, { value: 'B', label: 'B (3.0)' }];
+  if (scale === 'us4') return GRADE_BANDS.filter((b) => b.min > 0).map((b) => ({ value: b.letter, label: `${b.letter} (${b.gpa.toFixed(1)})` }));
   if (scale === 'pct') return [{ value: '70', label: '70%' }, { value: '60', label: '60%' }, { value: '50', label: '50%' }, { value: '40', label: '40%' }];
   return BANDS[scale].map((b) => ({ value: String(b.min), label: b.label }));
 }
@@ -66,7 +66,7 @@ function targetPercentage(target: string): number {
 
 /** A course's target in the words of the chosen scale, whichever scale it was set on. */
 export function targetLabel(scale: GradingScale, target: string): string {
-  if (scale === 'us4' && !/^\d{1,3}$/.test(target)) return target;
+  if (scale === 'us4' && !/^\d{1,3}$/.test(target)) return percentageToLetter(letterToTargetPercentage(target));
   return gradeLabel(scale, targetPercentage(target));
 }
 
@@ -76,7 +76,7 @@ export interface OverallResult {
   value: string;
   /** What the value is: "out of 4.00" or "weighted average". */
   unit: string;
-  /** "Projected: First Class Honours", or null when there is nothing to say. */
+  /** "Projected: First Class" (or "Not enough graded work yet"), or null when there is nothing to say. */
   standing: string | null;
   /** A line under the standing. */
   standingNote: string;
@@ -85,14 +85,15 @@ export interface OverallResult {
 
 /** The figure for the whole record: GPA on the US scale, the credit-weighted average percentage on the others. Sample courses and ungraded ones are left out. */
 export function overallResult(grades: CourseGrade[], scale: GradingScale): OverallResult {
+  const enough = countGradedItems(grades) >= MIN_GRADED_ITEMS;
   if (scale === 'us4') {
     const g = calculateCumulativeGpa(grades);
     return {
       hasData: g.hasData,
       value: g.gpaString,
       unit: 'out of 4.00',
-      standing: g.hasData ? getAcademicStanding(g.gpa).standing : null,
-      standingNote: 'Cut-offs are a common default (3.8, 3.5, 3.0). Your university may differ.',
+      standing: g.hasData ? (enough ? getAcademicStanding(g.gpa).standing : NOT_ENOUGH_GRADED) : null,
+      standingNote: 'A projection, not your official standing. Bands: 70+ First Class, 60 to 69 Upper Second, 50 to 59 Lower Second, 40 to 49 Pass. Your university may differ.',
       totalCredits: g.totalCredits
     };
   }
@@ -117,8 +118,8 @@ export function overallResult(grades: CourseGrade[], scale: GradingScale): Overa
     hasData: true,
     value: `${avg.toFixed(1)}%`,
     unit: 'weighted average',
-    standing: cls ? `Projected: ${cls}` : null,
-    standingNote: cls ? 'Class boundaries are 70, 60, 50 and 40 percent. Your university may differ.' : 'Percentages only: no grade classes are shown.',
+    standing: cls ? (enough ? `Projected: ${cls}` : NOT_ENOUGH_GRADED) : null,
+    standingNote: cls ? 'A projection, not your official standing. Class boundaries are 70, 60, 50 and 40 percent. Your university may differ.' : 'Percentages only: no grade classes are shown.',
     totalCredits
   };
 }

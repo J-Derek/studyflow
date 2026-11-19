@@ -9,6 +9,7 @@ import { MAX_DRAFT_BODY } from '../services/firestoreMappers';
 import { useDraftText } from '../lib/useDraftText';
 import { useFormatting } from '../lib/useFormatting';
 import { navigate } from '../lib/route';
+import { useAccountDataReady } from '../lib/useAccountDataReady';
 import { AssignmentModal } from './AssignmentModal';
 import { WritingSpace } from './WritingSpace';
 import { KindBadge } from './KindBadge';
@@ -46,6 +47,7 @@ export const AssignmentDetail: React.FC<{ id: string }> = ({ id }) => {
   const [newSubtask, setNewSubtask] = useState('');
   const [fullScreen, setFullScreen] = useState(false);
   const flushNotes = useRef<() => void>(() => {});
+  const dataReady = useAccountDataReady();
 
   // There used to be two kinds of note: a short one on the card and the longer writing. The short one is put at the top of the notes once.
   const hasOldNote = !!asg?.notes?.trim();
@@ -58,6 +60,15 @@ export const AssignmentDetail: React.FC<{ id: string }> = ({ id }) => {
     saveDraft(id, draft.trim() ? `${old}\n\n${draft}` : old);
     updateAssignment(id, { notes: '' });
   }, [hasOldNote, id, saveDraft, updateAssignment]);
+
+  if (!asg && !dataReady) {
+    return (
+      <div className="space-y-3 animate-fade-in" role="status" aria-live="polite">
+        <BackLink />
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading your assignment…</p>
+      </div>
+    );
+  }
 
   if (!asg) {
     return (

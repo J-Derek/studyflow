@@ -1,51 +1,65 @@
 import type { Assessment, CourseGrade } from '../types';
 
-// Standard 4.0 GPA scale mapping
 /** A score is a percentage: not-a-number becomes empty, anything else is held between 0 and 100. */
 export function clampScore(score: number | undefined): number | undefined {
   if (score === undefined || !Number.isFinite(score)) return undefined;
   return Math.min(100, Math.max(0, score));
 }
 
+/**
+ * THE grade scale. Every letter, grade point, class name and cut-off in the app comes from this one table, so changing it here changes it everywhere.
+ * This is the common Kenyan university scale on a 4.0 GPA. Universities differ (some use 5.0, or other cut-offs), so it is a default, not a rule.
+ * Best first; `min` is the lowest percentage of the band.
+ */
+export interface GradeBand {
+  min: number;
+  letter: string;
+  gpa: number;
+  /** The degree class this band stands for. */
+  standing: string;
+}
+
+export const GRADE_BANDS: readonly GradeBand[] = [
+  { min: 70, letter: 'A', gpa: 4.0, standing: 'First Class' },
+  { min: 60, letter: 'B', gpa: 3.0, standing: 'Upper Second' },
+  { min: 50, letter: 'C', gpa: 2.0, standing: 'Lower Second' },
+  { min: 40, letter: 'D', gpa: 1.0, standing: 'Pass' },
+  { min: 0, letter: 'E', gpa: 0.0, standing: 'Fail' }
+];
+
+/** With fewer graded items than this, a class would be a guess, so the app says there is not enough yet. */
+export const MIN_GRADED_ITEMS = 3;
+
+export const NOT_ENOUGH_GRADED = 'Not enough graded work yet';
+
+const bandFor = (pct: number): GradeBand => GRADE_BANDS.find((b) => pct >= b.min) ?? GRADE_BANDS[GRADE_BANDS.length - 1];
+
 export function percentageToGpa(pct: number): number {
-  if (pct >= 93) return 4.0;
-  if (pct >= 90) return 3.7;
-  if (pct >= 87) return 3.3;
-  if (pct >= 83) return 3.0;
-  if (pct >= 80) return 2.7;
-  if (pct >= 77) return 2.3;
-  if (pct >= 73) return 2.0;
-  if (pct >= 70) return 1.7;
-  if (pct >= 60) return 1.0;
-  return 0.0;
+  return bandFor(pct).gpa;
 }
 
 export function percentageToLetter(pct: number): string {
-  if (pct >= 93) return 'A';
-  if (pct >= 90) return 'A-';
-  if (pct >= 87) return 'B+';
-  if (pct >= 83) return 'B';
-  if (pct >= 80) return 'B-';
-  if (pct >= 77) return 'C+';
-  if (pct >= 73) return 'C';
-  if (pct >= 70) return 'C-';
-  if (pct >= 60) return 'D';
-  return 'F';
+  return bandFor(pct).letter;
 }
 
+/**
+ * The percentage a stored target stands for. Targets saved before the Kenyan scale are US letters, so those map to the nearest band
+ * (A and A- to A, B+/B/B- to B, C+/C/C- to C, D to D).
+ */
 export function letterToTargetPercentage(letter: string): number {
-  switch (letter) {
-    case 'A': return 93;
-    case 'A-': return 90;
-    case 'B+': return 87;
-    case 'B': return 83;
-    case 'B-': return 80;
-    case 'C+': return 77;
-    case 'C': return 73;
-    case 'C-': return 70;
-    case 'D': return 60;
-    default: return 93;
+  const base = letter.trim().charAt(0).toUpperCase();
+  const band = GRADE_BANDS.find((b) => b.letter === base && b.letter !== 'E');
+  return band ? band.min : GRADE_BANDS[0].min;
+}
+
+/** How many assessments carry a score, across the student's own courses (sample courses and ungraded ones are not counted). */
+export function countGradedItems(grades: CourseGrade[]): number {
+  let n = 0;
+  for (const c of grades) {
+    if (c.sample || !(c.credits > 0) || !Number.isFinite(c.credits)) continue;
+    for (const a of c.assessments) if (clampScore(a.score ?? undefined) !== undefined) n += 1;
   }
+  return n;
 }
 
 export function calculateCoursePercentage(course: CourseGrade): {
@@ -120,11 +134,13 @@ export function getAcademicStanding(gpa: number): {
   standing: string;
   tier: string;
 } {
-  // Projected, not official: these cut-offs are a common default. Universities differ.
-  if (gpa >= 3.8) return { standing: 'Projected: highest honors range', tier: 'Above 3.8 (default scale)' };
-  if (gpa >= 3.5) return { standing: 'Projected: honors range', tier: 'Above 3.5 (default scale)' };
-  if (gpa >= 3.0) return { standing: 'Projected: good standing', tier: 'Above 3.0 (default scale)' };
-  return { standing: 'Projected: below 3.0', tier: 'Check your university policy' };
+  // A projection, not official standing. A GPA belongs to the band whose grade points it is closest to (3.5, 2.5, 1.5 and 0.5 are the halfway points).
+  for (let i = 0; i < GRADE_BANDS.length - 1; i++) {
+    const cut = (GRADE_BANDS[i].gpa + GRADE_BANDS[i + 1].gpa) / 2;
+    if (gpa >= cut) return { standing: `Projected: ${GRADE_BANDS[i].standing}`, tier: `GPA ${cut.toFixed(1)} and above (default scale)` };
+  }
+  const last = GRADE_BANDS[GRADE_BANDS.length - 1];
+  return { standing: `Projected: ${last.standing}`, tier: 'Check your university policy' };
 }
 
 export function solveRequiredFinalScore(

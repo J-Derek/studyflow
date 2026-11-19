@@ -1,3 +1,5 @@
+import { localDateISO } from './limits';
+
 /**
  * The "Download my data" file. One place builds it, so the Your account dialog and the error screen
  * (where the page itself may be broken) produce exactly the same file.
@@ -35,7 +37,7 @@ export function downloadBackup(data: unknown, now: Date = new Date()): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `studyflow-data-${now.toISOString().split('T')[0]}.json`;
+  link.download = `studyflow-data-${localDateISO(now)}.json`;
   link.click();
   URL.revokeObjectURL(url);
 }

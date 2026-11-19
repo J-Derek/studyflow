@@ -3,6 +3,8 @@ import {
   percentageToGpa,
   percentageToLetter,
   letterToTargetPercentage,
+  GRADE_BANDS,
+  countGradedItems,
   calculateCoursePercentage,
   calculateCumulativeGpa,
   getAcademicStanding,
@@ -13,21 +15,24 @@ import type { CourseGrade } from '../types';
 
 describe('academicCalculations', () => {
   describe('percentageToGpa', () => {
-    it('maps percentage scores to standard 4.0 scale accurately', () => {
+    it('maps percentage scores to the Kenyan bands on a 4.0 scale', () => {
       expect(percentageToGpa(100)).toBe(4.0);
-      expect(percentageToGpa(93)).toBe(4.0);
-      expect(percentageToGpa(92.99)).toBe(3.7);
-      expect(percentageToGpa(90)).toBe(3.7);
-      expect(percentageToGpa(87)).toBe(3.3);
-      expect(percentageToGpa(83)).toBe(3.0);
-      expect(percentageToGpa(80)).toBe(2.7);
-      expect(percentageToGpa(77)).toBe(2.3);
-      expect(percentageToGpa(73)).toBe(2.0);
-      expect(percentageToGpa(70)).toBe(1.7);
-      expect(percentageToGpa(60)).toBe(1.0);
-      expect(percentageToGpa(59.9)).toBe(0.0);
+      expect(percentageToGpa(70)).toBe(4.0);
+      expect(percentageToGpa(69.9)).toBe(3.0);
+      expect(percentageToGpa(60)).toBe(3.0);
+      expect(percentageToGpa(59.9)).toBe(2.0);
+      expect(percentageToGpa(50)).toBe(2.0);
+      expect(percentageToGpa(49.9)).toBe(1.0);
+      expect(percentageToGpa(40)).toBe(1.0);
+      expect(percentageToGpa(39.9)).toBe(0.0);
       expect(percentageToGpa(0)).toBe(0.0);
       expect(percentageToGpa(-5)).toBe(0.0);
+    });
+
+    it('is driven by the one GRADE_BANDS table, best band first', () => {
+      expect(GRADE_BANDS.map((b) => b.letter)).toEqual(['A', 'B', 'C', 'D', 'E']);
+      expect(GRADE_BANDS.map((b) => b.min)).toEqual([70, 60, 50, 40, 0]);
+      expect(GRADE_BANDS.map((b) => b.standing)).toEqual(['First Class', 'Upper Second', 'Lower Second', 'Pass', 'Fail']);
     });
 
     it('preserves strict monotonicity: higher percentage never yields lower GPA', () => {
@@ -41,30 +46,24 @@ describe('academicCalculations', () => {
   });
 
   describe('percentageToLetter & letterToTargetPercentage', () => {
-    it('converts percentages to canonical letter grades', () => {
+    it('converts percentages to letters A to E', () => {
       expect(percentageToLetter(95)).toBe('A');
-      expect(percentageToLetter(91)).toBe('A-');
-      expect(percentageToLetter(88)).toBe('B+');
-      expect(percentageToLetter(84)).toBe('B');
-      expect(percentageToLetter(81)).toBe('B-');
-      expect(percentageToLetter(78)).toBe('C+');
-      expect(percentageToLetter(74)).toBe('C');
-      expect(percentageToLetter(71)).toBe('C-');
-      expect(percentageToLetter(62)).toBe('D');
-      expect(percentageToLetter(55)).toBe('F');
+      expect(percentageToLetter(70)).toBe('A');
+      expect(percentageToLetter(65)).toBe('B');
+      expect(percentageToLetter(55)).toBe('C');
+      expect(percentageToLetter(45)).toBe('D');
+      expect(percentageToLetter(39)).toBe('E');
     });
 
-    it('maps letter grades to valid target percentages', () => {
-      expect(letterToTargetPercentage('A')).toBe(93);
-      expect(letterToTargetPercentage('A-')).toBe(90);
-      expect(letterToTargetPercentage('B+')).toBe(87);
-      expect(letterToTargetPercentage('B')).toBe(83);
-      expect(letterToTargetPercentage('B-')).toBe(80);
-      expect(letterToTargetPercentage('C+')).toBe(77);
-      expect(letterToTargetPercentage('C')).toBe(73);
-      expect(letterToTargetPercentage('C-')).toBe(70);
-      expect(letterToTargetPercentage('D')).toBe(60);
-      expect(letterToTargetPercentage('UNKNOWN')).toBe(93);
+    it('maps targets to the bottom of their band, and older US letters to the nearest band', () => {
+      expect(letterToTargetPercentage('A')).toBe(70);
+      expect(letterToTargetPercentage('B')).toBe(60);
+      expect(letterToTargetPercentage('C')).toBe(50);
+      expect(letterToTargetPercentage('D')).toBe(40);
+      expect(letterToTargetPercentage('A-')).toBe(70);
+      expect(letterToTargetPercentage('B+')).toBe(60);
+      expect(letterToTargetPercentage('C-')).toBe(50);
+      expect(letterToTargetPercentage('UNKNOWN')).toBe(70);
     });
   });
 
@@ -152,10 +151,10 @@ describe('academicCalculations', () => {
           id: 'c-2',
           courseCode: 'HIST 101',
           courseName: 'History Seminar',
-          credits: 1, // 1 credit with 85% (3.0 GPA) -> 3 quality points
+          credits: 1, // 1 credit with 65% (3.0 GPA) -> 3 quality points
           targetLetter: 'B',
           color: '#10B981',
-          assessments: [{ id: 'a-2', name: 'Essay', weight: 100, score: 85 }]
+          assessments: [{ id: 'a-2', name: 'Essay', weight: 100, score: 65 }]
         }
       ];
 
@@ -191,12 +190,12 @@ describe('academicCalculations', () => {
         id, courseCode: id, courseName: id, credits, targetLetter: 'A', color: '#000',
         assessments: [{ id: 'a', name: 'T', weight: 100, score }]
       });
-      // 3.7x3 + 3.3x3 + 2.7x3 = 29.1 quality points / 9 credits = 3.2333, rounds to 3.23
-      const r = calculateCumulativeGpa([mk('a', 3, 91), mk('b', 3, 88), mk('c', 3, 81)]);
-      expect(r.gpa).toBe(3.23);
-      expect(r.totalQualityPoints).toBe(29.1);
+      // 4.0x3 + 3.0x4 + 1.0x2 = 26 quality points / 9 credits = 2.8888, rounds to 2.89
+      const r = calculateCumulativeGpa([mk('a', 3, 75), mk('b', 4, 65), mk('c', 2, 45)]);
+      expect(r.gpa).toBe(2.89);
+      expect(r.totalQualityPoints).toBe(26);
       // half credits stay exact: 4.0 x 1.5 + 3.0 x 1.5 = 10.5 / 3 = 3.5
-      expect(calculateCumulativeGpa([mk('a', 1.5, 95), mk('b', 1.5, 85)]).gpa).toBe(3.5);
+      expect(calculateCumulativeGpa([mk('a', 1.5, 95), mk('b', 1.5, 65)]).gpa).toBe(3.5);
     });
 
     it('property: GPA stays within 0..4 and is stable under course order', () => {
@@ -243,15 +242,30 @@ describe('academicCalculations', () => {
     });
   });
 
+  describe('countGradedItems', () => {
+    it('counts scored assessments in real courses only', () => {
+      const mk = (over: Partial<CourseGrade>): CourseGrade => ({
+        id: 'x', courseCode: 'X', courseName: 'X', credits: 3, targetLetter: 'A', color: '#000',
+        assessments: [{ id: 'a', name: 'T', weight: 50, score: 70 }, { id: 'b', name: 'U', weight: 50 }], ...over
+      });
+      expect(countGradedItems([mk({}), mk({ id: 'y' })])).toBe(2);
+      expect(countGradedItems([mk({ sample: true }), mk({ credits: 0 })])).toBe(0);
+    });
+  });
+
   describe('getAcademicStanding', () => {
     it('labels standings as projected and never renders rank or percentile text', () => {
-      for (const gpa of [3.9, 3.6, 3.2, 2.4]) {
+      for (const gpa of [3.9, 3.6, 2.6, 1.6, 0.6, 0.2]) {
         const r = getAcademicStanding(gpa);
-        expect(r.standing.startsWith('Projected')).toBe(true);
-        expect(`${r.standing} ${r.tier}`).not.toMatch(/top\s*\d|percentile|rank/i);
+        expect(r.standing.startsWith('Projected: ')).toBe(true);
+        expect(`${r.standing} ${r.tier}`).not.toMatch(/top\s*\d|percentile|rank|honou?rs/i);
       }
-      expect(getAcademicStanding(3.9).standing).toContain('highest honors');
-      expect(getAcademicStanding(2.4).standing).toContain('below 3.0');
+      expect(getAcademicStanding(4).standing).toBe('Projected: First Class');
+      expect(getAcademicStanding(3.5).standing).toBe('Projected: First Class');
+      expect(getAcademicStanding(3.0).standing).toBe('Projected: Upper Second');
+      expect(getAcademicStanding(2.0).standing).toBe('Projected: Lower Second');
+      expect(getAcademicStanding(1.0).standing).toBe('Projected: Pass');
+      expect(getAcademicStanding(0.4).standing).toBe('Projected: Fail');
     });
   });
 

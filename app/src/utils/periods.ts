@@ -1,4 +1,5 @@
 import type { Assignment, CourseGrade, Note, PeriodLabel, StudySession } from '../types';
+import { localDateISO } from './limits';
 
 /**
  * Starting a new semester (or term, or trimester). Nothing is deleted: everything the student does not carry over is ARCHIVED, which means it is
@@ -73,6 +74,6 @@ export function planArchive(current: Current, choice: CarryChoice, periodId: str
 
 /** A short id for a period, readable in the cloud console: "p-2026-11-09-ab3x". */
 export function newPeriodId(now: Date = new Date(), rand: () => string = () => Math.random().toString(36).slice(2, 6)): string {
-  const d = now.toISOString().slice(0, 10);
+  const d = localDateISO(now);
   return `p-${d}-${rand()}`;
 }
