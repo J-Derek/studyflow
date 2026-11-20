@@ -46,7 +46,7 @@ test('on a phone a very long course name stays inside the filter card and the li
     expect(b.x + b.width, 'nothing in the row passes its right edge').toBeLessThanOrEqual(rowBox!.x + rowBox!.width + 0.5);
   }
   // the title keeps a readable width instead of a sliver
-  const title = row.getByText('Write the business plan summary');
+  const title = row.getByText('Write the business plan summary', { exact: true }).first();
   expect((await title.boundingBox())!.width).toBeGreaterThan(150);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await context.close();
@@ -79,11 +79,11 @@ test('the same course code again (any capitals, extra spaces) is refused with a 
   await dialog.getByPlaceholder('e.g. CS 240').fill('  law   101 ');
   await dialog.getByPlaceholder('e.g. Advanced Operating Systems').fill('Another name');
   await expect(dialog.getByRole('alert')).toHaveText('You already have a course with this code.');
-  await dialog.getByRole('button', { name: 'Add Course' }).click();
+  await dialog.getByRole('button', { name: 'Add Course', exact: true }).click();
   await expect(dialog).toBeVisible(); // not added
   await dialog.getByPlaceholder('e.g. CS 240').fill('LAW 102');
   await expect(dialog.getByRole('alert')).toHaveCount(0);
-  await dialog.getByRole('button', { name: 'Add Course' }).click();
+  await dialog.getByRole('button', { name: 'Add Course', exact: true }).click();
   await expect(dialog).toHaveCount(0);
 });
 
@@ -92,7 +92,9 @@ test('a score of 69.96 is shown as 70.0% and is banded A, the same figure the st
   await ready(page);
   await page.evaluate(([c]) => (window as unknown as W).__store.getState().addCourseGrade(c as object), [course('MAT 101', 'Calculus', [69.96, 69.96, 69.96])]);
   await expect(page.getByText('70.0%').first()).toBeVisible();
-  await expect(page.getByText('Upper Second')).toHaveCount(0);
+  // three graded items, all shown as 70.0%: the standing is First Class (the help text under it names every band, so look for the projection)
+  await expect(page.getByText('Projected: First Class').first()).toBeVisible();
+  await expect(page.getByText('Projected: Upper Second')).toHaveCount(0);
   await expect(page.getByText('4.00', { exact: true }).first()).toBeVisible();
 });
 
