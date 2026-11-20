@@ -116,6 +116,16 @@ export function sameRun(a: TimerState, b: TimerState, toleranceMs = 15_000): boo
 /** Longest length a student can choose, in minutes. */
 export const TIMER_LIMITS_MIN = { focus: 180, shortBreak: 60, longBreak: 90 } as const;
 
+/**
+ * Seconds to write on the focus-session record when a running block finishes. The account's rules only accept a session no longer than the
+ * time the cloud has seen the timer running, and the cloud's "running" clock restarts at every resume. So after a pause the record holds the
+ * time since the resume (the part the account has seen), not the whole block; an uninterrupted block still records its full length.
+ */
+export function focusSecondsToRecord(t: Pick<TimerState, 'durationSec' | 'elapsedBeforeMs'>): number {
+  const sinceResume = Math.floor((t.durationSec * 1000 - Math.max(0, t.elapsedBeforeMs)) / 1000);
+  return Math.max(1, Math.min(t.durationSec, sinceResume));
+}
+
 /** Whole minutes between 1 and `max`; anything that is not a number becomes 1. */
 export function clampMinutes(value: number, max: number): number {
   if (!Number.isFinite(value)) return 1;

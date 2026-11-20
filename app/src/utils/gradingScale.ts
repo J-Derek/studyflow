@@ -78,6 +78,8 @@ export interface OverallResult {
   unit: string;
   /** "Projected: First Class" (or "Not enough graded work yet"), or null when there is nothing to say. */
   standing: string | null;
+  /** True when there is a figure but too little graded work to show it as a result (the standing says so). Pages show a dash for the value. */
+  withheld: boolean;
   /** A line under the standing. */
   standingNote: string;
   totalCredits: number;
@@ -92,6 +94,7 @@ export function overallResult(grades: CourseGrade[], scale: GradingScale): Overa
       hasData: g.hasData,
       value: g.gpaString,
       unit: 'out of 4.00',
+      withheld: g.hasData && !enough,
       standing: g.hasData ? (enough ? getAcademicStanding(g.gpa).standing : NOT_ENOUGH_GRADED) : null,
       standingNote: 'A projection, not your official standing. Bands: 70+ First Class, 60 to 69 Upper Second, 50 to 59 Lower Second, 40 to 49 Pass. Your university may differ.',
       totalCredits: g.totalCredits
@@ -110,12 +113,13 @@ export function overallResult(grades: CourseGrade[], scale: GradingScale): Overa
     totalCredits += c.credits;
   }
   if (creditTenths === 0) {
-    return { hasData: false, value: '', unit: 'weighted average', standing: null, standingNote: '', totalCredits: 0 };
+    return { hasData: false, withheld: false, value: '', unit: 'weighted average', standing: null, standingNote: '', totalCredits: 0 };
   }
   const avg = oneDecimal(weighted / creditTenths);
   const cls = classOf(scale, avg);
   return {
     hasData: true,
+    withheld: !!cls && !enough,
     value: `${avg.toFixed(1)}%`,
     unit: 'weighted average',
     standing: cls ? (enough ? `Projected: ${cls}` : NOT_ENOUGH_GRADED) : null,

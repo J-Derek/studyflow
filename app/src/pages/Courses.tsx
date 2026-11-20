@@ -3,7 +3,7 @@ import { ArrowLeft, BookOpen, Clock, NotebookPen } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { courseSummary, unlistedCourses } from '../utils/courses';
 import { gradeLabel, targetLabel } from '../utils/gradingScale';
-import { getDaysRemaining } from '../utils/formatters';
+import { getDaysRemaining, plural } from '../utils/formatters';
 import { kindOf, CLASS_TYPE_META } from '../utils/kinds';
 import { KindBadge } from '../components/KindBadge';
 import type { CourseGrade } from '../types';
@@ -37,7 +37,7 @@ const CourseDetail: React.FC<{ course: CourseGrade; onBack: () => void }> = ({ c
           {course.courseCode} <span className="font-normal text-zinc-700 dark:text-zinc-300">{course.courseName}</span>
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 tabular-nums">
-          {course.credits} credits · target {targetLabel(scale, course.targetLetter)} · {summary.gradePct === null ? 'no grades yet' : `${summary.gradePct}% so far${scale === 'uk' || scale === 'ke' ? `, ${gradeLabel(scale, summary.gradePct)}` : ''}`}
+          {plural(course.credits, 'credit')} · target {targetLabel(scale, course.targetLetter)} · {summary.gradePct === null ? 'no grades yet' : `${summary.gradePct}% so far${scale === 'uk' || scale === 'ke' ? `, ${gradeLabel(scale, summary.gradePct)}` : ''}`}
         </p>
       </div>
 

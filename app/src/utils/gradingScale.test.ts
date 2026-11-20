@@ -75,6 +75,14 @@ describe('overallResult', () => {
     expect(pct.value).toBe('70.0%');
     expect(pct.standing).toBeNull();
   });
+  it('withholds the GPA figure (a dash on screen) while the standing says there is not enough graded work', () => {
+    expect(overallResult(grades, 'us4').withheld).toBe(true);
+    expect(overallResult(enough, 'us4').withheld).toBe(false);
+    expect(overallResult(grades, 'uk').withheld).toBe(true);
+    expect(overallResult(enough, 'uk').withheld).toBe(false);
+    expect(overallResult(grades, 'pct').withheld).toBe(false);
+    expect(overallResult([course('c', 3, null)], 'us4').withheld).toBe(false);
+  });
   it('has nothing to show before anything is graded', () => {
     for (const s of ['us4', 'pct', 'uk', 'ke'] as const) {
       const r = overallResult([course('c', 3, null)], s);

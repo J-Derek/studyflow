@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
+import { useDialog } from '../lib/useDialog';
+import { courseKey } from '../utils/courses';
 import { confirmAction } from '../lib/confirm';
 import {
   Calculator,
@@ -11,7 +13,7 @@ import {
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { GradingEditor } from '../components/GradingEditor';
 import { LIMITS } from '../utils/limits';
-import { percentageToGpa, calculateCoursePercentage, whatIfProjection } from '../utils/academicCalculations';
+import { percentageToGpa, calculateCoursePercentage, whatIfProjection, NOT_ENOUGH_GRADED } from '../utils/academicCalculations';
 import { gradeLabel, overallResult, targetLabel, targetOptions } from '../utils/gradingScale';
 
 export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
@@ -24,6 +26,8 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
   // Which score box was just given a number outside 0 to 100 (it is held to the nearest end, and the student is told)
   const [outOfRange, setOutOfRange] = useState<{ id: string; to: number } | null>(null);
 
+  const addTitleId = useId();
+  const addDialogRef = useDialog(showAddCourseModal, () => setShowAddCourseModal(false));
   // Form state for adding new course
   const [newCode, setNewCode] = useState('');
   const [newName, setNewName] = useState('');
@@ -44,9 +48,13 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
   const simCoursePct = projection?.pct ?? 0;
   const upcomingAssessment = projection?.upcoming;
 
+  // The same code again (capitals and extra spaces ignored) would be a second copy of the same course.
+  const duplicateCode = newCode.trim() !== '' && grades.some((g) => courseKey(g.courseCode) === courseKey(newCode));
+
   const handleCreateCourse = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCode.trim() || !newName.trim()) return;
+    if (duplicateCode) return;
 
     addCourseGrade({
       courseCode: newCode.trim().toUpperCase().slice(0, LIMITS.courseCode),
@@ -82,12 +90,12 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
           <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{scale === 'us4' ? 'Projected GPA' : 'Average so far'}</span>
           <div className="my-2.5 flex items-baseline gap-2">
             <span className="text-3xl md:text-4xl tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-              {hasGpa ? termGpa : '—'}
+              {hasGpa && !overall.withheld ? termGpa : '—'}
             </span>
-            {hasGpa && <span className="text-xs text-zinc-600 dark:text-zinc-400">{overall.unit}</span>}
+            {hasGpa && !overall.withheld && <span className="text-xs text-zinc-600 dark:text-zinc-400">{overall.unit}</span>}
           </div>
           <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-600 dark:text-zinc-400">
-            {hasGpa ? 'Based on the grades you have entered so far.' : 'Enter a score for any assessment to see it.'}
+            {hasGpa ? (overall.withheld ? NOT_ENOUGH_GRADED : 'Based on the grades you have entered so far.') : 'Enter a score for any assessment to see it.'}
           </div>
         </div>
 
@@ -417,9 +425,14 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
       {/* Modal: Add New Course */}
       {showAddCourseModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-surface-light dark:bg-surface-dark w-full max-w-md rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-4 animate-scale-in">
+          <div
+            ref={addDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={addTitleId}
+            className="bg-surface-light dark:bg-surface-dark w-full max-w-md rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-4 animate-scale-in">
             <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Add a course</h2>
+              <h2 id={addTitleId} className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Add a course</h2>
               <button
                 type="button"
                 onClick={() => setShowAddCourseModal(false)}
@@ -440,9 +453,16 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                   placeholder="e.g. CS 240"
                   value={newCode}
                   onChange={(e) => setNewCode(e.target.value)}
+                  aria-invalid={duplicateCode || undefined}
+                  aria-describedby={duplicateCode ? 'add-course-duplicate' : undefined}
                   className="mt-1 w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-850 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500"
                   required
                 />
+                {duplicateCode && (
+                  <p id="add-course-duplicate" role="alert" className="mt-1 text-xs font-medium text-rose-700 dark:text-rose-300">
+                    You already have a course with this code.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -491,13 +511,13 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                 <button
                   type="button"
                   onClick={() => setShowAddCourseModal(false)}
-                  className="px-3 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 text-xs font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  className="min-h-[44px] md:min-h-0 px-3 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 text-xs font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-3.5 py-1.5 rounded-md bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 shadow-2xs"
+                  className="min-h-[44px] md:min-h-0 px-3.5 py-1.5 rounded-md bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 shadow-2xs"
                 >
                   Add Course
                 </button>

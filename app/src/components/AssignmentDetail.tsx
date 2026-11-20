@@ -47,6 +47,15 @@ export const AssignmentDetail: React.FC<{ id: string }> = ({ id }) => {
   const [newSubtask, setNewSubtask] = useState('');
   const [fullScreen, setFullScreen] = useState(false);
   const flushNotes = useRef<() => void>(() => {});
+  // The notes editor (and its Full screen button) is unmounted while full screen is open, so focus is put back on the new button when it returns.
+  const fullScreenButton = useRef<HTMLButtonElement | null>(null);
+  const cameFromFullScreen = useRef(false);
+  useEffect(() => {
+    if (fullScreen || !cameFromFullScreen.current) return;
+    cameFromFullScreen.current = false;
+    const frame = requestAnimationFrame(() => fullScreenButton.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [fullScreen]);
   const dataReady = useAccountDataReady();
 
   // There used to be two kinds of note: a short one on the card and the longer writing. The short one is put at the top of the notes once.
@@ -185,8 +194,10 @@ export const AssignmentDetail: React.FC<{ id: string }> = ({ id }) => {
         <NotesEditor
           assignment={asg}
           registerFlush={(f) => (flushNotes.current = f)}
+          fullScreenButton={fullScreenButton}
           onFullScreen={() => {
             flushNotes.current();
+            cameFromFullScreen.current = true;
             setFullScreen(true);
           }}
         />
@@ -204,9 +215,10 @@ export const AssignmentDetail: React.FC<{ id: string }> = ({ id }) => {
 };
 
 /** The assignment's notes, on the page: the same text as the full-screen view, with the same formatting buttons and export. */
-const NotesEditor: React.FC<{ assignment: Assignment; registerFlush: (f: () => void) => void; onFullScreen: () => void }> = ({
+const NotesEditor: React.FC<{ assignment: Assignment; registerFlush: (f: () => void) => void; onFullScreen: () => void; fullScreenButton: React.RefObject<HTMLButtonElement | null> }> = ({
   assignment,
   registerFlush,
+  fullScreenButton,
   onFullScreen
 }) => {
   const { text, change, flush, status, wordCount } = useDraftText(assignment.id);
@@ -229,7 +241,7 @@ const NotesEditor: React.FC<{ assignment: Assignment; registerFlush: (f: () => v
         <FormatButtons onFormat={format} />
         <span className="flex-1" />
         <ExportButtons title={assignment.title} text={text} onBeforeExport={flush} />
-        <button type="button" onClick={onFullScreen} className={button}>
+        <button type="button" ref={fullScreenButton} onClick={onFullScreen} className={button}>
           <Maximize2 className="h-4 w-4" aria-hidden="true" />
           Full screen
         </button>

@@ -7,6 +7,7 @@ import { useDialog } from '../lib/useDialog';
 import { periodWord } from '../utils/periods';
 import { calculateCoursePercentage } from '../utils/academicCalculations';
 import { gradeLabel } from '../utils/gradingScale';
+import { plural } from '../utils/formatters';
 import { kindOf, CLASS_TYPE_META } from '../utils/kinds';
 import { KindBadge } from './KindBadge';
 import type { Period } from '../types';
@@ -99,7 +100,7 @@ export const PastSemestersDialog: React.FC<{ onClose: () => void }> = ({ onClose
                           const { currentPct, gradedWeight } = calculateCoursePercentage(g);
                           return (
                             <li key={g.id} className="text-sm text-zinc-800 dark:text-zinc-200">
-                              {g.courseCode} {g.courseName} <span className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">· {g.credits} credits · {gradedWeight > 0 ? `${Math.round(currentPct * 10) / 10}%${user.gradingScale === 'uk' || user.gradingScale === 'ke' ? ` (${gradeLabel(user.gradingScale, currentPct)})` : ''}` : 'no grades'}</span>
+                              {g.courseCode} {g.courseName} <span className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">· {plural(g.credits, 'credit')} · {gradedWeight > 0 ? `${Math.round(currentPct * 10) / 10}%${user.gradingScale === 'uk' || user.gradingScale === 'ke' ? ` (${gradeLabel(user.gradingScale, currentPct)})` : ''}` : 'no grades'}</span>
                             </li>
                           );
                         })}
@@ -146,7 +147,7 @@ export const PastSemestersDialog: React.FC<{ onClose: () => void }> = ({ onClose
                 >
                   <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-100 [overflow-wrap:anywhere]">{p.name}</span>
                   <span className="block text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">
-                    {date(p.archivedAt)} · {p.counts.assignments} work · {p.counts.grades} courses · {p.counts.notes} notes · {p.counts.sessions} classes
+                    {date(p.archivedAt)} · {p.counts.assignments} work · {plural(p.counts.grades, 'course')} · {plural(p.counts.notes, 'note')} · {plural(p.counts.sessions, 'class', 'classes')}
                   </span>
                 </button>
               </li>

@@ -466,7 +466,7 @@ export const CalendarPage: React.FC = () => {
                               const ok = await confirmAction({ title: `Delete ${session.title}?`, body: session.date ? 'It is removed from your timetable.' : 'It is removed from every week of your timetable.', confirmLabel: 'Delete block' });
                               if (ok) deleteSession(session.id);
                             }}
-                            className="hidden [@media(hover:hover)]:block absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition p-1 hover:text-rose-600 dark:hover:text-rose-400"
+                            className="hidden [@media(hover:hover)]:flex items-center justify-center max-sm:min-h-[44px] max-sm:min-w-[44px] absolute top-1 right-1 max-sm:top-0 max-sm:right-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition p-1 hover:text-rose-600 dark:hover:text-rose-400"
                             title="Delete block"
                             aria-label={`Delete block ${session.title}`}
                           >
@@ -561,8 +561,9 @@ export const CalendarPage: React.FC = () => {
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-850/40">
               <h2 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">{editingId ? 'Edit block' : 'Add a block'}</h2>
               <button
+                type="button"
                 onClick={closeModal}
-                className="p-1 rounded-md text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 md:min-h-0 md:min-w-0 md:my-0 md:mr-0 p-1 rounded-md text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
                 title="Close modal"
                 aria-label="Close modal"
               >
@@ -724,7 +725,7 @@ export const CalendarPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleDeleteEditing}
-                    className="mr-auto px-3 py-1.5 rounded-md text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
+                    className="mr-auto min-h-[44px] md:min-h-0 px-3 py-1.5 rounded-md text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
                   >
                     Delete
                   </button>
@@ -732,13 +733,13 @@ export const CalendarPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-3 py-1.5 rounded-md text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                  className="min-h-[44px] md:min-h-0 px-3 py-1.5 rounded-md text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-3.5 py-1.5 rounded-md text-xs font-medium text-white dark:text-zinc-900 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs"
+                  className="min-h-[44px] md:min-h-0 px-3.5 py-1.5 rounded-md text-xs font-medium text-white dark:text-zinc-900 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 transition shadow-2xs"
                 >
                   {editingId ? 'Save changes' : 'Add block'}
                 </button>
