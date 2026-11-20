@@ -69,29 +69,26 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="w-full bg-surface-light dark:bg-surface-dark border-b border-zinc-200/80 dark:border-zinc-800/80 sticky top-0 z-20 px-4 md:px-6 h-12 flex items-center transition-colors duration-150">
       <div className="flex items-center justify-between gap-2 sm:gap-4 w-full min-w-0">
-        {/* Left: Dynamic Page Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs">
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <span className="hidden sm:inline">{getPageTitle()}</span>
-          </span>
-        </div>
-
-        {/* Right: Search, Sync Pip, Theme & Actions */}
-        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 ml-auto">
-          {/* Quick Search trigger */}
+        {/* Left: the page name, then (wide screens) the search, so the bar is never an empty strip */}
+        <div className="flex items-center gap-3 lg:gap-4 text-xs min-w-0 flex-1">
+          <span className="text-base md:text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">{getPageTitle()}</span>
           {onOpenSearch && (
             <button
+              type="button"
               onClick={onOpenSearch}
-              className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
+              className="hidden lg:flex flex-1 max-w-sm items-center gap-2 px-2.5 py-1 rounded-md border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
             >
               <Search className="h-3 w-3" />
-              <span>Search assignments…</span>
+              <span className="flex-1 text-left">Search assignments…</span>
               <kbd className="inline-flex items-center gap-0.5 px-1 py-0.5 text-xs tabular-nums bg-surface-light dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-400">
                 <Command className="h-2.5 w-2.5" /> K
               </kbd>
             </button>
           )}
+        </div>
 
+        {/* Right: Search, Sync Pip, Theme & Actions */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 ml-auto">
           {/* Theme Toggle Button for Mobile (signed-in students have it in the account menu) */}
           {isAnonymous && (
           <button

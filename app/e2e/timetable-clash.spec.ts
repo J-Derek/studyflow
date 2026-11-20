@@ -62,6 +62,8 @@ for (const [label, width] of [['desktop', 1280], ['phone', 375]] as const) {
       st.addSession({ title: 'Distributed Systems', course: 'ACS443', dayOfWeek: 3, startTime: '10:00', endTime: '11:30', type: 'lecture' });
       st.addSession({ title: 'Differential Calculus', course: 'MAT344', dayOfWeek: 3, startTime: '10:00', endTime: '11:30', type: 'lecture' });
     });
+    // a phone shows one day at a time: go to the Wednesday the blocks are on
+    if (width < 768) await page.getByTestId('day-strip').getByRole('button', { name: /^Wed / }).click();
     await expect(page.getByText('Clashes with another block')).toHaveCount(2);
 
     await page.getByRole('button', { name: /Edit .*Distributed Systems/ }).click();
@@ -99,6 +101,7 @@ for (const [label, width] of [['desktop', 1280], ['phone', 375]] as const) {
     // the change is kept after a reload
     await page.reload();
     await page.waitForFunction(() => !!(window as unknown as { __store?: { getState: () => S } }).__store?.getState().userId);
+    if (width < 768) await page.getByTestId('day-strip').getByRole('button', { name: /^Wed / }).click();
     await expect(page.getByRole('button', { name: /Edit .*Distributed Systems.*13:00 - 14:30/ })).toBeVisible();
 
     // a block can also be deleted from its edit dialog

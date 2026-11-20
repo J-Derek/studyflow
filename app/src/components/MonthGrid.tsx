@@ -2,7 +2,7 @@ import React from 'react';
 import type { Assignment, StudySession } from '../types';
 import { needsAttention } from '../utils/deadlineEmphasis';
 import { classesOn, monthGrid, type Term } from '../utils/calendarMonth';
-import { KIND_META, kindOf } from '../utils/kinds';
+import { ASSIGNMENT_KINDS, CLASS_TYPE_META, DONE_DOT, KIND_META, kindOf } from '../utils/kinds';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const LONG_DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -37,9 +37,9 @@ interface MonthGridProps {
 export const MonthGrid: React.FC<MonthGridProps> = ({ year, month, sessions, term, deadlines, today, onSelectDay }) => {
   const rows = React.useMemo(() => monthGrid(year, month), [year, month]);
   const perDate = React.useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const row of rows) for (const cell of row) counts.set(cell.date, classesOn(sessions, cell.date, term).length);
-    return counts;
+    const byDate = new Map<string, StudySession[]>();
+    for (const row of rows) for (const cell of row) byDate.set(cell.date, classesOn(sessions, cell.date, term));
+    return byDate;
   }, [rows, sessions, term]);
 
   return (
@@ -55,9 +55,18 @@ export const MonthGrid: React.FC<MonthGridProps> = ({ year, month, sessions, ter
         {rows.map((row) => (
           <div key={row[0]!.date} className="grid grid-cols-7 divide-x divide-zinc-200/70 dark:divide-zinc-800/70">
             {row.map((cell) => {
-              const classes = perDate.get(cell.date) ?? 0;
+              const classList = perDate.get(cell.date) ?? [];
+              const classes = classList.length;
+              // One mark per kind, in that kind's colour, with its count: round for classes, square for deadlines; finished deadlines are grey.
+              const classMarks = (Object.keys(CLASS_TYPE_META) as (keyof typeof CLASS_TYPE_META)[])
+                .map((t) => ({ key: `c-${t}`, dot: CLASS_TYPE_META[t].swatch, n: classList.filter((c) => c.type === t).length, round: true, label: CLASS_TYPE_META[t].label }))
+                .filter((m) => m.n > 0);
               const due = deadlines.get(cell.date) ?? [];
               const pending = due.filter((a) => a.status !== 'completed').length;
+              const deadlineMarks = [
+                ...ASSIGNMENT_KINDS.map((k) => ({ key: `d-${k}`, dot: KIND_META[k].dot, n: due.filter((a) => a.status !== 'completed' && kindOf(a) === k).length, round: false, label: KIND_META[k].label })),
+                { key: 'd-done', dot: DONE_DOT, n: due.length - pending, round: false, label: 'Done' }
+              ].filter((m) => m.n > 0);
               const isToday = cell.date === today;
               // A busier day is shaded warmer, and an unfinished exam, test or project shows by name on bigger screens.
               const heat = !cell.inMonth ? '' : pending >= 3 ? 'bg-rose-50 dark:bg-rose-950/30' : pending === 2 ? 'bg-amber-50 dark:bg-amber-950/30' : pending === 1 ? 'bg-amber-50/50 dark:bg-amber-950/15' : cell.dayOfWeek === 0 || cell.dayOfWeek === 6 ? 'bg-zinc-50/60 dark:bg-zinc-900/25' : '';
@@ -110,18 +119,12 @@ export const MonthGrid: React.FC<MonthGridProps> = ({ year, month, sessions, ter
                     </span>
                   )}
                   <span className="flex flex-wrap gap-x-1.5 gap-y-0.5 text-xs tabular-nums text-zinc-700 dark:text-zinc-300" aria-hidden="true">
-                    {classes > 0 && (
-                      <span className="inline-flex items-center gap-0.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                        {classes}
+                    {[...classMarks, ...deadlineMarks].map((m) => (
+                      <span key={m.key} title={`${m.n} ${m.label}`} className={`inline-flex items-center gap-0.5 ${m.key === 'd-done' ? 'text-zinc-500 dark:text-zinc-400' : ''}`}>
+                        <span className={`h-1.5 w-1.5 ${m.round ? 'rounded-full' : 'rounded-[2px]'} ${m.dot}`} />
+                        {m.n}
                       </span>
-                    )}
-                    {due.length > 0 && (
-                      <span className={`items-center gap-0.5 ${pending > 0 ? 'inline-flex md:hidden' : 'inline-flex'}`}>
-                        <span className={`h-1.5 w-1.5 rounded-[2px] ${pending > 0 ? 'bg-rose-500' : 'bg-emerald-500'}`} />
-                        {due.length}
-                      </span>
-                    )}
+                    ))}
                   </span>
                 </button>
               );

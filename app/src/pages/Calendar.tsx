@@ -8,7 +8,7 @@ import { exportMonth, exportTimetable } from '../lib/exportTimetable';
 import { clashingIds, findClashes, isOneOff, toMinutes } from '../utils/timetable';
 import type { StudySession } from '../types';
 import { Legend } from '../components/Legend';
-import { CLASS_TYPE_META } from '../utils/kinds';
+import { CLASS_TYPE_META, DONE_DOT, KIND_META } from '../utils/kinds';
 import { LIMITS, localDateISO } from '../utils/limits';
 import type { Assignment } from '../types';
 import { MonthGrid } from '../components/MonthGrid';
@@ -16,6 +16,8 @@ import { MonthSummaryBar } from '../components/MonthSummaryBar';
 import { DaySheet } from '../components/DaySheet';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { KindBadge } from '../components/KindBadge';
+import { SemesterPrompt } from '../components/SemesterPrompt';
+import { useIsPhone } from '../lib/useIsPhone';
 import { BusyWeekNotice } from '../components/BusyWeekNotice';
 import { classesOn, dayOfWeekOf, deadlinesByDate, inTerm, meetsOn, monthLabel, monthSummary, selectPendingDeadlines, type Term } from '../utils/calendarMonth';
 import { SemesterDatesDialog } from '../components/SemesterDatesDialog';
@@ -66,6 +68,9 @@ export const CalendarPage: React.FC = () => {
   // The block being edited, or null when adding a new one.
   const [editingId, setEditingId] = useState<string | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
+  // On a phone the week shows one day at a time (a strip of day buttons picks it), so there is no seven-screen scroll.
+  const isPhone = useIsPhone();
+  const [phoneDate, setPhoneDate] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [course, setCourse] = useState('');
   const [dayOfWeek, setDayOfWeek] = useState(1);
@@ -98,6 +103,12 @@ export const CalendarPage: React.FC = () => {
       };
     });
   }, [weekOffset]);
+
+  const shownDays = useMemo(() => {
+    if (!isPhone) return weekDays;
+    const pick = weekDays.find((d) => d.date === phoneDate) ?? weekDays.find((d) => d.isToday) ?? weekDays[0];
+    return weekDays.filter((d) => d.date === pick.date);
+  }, [isPhone, weekDays, phoneDate]);
 
   const weekRangeLabel = useMemo(() => {
     if (weekDays.length < 7) return 'Week 10';
@@ -201,8 +212,8 @@ export const CalendarPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Timetable</h1>
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 font-sans">Your weekly classes and study blocks.</p>
+          <h1 className="sr-only md:not-sr-only text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Timetable</h1>
+          <p className="hidden md:block text-xs text-zinc-600 dark:text-zinc-400 font-sans">Your weekly classes and study blocks.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap sm:justify-end">
           <button
@@ -290,7 +301,7 @@ export const CalendarPage: React.FC = () => {
           
           <button
             onClick={() => openAdd()}
-            className="min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-xs transition shadow-2xs active:scale-95"
+            className="min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-xs transition shadow-2xs active:scale-95 max-md:fixed max-md:bottom-[4.75rem] max-md:right-4 max-md:z-30 max-md:shadow-lg max-md:px-4"
           >
             <Plus className="h-3.5 w-3.5" /> <span>Add block</span>
           </button>
@@ -321,18 +332,7 @@ export const CalendarPage: React.FC = () => {
         </div>
       )}
 
-      {!(semesterStart && semesterEnd) && (
-        <p className="text-xs text-zinc-600 dark:text-zinc-400">
-          <button
-            type="button"
-            onClick={() => setSemesterOpen(true)}
-            className="font-medium text-zinc-800 dark:text-zinc-200 underline underline-offset-2 hover:text-zinc-950 dark:hover:text-white min-h-[44px] md:min-h-0 cursor-pointer"
-          >
-            Set semester dates
-          </button>{' '}
-          so weekly classes stop when the semester ends.
-        </p>
-      )}
+      <SemesterPrompt start={semesterStart} end={semesterEnd} today={todayISO} onOpen={() => setSemesterOpen(true)} />
       <SemesterDatesDialog open={semesterOpen} onClose={() => setSemesterOpen(false)} />
 
       <BusyWeekNotice assignments={assignments} />
@@ -390,11 +390,40 @@ export const CalendarPage: React.FC = () => {
         </p>
       )}
 
+      {view === 'week' && isPhone && sessions.length > 0 && (
+        <div role="group" aria-label="Day of the week" data-testid="day-strip" className="grid grid-cols-7 gap-1">
+          {weekDays.map((d) => {
+            const active = shownDays[0]?.date === d.date;
+            const busy = sessions.some((s) => meetsOn(s, d.date, term)) || (deadlines.get(d.date) ?? []).length > 0;
+            return (
+              <button
+                key={d.date}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setPhoneDate(d.date)}
+                className={`min-h-[44px] flex flex-col items-center justify-center rounded-lg border text-xs tabular-nums cursor-pointer ${
+                  active
+                    ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100'
+                    : d.isToday
+                      ? 'border-blue-500 text-blue-800 dark:text-blue-300'
+                      : 'border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300'
+                }`}
+              >
+                <span>{d.dayName}</span>
+                <span className="font-semibold">{d.dateNumber}</span>
+                {d.isToday && <span className="sr-only">, today</span>}
+                <span aria-hidden="true" className={`h-1 w-1 rounded-full ${busy ? (active ? 'bg-white dark:bg-zinc-900' : 'bg-zinc-500') : 'opacity-0'}`} />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* The week: one column per day */}
       {view === 'week' && sessions.length > 0 && (
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark shadow-2xs overflow-hidden">
         <div className="grid grid-cols-1 xl:grid-cols-7 divide-y xl:divide-y-0 xl:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 xl:min-h-[500px]">
-          {weekDays.map((day) => {
+          {shownDays.map((day) => {
             const daySessions = sessions
               .filter((s) => meetsOn(s, day.date, term))
               .sort((a, b) => toMinutes(a.startTime) - toMinutes(b.startTime));
@@ -451,7 +480,7 @@ export const CalendarPage: React.FC = () => {
                               {session.course.split('—')[0].trim()}
                               <span className="font-normal"> · {CLASS_TYPE_META[session.type]?.label ?? session.type}</span>
                             </span>
-                            <span className="block font-medium text-zinc-900 dark:text-zinc-100 text-xs leading-snug line-clamp-2">{session.title}</span>
+                            <span className="font-medium text-zinc-900 dark:text-zinc-100 text-xs leading-snug line-clamp-2">{session.title}</span>
                             <span className="mt-1 flex items-center gap-1 text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
                               <Clock className="h-2.5 w-2.5" aria-hidden="true" />
                               {session.startTime} - {session.endTime}
@@ -485,13 +514,14 @@ export const CalendarPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setDeadlineDialog({ edit: a })}
-                            className="w-full min-h-[44px] flex items-center gap-1.5 rounded-md border border-rose-200 dark:border-rose-900 bg-rose-50/60 dark:bg-rose-950/30 px-2 py-1 text-left text-xs cursor-pointer hover:bg-rose-100/70 dark:hover:bg-rose-950/50"
+                            className="w-full min-h-[44px] flex items-center gap-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-900/40 px-2 py-1 text-left text-xs cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/60"
                           >
+                            <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-[3px] shrink-0 ${a.status === 'completed' ? DONE_DOT : KIND_META[kindOf(a)].dot}`} />
                             <span className={`flex-1 min-w-0 [overflow-wrap:anywhere] ${a.status === 'completed' ? 'line-through text-zinc-600 dark:text-zinc-400' : 'text-zinc-900 dark:text-zinc-100'}`}>
                               <span className="sr-only">Deadline: </span>
                               {a.title}
                             </span>
-                            {kindOf(a) !== 'assignment' && <KindBadge kind={kindOf(a)} />}
+                            {kindOf(a) !== 'assignment' && a.status !== 'completed' && <KindBadge kind={kindOf(a)} />}
                           </button>
                         </li>
                       ))}

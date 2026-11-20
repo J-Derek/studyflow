@@ -14,6 +14,22 @@ const formatDate = (iso: string) => {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 };
 
+/** About four lines of a note, fading out when there is more, so a long note never runs down the page. */
+const Preview: React.FC<{ text: string }> = ({ text }) => {
+  const long = text.length > 180 || text.split('\n').length > 4;
+  return (
+    <span
+      data-testid="note-preview"
+      data-clamped={long ? 'true' : undefined}
+      className={`mt-1 w-full text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap [overflow-wrap:anywhere] line-clamp-4 ${
+        long ? '[mask-image:linear-gradient(to_bottom,black_55%,transparent)]' : ''
+      }`}
+    >
+      {text}
+    </span>
+  );
+};
+
 export const NotesPage: React.FC = () => {
   const { notes, drafts, assignments, grades, addNote, updateNote, deleteNote, restoreNote } = useStudyFlowStore();
   const [query, setQuery] = useState('');
@@ -77,8 +93,8 @@ export const NotesPage: React.FC = () => {
     <div className="space-y-6 animate-fade-in pb-16">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Notes</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Keep what you learn in one place, by course.</p>
+          <h1 className="sr-only md:not-sr-only text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Notes</h1>
+          <p className="hidden md:block text-sm text-zinc-600 dark:text-zinc-400">Keep what you learn in one place, by course.</p>
         </div>
         <button
           type="button"
@@ -153,8 +169,8 @@ export const NotesPage: React.FC = () => {
                   {n.course && <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">{n.course}</span>}
                   <span>{formatDate(n.editedAt)}</span>
                 </span>
-                <span className="block mt-1.5 font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">{n.title}</span>
-                {n.body && <span className="block mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap [overflow-wrap:anywhere] line-clamp-4">{plainText(n.body, NOTE_FORMAT)}</span>}
+                <span className="mt-1.5 font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">{n.title}</span>
+                {n.body && <Preview text={plainText(n.body, NOTE_FORMAT)} />}
               </button>
               <button
                 type="button"
@@ -195,10 +211,10 @@ export const NotesPage: React.FC = () => {
                     {courseCode(assignment.course) && <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">{courseCode(assignment.course)}</span>}
                     <span>{formatDate(draft.editedAt)}</span>
                   </span>
-                  <span className="block mt-1.5 font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">
+                  <span className="mt-1.5 font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 [overflow-wrap:anywhere] line-clamp-2">
                     From Assignments: {assignment.title}
                   </span>
-                  <span className="block mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap [overflow-wrap:anywhere] line-clamp-4">{plainText(draft.body)}</span>
+                  <Preview text={plainText(draft.body)} />
                 </button>
               </li>
             ))}

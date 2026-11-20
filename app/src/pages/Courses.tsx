@@ -115,8 +115,8 @@ export const CoursesPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in pb-16">
       <div className="space-y-1">
-        <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Courses</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">Each course with its work, classes, notes and grade.</p>
+        <h1 className="sr-only md:not-sr-only text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Courses</h1>
+        <p className="hidden md:block text-sm text-zinc-600 dark:text-zinc-400">Each course with its work, classes, notes and grade.</p>
       </div>
 
       {unlisted.length > 0 && (
