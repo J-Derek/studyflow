@@ -13,34 +13,15 @@ import {
   Music2,
   Moon,
   Headphones,
-  X
+  Pencil
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { formatTimeLeft, plural } from '../utils/formatters';
-import { clampMinutes, remainingSeconds, TIMER_LIMITS_MIN } from '../lib/timerEngine';
+import { remainingSeconds } from '../lib/timerEngine';
+import { LENGTH_KEY, MODE_NAME, savedMinutes } from '../lib/timerLength';
+import { readCuesMuted, writeCuesMuted } from '../lib/timerCues';
+import { TimerLengthDialog } from '../components/TimerLengthDialog';
 import type { SoundscapeType } from '../types';
-import confetti from 'canvas-confetti';
-
-/** One length in whole minutes, typed freely (nothing changes until Apply). */
-const LengthField: React.FC<{ id: string; label: string; value: string; onChange: (value: string) => void }> = ({ id, label, value, onChange }) => (
-  <div>
-    <label htmlFor={id} className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-      {label}
-    </label>
-    <div className="flex items-center gap-1.5">
-      <input
-        id={id}
-        type="number"
-        inputMode="numeric"
-        min={1}
-        value={value}
-        onChange={(e) => onChange(e.currentTarget.value)}
-        className="w-full min-h-[44px] px-3 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-surface-light dark:bg-zinc-900 text-sm tabular-nums text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
-      />
-      <span className="text-xs text-zinc-600 dark:text-zinc-400">min</span>
-    </div>
-  </div>
-);
 
 /** A small flame for each finished focus session. A lit one flickers slowly; with "reduce motion" it holds still (see index.css). */
 const FocusFlame: React.FC<{ lit: boolean; delay: number }> = ({ lit, delay }) => (
@@ -62,98 +43,11 @@ const FocusFlame: React.FC<{ lit: boolean; delay: number }> = ({ lit, delay }) =
   </svg>
 );
 
-const LIMITS = [TIMER_LIMITS_MIN.focus, TIMER_LIMITS_MIN.shortBreak, TIMER_LIMITS_MIN.longBreak] as const;
-const toMinutes = (seconds: number) => String(Math.round(seconds / 60));
-
-/**
- * The three lengths as a small form: type, then Apply (or Cancel). While a block is running or paused the
- * student chooses between keeping that block as it is and restarting it at the new length.
- */
-const LengthsForm: React.FC<{
-  settings: { focusDuration: number; shortBreakDuration: number; longBreakDuration: number };
-  timerStatus: 'idle' | 'running' | 'paused' | string;
-  signedIn: boolean;
-  onApply: (lengths: { focusDuration: number; shortBreakDuration: number; longBreakDuration: number }, restartCurrent: boolean) => void;
-  /** Folds the panel away. */
-  onClose: () => void;
-}> = ({ settings, timerStatus, signedIn, onApply, onClose }) => {
-  const saved = [toMinutes(settings.focusDuration), toMinutes(settings.shortBreakDuration), toMinutes(settings.longBreakDuration)];
-  const [draft, setDraft] = useState<string[]>(saved);
-  const savedKey = saved.join('/');
-
-  // A blank box keeps the saved length (it is not read as 0, which would become 1 minute).
-  const clamped = draft.map((v, i) => (v.trim() === '' ? saved[i] : String(clampMinutes(Number(v), LIMITS[i]))));
-  const changed = clamped.join('/') !== savedKey;
-  const busy = timerStatus !== 'idle';
-
-  const apply = (restartCurrent: boolean) => {
-    const [f, sh, lg] = clamped.map(Number);
-    setDraft(clamped);
-    onApply({ focusDuration: f * 60, shortBreakDuration: sh * 60, longBreakDuration: lg * 60 }, restartCurrent);
-  };
-
-  const btn = 'min-h-[44px] px-4 rounded-lg text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-600 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-400 disabled:border-zinc-300 dark:disabled:border-zinc-700';
-  const names = ['Focus', 'Short break', 'Long break'];
-  const adjusted = draft
-    .map((v, i) => ({ name: names[i], typed: v.trim(), max: LIMITS[i], to: clamped[i], kept: saved[i] }))
-    .filter((d) => d.typed === '' || String(d.to) !== String(Number(d.typed)));
-  return (
-    <form
-      noValidate
-      className="px-4 pb-4 space-y-3"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (changed) apply(false);
-      }}
-    >
-      <div className="grid grid-cols-3 gap-3">
-        <LengthField id="len-focus" label="Focus" value={draft[0]} onChange={(v) => setDraft([v, draft[1], draft[2]])} />
-        <LengthField id="len-short" label="Short break" value={draft[1]} onChange={(v) => setDraft([draft[0], v, draft[2]])} />
-        <LengthField id="len-long" label="Long break" value={draft[2]} onChange={(v) => setDraft([draft[0], draft[1], v])} />
-      </div>
-      {adjusted.map((d) => (
-        <p key={d.name} role="status" className="text-xs font-medium text-amber-800 dark:text-amber-300">
-          {d.typed === '' ? `${d.name} is empty, so it stays at ${plural(Number(d.kept), 'minute')}.` : `${d.name} can be 1 to ${d.max} minutes, so ${d.typed} will be saved as ${d.to}.`}
-        </p>
-      ))}
-      <p className="text-xs text-zinc-600 dark:text-zinc-400">
-        {busy
-          ? 'A block is in progress (running or paused). Keep it as it is and use the new length from the next block, or restart it now.'
-          : 'The new length shows on the clock straight away. '}
-        {signedIn ? ' These settings are saved to your account.' : ' These settings are saved on this device.'}
-      </p>
-      <div className="flex flex-wrap items-center gap-2">
-        <button type="submit" disabled={!changed} className={`${btn} bg-blue-600 text-white hover:bg-blue-700`}>
-          {busy ? 'Apply to the next block' : 'Apply'}
-        </button>
-        {busy && (
-          <button type="button" disabled={!changed} onClick={() => apply(true)} className={`${btn} border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200`}>
-            Restart with the new length
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => {
-            setDraft(saved);
-            onClose();
-          }}
-          className={`${btn} text-zinc-700 dark:text-zinc-300`}
-        >
-          Cancel
-        </button>
-        <button type="button" onClick={() => setDraft(['25', '5', '15'])} className="min-h-[44px] px-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
-          Back to 25 / 5 / 15
-        </button>
-      </div>
-    </form>
-  );
-};
-
 export const FocusTimerPage: React.FC = () => {
   const {
     timer,
     nowMs,
-    focusCompletedAtMs,
+    lastCue,
     pomodorosCompleted,
     timerSettings,
     updateTimerSettings,
@@ -173,7 +67,9 @@ export const FocusTimerPage: React.FC = () => {
   // Which sound is being chosen: the one for focus blocks or the one for breaks. It follows the timer mode; a switch by hand
   // lasts until the mode changes (by a tap or when a block ends), and then the card follows the mode again.
   const [pickedTarget, setPickedTarget] = useState<'focus' | 'break' | null>(null);
-  const [lengthsOpen, setLengthsOpen] = useState(false);
+  // The length dialog (opened by tapping the time on the ring), and whether the end-of-block sounds are muted on this device.
+  const [lengthOpen, setLengthOpen] = useState(false);
+  const [cuesMuted, setCuesMuted] = useState(readCuesMuted);
   const [pickedInMode, setPickedInMode] = useState(timer.mode);
   if (pickedInMode !== timer.mode) {
     setPickedInMode(timer.mode);
@@ -251,13 +147,6 @@ export const FocusTimerPage: React.FC = () => {
 
   const progressPercent = Math.max(0, Math.min(100, ((totalDuration - timerSecondsLeft) / totalDuration) * 100));
 
-  // Celebrate once per finished focus block (the store sets the time; the chime plays there).
-  useEffect(() => {
-    if (focusCompletedAtMs && Date.now() - focusCompletedAtMs < 5000) {
-      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 }, disableForReducedMotion: true });
-    }
-  }, [focusCompletedAtMs]);
-
   // SVG Circular parameters
   const radius = 120;
   const circumference = 2 * Math.PI * radius;
@@ -331,7 +220,7 @@ export const FocusTimerPage: React.FC = () => {
 
       {/* Circular Laboratory Gauge Display */}
       <div className="bg-surface-light dark:bg-surface-dark p-8 md:p-10 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex flex-col items-center justify-center relative overflow-hidden transition-colors">
-        <div className="relative w-60 h-60 md:w-68 md:h-68 flex items-center justify-center">
+        <div key={lastCue?.atMs ?? 'idle'} className={`relative w-60 h-60 md:w-68 md:h-68 flex items-center justify-center ${lastCue ? (lastCue.kind === 'relief' ? 'sf-ring-ease' : 'sf-ring-tighten') : ''}`}>
           {/* Base SVG Ring */}
           <svg className="w-full h-full transform -rotate-90" aria-hidden="true">
             <circle
@@ -348,7 +237,7 @@ export const FocusTimerPage: React.FC = () => {
               cx="50%"
               cy="50%"
               r={radius}
-              className={`transition-[stroke-dashoffset] duration-500 ${
+              className={`transition-[stroke-dashoffset,color] duration-500 motion-reduce:transition-none ${
                 timerMode === 'focus'
                   ? 'text-blue-600 dark:text-blue-500'
                   : timerMode === 'shortBreak'
@@ -369,10 +258,25 @@ export const FocusTimerPage: React.FC = () => {
             <span className="font-display text-5xl md:text-6xl font-medium text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums ">
               <span role="timer" aria-live="off" aria-label={`${timerMode === 'focus' ? 'Focus' : 'Break'} timer`}>{formatTimeLeft(timerSecondsLeft)}</span>
             </span>
-            <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 mt-2">
+            <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400 mt-2 inline-flex items-center gap-1">
               {timerMode === 'focus' ? 'Focus' : 'Break'}
+              {!timerIsRunning && <Pencil className="h-3 w-3" aria-hidden="true" />}
             </span>
           </div>
+          {/* The time is a button: tap it to change this mode's length, like setting a clock. Not while it runs. */}
+          <button
+            type="button"
+            data-testid="change-length"
+            aria-label={`Change ${MODE_NAME[timerMode]} length, ${plural(savedMinutes(timerMode, timerSettings), 'minute')}`}
+            aria-disabled={timerIsRunning || undefined}
+            data-tip={timerIsRunning ? 'Pause to change the length' : 'Change the length'}
+            onClick={() => {
+              if (!timerIsRunning) setLengthOpen(true);
+            }}
+            className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[62%] w-48 min-h-[88px] rounded-2xl border border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+              timerIsRunning ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40 hover:border-zinc-300 dark:hover:border-zinc-600'
+            }`}
+          />
         </div>
 
         {/* Action Controls */}
@@ -406,32 +310,34 @@ export const FocusTimerPage: React.FC = () => {
 
         </div>
 
+        {lastCue && timer.status === 'idle' && (
+          <p
+            role="status"
+            data-testid="cue-message"
+            data-cue={lastCue.kind}
+            className={`mt-4 text-sm font-medium text-center ${lastCue.kind === 'relief' ? 'text-emerald-800 dark:text-emerald-300' : 'text-blue-800 dark:text-blue-300'}`}
+          >
+            {lastCue.message}
+          </p>
+        )}
+
         {/* Tab-inactive Accuracy Badge */}
         
       </div>
 
-      {/* Timer lengths */}
-      <details
-        open={lengthsOpen}
-        onToggle={(e) => setLengthsOpen(e.currentTarget.open)}
-        className="relative mx-auto w-full max-w-md rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark"
-      >
-        <summary className="cursor-pointer select-none px-4 pr-14 min-h-[44px] flex items-center text-sm font-medium text-zinc-800 dark:text-zinc-200">
-          Change timer lengths
-        </summary>
-        {lengthsOpen && (
-          <button
-            type="button"
-            onClick={() => setLengthsOpen(false)}
-            aria-label="Close timer lengths"
-            title="Close"
-            className="absolute top-0 right-0 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
-        )}
-        <LengthsForm key={`${timerSettings.focusDuration}/${timerSettings.shortBreakDuration}/${timerSettings.longBreakDuration}`} settings={timerSettings} timerStatus={timer.status} signedIn={!isAnonymous} onApply={(lengths, restartCurrent) => updateTimerSettings(lengths, { restartCurrent })} onClose={() => setLengthsOpen(false)} />
-      </details>
+      {lengthOpen && (
+        <TimerLengthDialog
+          mode={timerMode}
+          saved={savedMinutes(timerMode, timerSettings)}
+          paused={timer.status === 'paused'}
+          signedIn={!isAnonymous}
+          onClose={() => setLengthOpen(false)}
+          onSave={(minutes) => {
+            updateTimerSettings({ [LENGTH_KEY[timerMode]]: minutes * 60 }, { restartCurrent: timer.status === 'paused' });
+            setLengthOpen(false);
+          }}
+        />
+      )}
 
       {/* AMBIENT SOUNDSCAPES DEEP WORK AUDIO (Web Audio Synthesizer) */}
       <div className="bg-surface-light dark:bg-surface-dark p-5 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs space-y-3.5 transition-colors">
@@ -475,6 +381,19 @@ export const FocusTimerPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        <label className="flex items-center gap-2 min-h-[44px] text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!cuesMuted}
+            onChange={(e) => {
+              setCuesMuted(!e.currentTarget.checked);
+              writeCuesMuted(!e.currentTarget.checked);
+            }}
+            className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-700 text-blue-600 cursor-pointer"
+          />
+          Play a sound when a block ends (this device)
+        </label>
 
         {/* Which timer mode the sound is for */}
         <div role="group" aria-label="Choose sound for" className="inline-flex p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80">

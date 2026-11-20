@@ -11,7 +11,8 @@ import { MiniMarkdown } from './MiniMarkdown';
 interface NoteReaderProps {
   note: Note;
   onClose: () => void;
-  onEdit: () => void;
+  /** `scrolled` is how far down the student had read, 0 to 1, so the editor can open at the same place. */
+  onEdit: (scrolled: number) => void;
 }
 
 const barButton =
@@ -28,6 +29,7 @@ export const NoteReader: React.FC<NoteReaderProps> = ({ note, onClose, onEdit })
   const [busy, setBusy] = useState(false);
   const [viewing, setViewing] = useState<{ meta: LocalFileMeta; url: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const dialogRef = useDialog(true, onClose);
 
   const refresh = useCallback(async () => {
@@ -109,7 +111,15 @@ export const NoteReader: React.FC<NoteReaderProps> = ({ note, onClose, onEdit })
             <span>Back to note</span>
           </button>
         ) : (
-          <button type="button" onClick={onEdit} className={barButton}>
+          <button
+            type="button"
+            onClick={() => {
+              const el = scrollRef.current;
+              const room = el ? el.scrollHeight - el.clientHeight : 0;
+              onEdit(el && room > 0 ? el.scrollTop / room : 0);
+            }}
+            className={barButton}
+          >
             <Pencil className="h-4 w-4" aria-hidden="true" />
             <span>Edit</span>
           </button>
@@ -131,7 +141,7 @@ export const NoteReader: React.FC<NoteReaderProps> = ({ note, onClose, onEdit })
           </p>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <article className="mx-auto w-full max-w-[65ch] px-4 sm:px-6 py-8 sm:py-12">
             <h1 id="note-reader-title" className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 break-words">
               {note.title || 'Untitled note'}
