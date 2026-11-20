@@ -54,6 +54,7 @@ import { newPeriodId, planArchive, type CarryChoice } from '../utils/periods';
 import { MAX_DRAFT_BODY, type AssignmentFieldChanges } from '../services/firestoreMappers';
 import { normalizeAssessments } from '../utils/assessments';
 import { notifyPathChange } from '../lib/route';
+import { stopSharing } from '../services/sharedNotes';
 
 export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' | 'courses' | 'notes';
 
@@ -61,8 +62,8 @@ export type NavigationTab = 'dashboard' | 'assignments' | 'calendar' | 'timer' |
 export type LegalTab = 'privacy' | 'terms' | 'children' | 'storage' | 'accessibility';
 export const LEGAL_TABS: LegalTab[] = ['privacy', 'terms', 'children', 'storage', 'accessibility'];
 
-/** The six pages, the legal pages, and what the app shows for an address it does not have. */
-export type AppTab = NavigationTab | LegalTab | 'notfound';
+/** The six pages, the legal pages, a note someone shared by link (/s/<id>), and what the app shows for an address it does not have. */
+export type AppTab = NavigationTab | LegalTab | 'shared' | 'notfound';
 
 export function getTabFromPath(path: string): AppTab {
   const clean = path.replace(/\/$/, '').toLowerCase();
@@ -74,6 +75,7 @@ export function getTabFromPath(path: string): AppTab {
   // "Grades" became "Courses"; the old address (bookmarks, links, the sitemap) still lands on the right page.
   if (clean === '/courses' || clean === '/grades') return 'courses';
   if (clean === '/notes') return 'notes';
+  if (/^\/s\/[^/]+$/.test(clean)) return 'shared';
   const legal = LEGAL_TABS.find((t) => clean === `/${t}`);
   if (legal) return legal;
   return 'notfound';
@@ -161,6 +163,8 @@ interface StudyFlowState {
   addNote: (input: { title: string; body: string; course: string; pinned?: boolean }) => string;
   updateNote: (id: string, updates: Partial<Pick<Note, 'title' | 'body' | 'course' | 'pinned'>>, opts?: { touch?: boolean }) => void;
   deleteNote: (id: string) => void;
+  /** Records that a note is shared by link (its id) or no longer is (null). Does not change when the note was last edited. */
+  setNoteShareId: (id: string, shareId: string | null) => void;
   /** Puts a just-deleted note back (same id), for the Undo button. */
   restoreNote: (note: Note) => void;
   toggleSubtask: (assignmentId: string, subtaskId: string) => void;
@@ -225,6 +229,7 @@ const SYNC_WHAT: Record<string, string> = {
   deleteGradeFromFirestore: 'a course you deleted',
   syncNoteToFirestore: 'your note',
   deleteNoteFromFirestore: 'a note you deleted',
+  stopSharing: 'stopping the link to a note you deleted',
   syncDraftToFirestore: 'your writing',
   commitArchive: 'the archive of your old semester',
   syncPeriodToFirestore: 'your semester record',
@@ -748,6 +753,8 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         const removed = get().notes.find((n) => n.id === id);
         set((state) => ({ notes: state.notes.filter((n) => n.id !== id) }));
         const uid = get().userId;
+        // A deleted note is no longer shared: its link stops working (Undo brings the note back unshared).
+        if (uid && removed?.shareId) stopSharing(uid, removed.shareId).catch(failed('stopSharing'));
         if (uid) {
           deleteNoteFromFirestore(uid, id).catch((err) => {
             failed('deleteNoteFromFirestore')(err);
@@ -756,7 +763,26 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         }
       },
 
-      restoreNote: (note) => {
+      setNoteShareId: (id, shareId) => {
+        let updated: Note | undefined;
+        set((state) => ({
+          notes: state.notes.map((n) => {
+            if (n.id !== id) return n;
+            const { shareId: _old, ...rest } = n;
+            void _old;
+            updated = shareId ? { ...rest, shareId } : rest;
+            return updated;
+          })
+        }));
+        const uid = get().userId;
+        const saved = updated as Note | undefined;
+        if (uid && saved) syncNoteToFirestore(uid, saved).catch(failed('syncNoteToFirestore', () => syncNoteToFirestore(uid, saved)));
+      },
+
+      restoreNote: (restored) => {
+        // Deleting stopped its link, so it comes back unshared.
+        const { shareId: _gone, ...note } = restored;
+        void _gone;
         set((state) => (state.notes.some((n) => n.id === note.id) ? state : { notes: [note, ...state.notes] }));
         const uid = get().userId;
         if (uid) syncNoteToFirestore(uid, note).catch(failed('syncNoteToFirestore', () => syncNoteToFirestore(uid, note)));

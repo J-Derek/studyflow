@@ -1,3 +1,4 @@
+import { isShareId } from '../utils/shareNote';
 import type { Assignment, AssignmentStatus, CourseGrade, Draft, Note, Period, StudySession, Subtask, UserPreferences } from '../types';
 import { isPeriodLabel } from '../utils/periods';
 import { isAssignmentKind } from '../utils/kinds';
@@ -370,7 +371,8 @@ export function noteToDoc(n: Note): Doc {
     createdAt: n.createdAt,
     editedAt: n.editedAt,
     ...archivedField(n.archivedPeriod),
-    archived: !!n.archivedPeriod // lets the app load current items only (rules: bool)
+    archived: !!n.archivedPeriod, // lets the app load current items only (rules: bool)
+    ...(n.shareId && isShareId(n.shareId) ? { shareId: n.shareId } : {})
   };
 }
 
@@ -385,6 +387,7 @@ export function docToNote(id: string, data: Doc): Note {
     pinned: data.pinned === true,
     createdAt: created,
     editedAt: str(data.editedAt, created),
-    ...archivedField(data.archivedPeriod)
+    ...archivedField(data.archivedPeriod),
+    ...(typeof data.shareId === 'string' && isShareId(data.shareId) ? { shareId: data.shareId } : {})
   };
 }

@@ -38,6 +38,7 @@ const preloadPages = () => {
   void import('./pages/Assignments').catch(() => undefined);
 };
 
+const SharedNotePage = lazy(() => import('./pages/SharedNotePage').then((m) => ({ default: m.SharedNotePage })));
 const LegalPage = lazy(() => import('./pages/LegalPage').then((m) => ({ default: m.LegalPage })));
 
 export function App() {
@@ -201,6 +202,7 @@ export function App() {
             {activeTab === 'timer' && <FocusTimerPage />}
             {activeTab === 'courses' && <CoursesPage />}
             {activeTab === 'notes' && <NotesPage />}
+            {activeTab === 'shared' && <SharedNotePage />}
             {activeTab === 'notfound' && <NotFoundPage />}
             {(LEGAL_TABS as string[]).includes(activeTab) && <LegalPage doc={activeTab as (typeof LEGAL_TABS)[number]} />}
           </Suspense>

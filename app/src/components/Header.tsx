@@ -49,6 +49,8 @@ export const Header: React.FC<HeaderProps> = ({
         return 'Courses';
       case 'notes':
         return 'Notes';
+      case 'shared':
+        return 'Shared note';
       case 'notfound':
         return 'Page not found';
       case 'privacy':

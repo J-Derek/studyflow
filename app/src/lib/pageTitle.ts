@@ -14,6 +14,7 @@ const NAMES: Record<string, string> = {
   children: 'Children and privacy',
   storage: 'Data and storage',
   accessibility: 'Accessibility',
+  shared: 'Shared note',
   notfound: 'Page not found'
 };
 

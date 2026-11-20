@@ -20,7 +20,7 @@ function Spans({ spans }: { spans: Span[] }): React.ReactElement {
             {...(inApp ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
             onClick={(e) => {
               // An address inside the app opens without reloading the page.
-              if (tab && tab !== 'notfound') {
+              if (tab && tab !== 'notfound' && tab !== 'shared') {
                 e.preventDefault();
                 setActiveTab(tab as NavigationTab | LegalTab);
                 window.scrollTo({ top: 0 });

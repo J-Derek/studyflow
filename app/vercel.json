@@ -50,6 +50,15 @@
       ]
     },
     {
+      "source": "/s/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
       "source": "/sw.js",
       "headers": [
         {
