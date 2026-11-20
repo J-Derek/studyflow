@@ -2,7 +2,7 @@ import React, { useId } from 'react';
 import { CalendarPlus, Clock, Plus, X } from 'lucide-react';
 import type { Assignment, StudySession } from '../types';
 import { useDialog } from '../lib/useDialog';
-import { CLASS_TYPE_META, kindOf } from '../utils/kinds';
+import { CLASS_TYPE_META, DONE_DOT, KIND_META, kindOf } from '../utils/kinds';
 import { spokenDate } from './MonthGrid';
 import { KindBadge } from './KindBadge';
 
@@ -60,11 +60,12 @@ export const DaySheet: React.FC<DaySheetProps> = ({ date, classes, deadlines, on
               {deadlines.map((a) => (
                 <li key={a.id}>
                   <button type="button" className={row} onClick={() => onEditDeadline(a)}>
+                    <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-[3px] shrink-0 ${a.status === 'completed' ? DONE_DOT : KIND_META[kindOf(a)].dot}`} />
                     <span className={`flex-1 min-w-0 [overflow-wrap:anywhere] ${a.status === 'completed' ? 'line-through text-zinc-600 dark:text-zinc-400' : 'text-zinc-900 dark:text-zinc-100'}`}>
                       {a.title}
                       <span className="block text-xs text-zinc-600 dark:text-zinc-400 no-underline">{a.course.split('—')[0]!.trim()}{a.dueTime ? ` · ${a.dueTime}` : ''}{a.status === 'completed' ? ' · done' : ''}</span>
                     </span>
-                    {kindOf(a) !== 'assignment' && <KindBadge kind={kindOf(a)} />}
+                    {kindOf(a) !== 'assignment' && a.status !== 'completed' && <KindBadge kind={kindOf(a)} />}
                   </button>
                 </li>
               ))}
@@ -91,7 +92,7 @@ export const DaySheet: React.FC<DaySheetProps> = ({ date, classes, deadlines, on
                         {c.startTime} - {c.endTime} · {CLASS_TYPE_META[c.type]?.label ?? c.type}
                       </span>
                     </span>
-                    <span aria-hidden="true" className={`h-3 w-3 rounded-sm shrink-0 ${CLASS_TYPE_META[c.type]?.swatch ?? 'bg-zinc-400'}`} />
+                    <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full shrink-0 ${CLASS_TYPE_META[c.type]?.swatch ?? 'bg-zinc-400'}`} />
                   </button>
                 </li>
               ))}

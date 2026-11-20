@@ -96,7 +96,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div className="space-y-6 animate-fade-in pb-16">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Today</h1>
+          <h1 className="sr-only md:not-sr-only text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Today</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             {todayLabel}
             {' · '}
@@ -122,7 +122,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {isAnonymous && !guestNoticeDismissed && !justSaved && assignments.some((a) => !a.sample) && (
         <div role="note" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-surface-light dark:bg-surface-dark px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
-          <p>Your deadlines are saved on this device only. Sign in with Google to keep them if you clear this browser or switch phones.</p>
+          <p>
+            <span className="sm:hidden">Saved on this device only. Sign in to keep your deadlines.</span>
+            <span className="hidden sm:inline">Your deadlines are saved on this device only. Sign in with Google to keep them if you clear this browser or switch phones.</span>
+          </p>
           <div className="flex items-center gap-2 shrink-0">
             {onOpenBackup && (
               <button type="button" onClick={onOpenBackup} className="px-3 py-1.5 min-h-[44px] rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium text-xs cursor-pointer">Sign in with Google</button>
@@ -355,8 +358,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 space-y-3.5 shadow-2xs">
             {todaysSessions.length === 0 ? (
-              <div className="py-6 text-center">
-                <EmptyIllustration kind="sunrise" className="h-20 w-28 mb-1" />
+              <div className="py-2 md:py-6 text-center">
+                <EmptyIllustration kind="sunrise" className="hidden md:block h-20 w-28 mb-1" />
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 tabular-nums">No lecture sessions scheduled today.</p>
               </div>
             ) : (

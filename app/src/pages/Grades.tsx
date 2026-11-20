@@ -85,7 +85,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Your courses, and what they add up to.</p>
       </div>
       {grades.length > 0 && (
-      <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-1 md:grid-cols-3 overflow-hidden">
+      <div className="bg-surface-light dark:bg-surface-dark border border-zinc-200/80 dark:border-zinc-800/80 rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/80 dark:divide-zinc-800/80 grid grid-cols-2 md:grid-cols-3 overflow-hidden">
         <div className="p-4 md:p-5 flex flex-col justify-between">
           <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{scale === 'us4' ? 'Projected GPA' : 'Average so far'}</span>
           <div className="my-2.5 flex items-baseline gap-2">
@@ -94,7 +94,7 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
             </span>
             {hasGpa && !overall.withheld && <span className="text-xs text-zinc-600 dark:text-zinc-400">{overall.unit}</span>}
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="hidden md:block pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-600 dark:text-zinc-400">
             {hasGpa ? (overall.withheld ? NOT_ENOUGH_GRADED : 'Based on the grades you have entered so far.') : 'Enter a score for any assessment to see it.'}
           </div>
         </div>
@@ -110,12 +110,12 @@ export const GradesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false 
             </span>
             <span className="text-xs text-zinc-600 dark:text-zinc-400">{scale === 'us4' ? 'counted in GPA' : 'counted in your average'}</span>
           </div>
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="hidden md:block pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-600 dark:text-zinc-400">
             {grades.length} {grades.length === 1 ? 'course' : 'courses'} added
           </div>
         </div>
 
-        <div className="p-4 md:p-5 flex flex-col justify-between">
+        <div className="p-4 md:p-5 flex flex-col justify-between col-span-2 md:col-span-1">
           <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Projected standing</span>
           <div className="my-2.5">
             <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">

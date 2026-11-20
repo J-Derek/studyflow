@@ -14,6 +14,7 @@ import { ConfirmHost } from './components/ConfirmHost';
 import { CelebrateBurst } from './components/CelebrateBurst';
 import { CourseSuggestions } from './components/CourseSuggestions';
 import { SyncErrorToast } from './components/SyncErrorToast';
+import { TooltipHost } from './components/TooltipHost';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { NotFoundPage } from './pages/NotFound';
@@ -269,6 +270,7 @@ export function App() {
 
         {/* Tells the student when a change reached the screen but not their account */}
         <SyncErrorToast />
+        <TooltipHost />
       </div>
     </div>
   );

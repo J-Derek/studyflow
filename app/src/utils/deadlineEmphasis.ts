@@ -1,5 +1,5 @@
 import type { Assignment } from '../types';
-import { KIND_META, kindOf } from './kinds';
+import { kindOf } from './kinds';
 
 export type DueTone = 'overdue' | 'today' | 'tomorrow' | 'later';
 
@@ -19,10 +19,10 @@ const dayNumber = (date: string) => {
 };
 
 const BADGE: Record<DueTone, string> = {
-  overdue: KIND_META.exam.badge,
-  today: KIND_META.test.badge,
-  tomorrow: KIND_META.reading.badge,
-  later: KIND_META.assignment.badge
+  overdue: 'bg-rose-50 dark:bg-rose-950/50 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800',
+  today: 'bg-amber-50 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-800',
+  tomorrow: 'bg-sky-50 dark:bg-sky-950/50 text-sky-900 dark:text-sky-200 border-sky-300 dark:border-sky-800',
+  later: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-300 dark:border-zinc-600'
 };
 
 /** How close a "YYYY-MM-DD" due date is to today, as a tone, words and badge colours. */

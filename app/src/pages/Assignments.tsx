@@ -119,8 +119,8 @@ export const AssignmentsPage: React.FC = () => {
   return (
     <div className="space-y-5 animate-fade-in pb-16">
       <div>
-        <h1 className="text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Assignments</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">Everything due, in one list.</p>
+        <h1 className="sr-only md:not-sr-only text-3xl md:text-4xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Assignments</h1>
+        <p className="hidden md:block text-sm text-zinc-600 dark:text-zinc-400">Everything due, in one list.</p>
       </div>
 
       {/* Filter and Search Bar */}
@@ -158,15 +158,15 @@ export const AssignmentsPage: React.FC = () => {
 
         {/* Secondary Dropdown Filters */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs">
-          <div className="flex flex-wrap items-center gap-3 min-w-0 max-w-full">
+          <div className="grid grid-cols-2 gap-2 w-full md:flex md:flex-wrap md:w-auto items-center md:gap-3 min-w-0 max-w-full">
             {/* Course filter: a long course name shortens inside the card instead of pushing past it */}
             <div className="flex items-center gap-1.5 min-w-0 max-w-full">
-              <span className="text-zinc-600 dark:text-zinc-400 tabular-nums text-xs">Course:</span>
+              <span className="hidden md:inline text-zinc-600 dark:text-zinc-400 tabular-nums text-xs">Course:</span>
               <select
                 aria-label="Filter by course"
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
-                className="min-h-[44px] md:min-h-0 min-w-0 max-w-full truncate px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
+                className="min-h-[44px] md:min-h-0 min-w-0 w-full md:w-auto max-w-full truncate px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
               >
                 <option value="all">All Courses ({assignments.length})</option>
                 {courses.map((c) => (
@@ -179,12 +179,12 @@ export const AssignmentsPage: React.FC = () => {
 
             {/* Priority filter */}
             <div className="flex items-center gap-1.5">
-              <span className="text-zinc-600 dark:text-zinc-400 tabular-nums text-xs">Priority:</span>
+              <span className="hidden md:inline text-zinc-600 dark:text-zinc-400 tabular-nums text-xs">Priority:</span>
               <select
                 aria-label="Filter by priority"
                 value={selectedPriority}
                 onChange={(e) => setSelectedPriority(e.target.value)}
-                className="min-h-[44px] md:min-h-0 px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
+                className="min-h-[44px] md:min-h-0 w-full md:w-auto px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
               >
                 <option value="all">All priorities</option>
                 <option value="high">High priority</option>
@@ -262,7 +262,7 @@ export const AssignmentsPage: React.FC = () => {
                 tabIndex={0}
                 onClick={(e) => openFromCard(e, asg)}
                 onKeyDown={(e) => openFromKey(e, asg)}
-                className={`p-3.5 cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-400 transition-[background-color] duration-200 motion-reduce:transition-none hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 flex flex-col gap-2.5 ${
+                className={`p-3.5 cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-400 transition-[background-color] duration-200 motion-reduce:transition-none hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 flex flex-col gap-1 md:gap-2.5 ${
                   // finished: a muted background and the struck-through title; no fading, which dropped its text below 4.5:1 contrast
                   isCompleted ? 'bg-zinc-50 dark:bg-zinc-900/60 border-l-4 border-l-emerald-600 dark:border-l-emerald-500' : ''
                 }`}
