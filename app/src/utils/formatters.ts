@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** "1 minute", "2 minutes", "0 minutes": the count with its word in the right number. Pass `many` for irregular plurals (class, classes). */
+export function plural(n: number, one: string, many = `${one}s`): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
 export function formatTimeLeft(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;

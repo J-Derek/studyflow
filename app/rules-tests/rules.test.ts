@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { focusSecondsToRecord } from '../src/lib/timerEngine';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -711,6 +712,19 @@ describe('focusSessions: forged creation is blocked', () => {
     b.set(fsDoc(db, 'run-2'), session({ durationSeconds: 1500 }));
     b.set(timerDoc(db), idle(3));
     await assertSucceeds(b.commit());
+  });
+  it('a block that was paused and resumed: the full length is refused, the time since the resume is accepted', async () => {
+    // 15 of 25 minutes were used before the pause; the account's clock for the run restarted at the resume, 10 minutes ago.
+    await seedRunningTimer(2, 600 * 1000);
+    const db = asAlice();
+    const full = writeBatch(db);
+    full.set(fsDoc(db, 'run-2'), session({ durationSeconds: 1500 }));
+    full.set(timerDoc(db), idle(3));
+    await assertFails(full.commit());
+    const resumed = writeBatch(db);
+    resumed.set(fsDoc(db, 'run-2'), session({ durationSeconds: focusSecondsToRecord({ durationSec: 1500, elapsedBeforeMs: 900 * 1000 }) }));
+    resumed.set(timerDoc(db), idle(3));
+    await assertSucceeds(resumed.commit());
   });
   it('binds the session id to the timer rev (one session per run)', async () => {
     await seedRunningTimer(2);

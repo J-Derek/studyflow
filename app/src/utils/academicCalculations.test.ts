@@ -29,6 +29,27 @@ describe('academicCalculations', () => {
       expect(percentageToGpa(-5)).toBe(0.0);
     });
 
+    it('bands the one-decimal figure the student sees (69.96 shows as 70.0%, so it is an A)', () => {
+      const cases: [number, string, number][] = [
+        [69.95, 'A', 4.0],
+        [69.96, 'A', 4.0],
+        [69.94, 'B', 3.0],
+        [59.95, 'B', 3.0],
+        [59.94, 'C', 2.0],
+        [49.95, 'C', 2.0],
+        [49.94, 'D', 1.0],
+        [39.95, 'D', 1.0],
+        [39.94, 'E', 0.0]
+      ];
+      for (const [pct, letter, gpa] of cases) {
+        expect(percentageToLetter(pct), `letter at ${pct}`).toBe(letter);
+        expect(percentageToGpa(pct), `gpa at ${pct}`).toBe(gpa);
+        // the same number the screens print with one decimal
+        const shown = Number(pct.toFixed(1));
+        expect(percentageToLetter(shown)).toBe(letter);
+      }
+    });
+
     it('is driven by the one GRADE_BANDS table, best band first', () => {
       expect(GRADE_BANDS.map((b) => b.letter)).toEqual(['A', 'B', 'C', 'D', 'E']);
       expect(GRADE_BANDS.map((b) => b.min)).toEqual([70, 60, 50, 40, 0]);

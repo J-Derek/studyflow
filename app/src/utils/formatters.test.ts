@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getDaysRemaining } from './formatters';
+import { getDaysRemaining, plural } from './formatters';
 
 // Instants chosen around the 2026 US daylight-saving changes, evaluated in explicit zones.
 describe('getDaysRemaining across daylight-saving boundaries', () => {
@@ -37,5 +37,15 @@ describe('getDaysRemaining across daylight-saving boundaries', () => {
     expect(getDaysRemaining('2026-11-01', new Date('2026-11-05T12:00:00Z'), 'Africa/Nairobi').label).toBe('4d overdue');
     expect(getDaysRemaining('not-a-date').label).toBe('Upcoming');
     expect(getDaysRemaining(undefined).label).toBe('Pending date');
+  });
+});
+
+describe('plural', () => {
+  it('uses the singular only for exactly one', () => {
+    expect(plural(1, 'minute')).toBe('1 minute');
+    expect(plural(0, 'minute')).toBe('0 minutes');
+    expect(plural(2, 'minute')).toBe('2 minutes');
+    expect(plural(1, 'class', 'classes')).toBe('1 class');
+    expect(plural(3, 'class', 'classes')).toBe('3 classes');
   });
 });

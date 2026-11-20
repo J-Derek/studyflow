@@ -11,7 +11,7 @@ import {
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useAccountView } from '../store/useAccountView';
-import { getDaysRemaining } from '../utils/formatters';
+import { getDaysRemaining, plural } from '../utils/formatters';
 import { overallResult } from '../utils/gradingScale';
 import type { Assignment } from '../types';
 import { AssignmentModal } from '../components/AssignmentModal';
@@ -157,7 +157,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {kindOf(nextUp) !== 'assignment' && <KindBadge kind={kindOf(nextUp)} />}
             {nextUp.subtasks && nextUp.subtasks.length > 0 && (
               <span className="text-sm text-zinc-600 dark:text-zinc-400 tabular-nums">
-                {nextUp.subtasks.filter((s) => s.completed).length} of {nextUp.subtasks.length} steps done
+                {nextUp.subtasks.filter((s) => s.completed).length} of {plural(nextUp.subtasks.length, 'step')} done
               </span>
             )}
           </p>
@@ -211,7 +211,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
         <div>
           <dt className="text-sm text-zinc-600 dark:text-zinc-400">{scale === 'us4' ? 'Projected GPA' : 'Average so far'}</dt>
-          <dd className="font-display tabular-nums text-3xl font-semibold text-zinc-900 dark:text-zinc-50">{overall.hasData ? overall.value : '—'}<span className="ml-2 text-sm font-normal font-sans text-zinc-600 dark:text-zinc-400">{overall.hasData ? (overall.standing ?? overall.unit) : 'Add graded work in Grades'}</span></dd>
+          <dd className="font-display tabular-nums text-3xl font-semibold text-zinc-900 dark:text-zinc-50">{overall.hasData && !overall.withheld ? overall.value : '—'}<span className="ml-2 text-sm font-normal font-sans text-zinc-600 dark:text-zinc-400">{overall.hasData ? (overall.standing ?? overall.unit) : 'Add graded work in Courses'}</span></dd>
         </div>
       </dl>}
 

@@ -129,7 +129,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="p-2 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 md:min-h-0 md:min-w-0 md:my-0 md:mr-0 p-2 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -219,7 +219,7 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
                     type="button"
                     key={p}
                     onClick={() => setPriority(p)}
-                    className={`py-1.5 rounded-md text-xs tabular-nums capitalize border transition-colors ${
+                    className={`min-h-[44px] md:min-h-0 py-1.5 rounded-md text-xs tabular-nums capitalize border transition-colors ${
                       isSelected
                         ? p === 'high'
                           ? 'bg-rose-50 dark:bg-rose-950/80 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-semibold'
@@ -280,13 +280,13 @@ export const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClos
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-md text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              className="min-h-[44px] md:min-h-0 px-3 py-1.5 rounded-md text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-3.5 py-1.5 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 transition shadow-2xs"
+              className="min-h-[44px] md:min-h-0 px-3.5 py-1.5 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 transition shadow-2xs"
             >
               {assignmentToEdit ? 'Save changes' : 'Add assignment'}
             </button>

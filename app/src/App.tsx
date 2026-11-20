@@ -20,6 +20,8 @@ import { NotFoundPage } from './pages/NotFound';
 import { LEGAL_TABS } from './store/studyFlowStore';
 import { useStudyFlowStore, getTabFromPath } from './store/studyFlowStore';
 import { startAuthSessionLazy } from './lib/authActions';
+import { assignmentIdFromPath, usePath } from './lib/route';
+import { pageTitle } from './lib/pageTitle';
 
 // Code-split pages for performance optimization
 import { Dashboard } from './pages/Dashboard';
@@ -48,6 +50,13 @@ export function App() {
     return () => window.clearTimeout(t);
   }, []);
   const { activeTab, theme, themeMode, setThemeMode } = useStudyFlowStore();
+  // The browser tab and history say which page this is; an assignment's own page uses its title.
+  const path = usePath();
+  const openAssignmentId = assignmentIdFromPath(path);
+  const openAssignmentTitle = useStudyFlowStore((s) => (openAssignmentId ? s.assignments.find((a) => a.id === openAssignmentId)?.title : undefined));
+  useEffect(() => {
+    document.title = pageTitle(activeTab, openAssignmentTitle);
+  }, [activeTab, openAssignmentTitle]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);

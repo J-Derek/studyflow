@@ -11,7 +11,7 @@ import {
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Assignment, Subtask } from '../types';
-import { getDaysRemaining } from '../utils/formatters';
+import { getDaysRemaining, plural } from '../utils/formatters';
 import { LIMITS } from '../utils/limits';
 import { AssignmentModal } from '../components/AssignmentModal';
 import { AssignmentDetail } from '../components/AssignmentDetail';
@@ -158,15 +158,15 @@ export const AssignmentsPage: React.FC = () => {
 
         {/* Secondary Dropdown Filters */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-xs">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Course filter */}
-            <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-3 min-w-0 max-w-full">
+            {/* Course filter: a long course name shortens inside the card instead of pushing past it */}
+            <div className="flex items-center gap-1.5 min-w-0 max-w-full">
               <span className="text-zinc-600 dark:text-zinc-400 tabular-nums text-xs">Course:</span>
               <select
                 aria-label="Filter by course"
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
-                className="min-h-[44px] md:min-h-0 px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
+                className="min-h-[44px] md:min-h-0 min-w-0 max-w-full truncate px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-surface-light dark:bg-zinc-800 text-xs tabular-nums text-zinc-700 dark:text-zinc-200 focus:outline-none"
               >
                 <option value="all">All Courses ({assignments.length})</option>
                 {courses.map((c) => (
@@ -195,7 +195,7 @@ export const AssignmentsPage: React.FC = () => {
           </div>
 
           <div className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
-            {filteredAssignments.length} of {assignments.length} assignments
+            {filteredAssignments.length} of {plural(assignments.length, 'assignment')}
           </div>
         </div>
       </div>
@@ -268,8 +268,8 @@ export const AssignmentsPage: React.FC = () => {
                 }`}
               >
                 {/* Main Assignment Row */}
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 overflow-hidden min-w-0">
+                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-3 gap-y-1">
+                  <div className="flex items-center gap-3 overflow-hidden min-w-0 max-w-full">
                     <button
                       onClick={() => {
                         toggleAssignmentComplete(asg.id);
@@ -287,7 +287,7 @@ export const AssignmentsPage: React.FC = () => {
                     </button>
 
                     <div className="flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1 min-w-0 sm:overflow-hidden">
-                      <span className="tabular-nums text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+                      <span className="tabular-nums text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 max-w-full [overflow-wrap:anywhere] sm:shrink-0 sm:max-w-[16rem] sm:truncate">
                         {asg.course.split('—')[0].trim()}
                       </span>
 
@@ -309,7 +309,7 @@ export const AssignmentsPage: React.FC = () => {
                   </div>
 
                   {/* Right Metadata & Controls */}
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-3 shrink-0 ml-auto">
                     {/* Priority — monochrome text only */}
                     <span className="tabular-nums text-xs text-zinc-600 dark:text-zinc-400 hidden sm:inline capitalize">
                       {asg.priority}

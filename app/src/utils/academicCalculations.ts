@@ -32,7 +32,13 @@ export const MIN_GRADED_ITEMS = 3;
 
 export const NOT_ENOUGH_GRADED = 'Not enough graded work yet';
 
-const bandFor = (pct: number): GradeBand => GRADE_BANDS.find((b) => pct >= b.min) ?? GRADE_BANDS[GRADE_BANDS.length - 1];
+/** Bands are judged on the one-decimal figure the student sees (69.96 shows as 70.0%, so it is an A), the same rule the class scales use. */
+export const roundToShown = (pct: number): number => Math.round(pct * 10) / 10;
+
+const bandFor = (pct: number): GradeBand => {
+  const shown = roundToShown(pct);
+  return GRADE_BANDS.find((b) => shown >= b.min) ?? GRADE_BANDS[GRADE_BANDS.length - 1];
+};
 
 export function percentageToGpa(pct: number): number {
   return bandFor(pct).gpa;

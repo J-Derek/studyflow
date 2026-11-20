@@ -22,7 +22,7 @@ import {
 import { db } from '../lib/firebase';
 import type { Assignment, CourseGrade, Draft, Note, Period, StudySession } from '../types';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
+import { focusSecondsToRecord, fromCloud, sameRun, type TimerState } from '../lib/timerEngine';
 import { REMOVE_FIELD, assignmentChangesToUpdates, type AssignmentFieldChanges, ageToDoc, assignmentToDoc, docToAssignment, docToDraft, docToPeriod, draftToDoc, periodToDoc, docToGrade, docToNote, docToProfile, docToSession, gradeToDoc, noteToDoc, profileToDoc, sessionToDoc, docToTimerPrefs, timerPrefsToDoc } from './firestoreMappers';
 import { RECENT_WRITE_MS, createRecentWrites, mergeById } from './mergeById';
 import { isDefaultTimerPrefs, type TimerPrefs } from '../utils/devicePrefs';
@@ -812,7 +812,8 @@ export function completeFocusSession(uid: string, t: TimerState): void {
   cloudStatus = 'idle';
   const batch = writeBatch(db);
   batch.set(doc(db, 'users', uid, 'focusSessions', `run-${runRev}`), {
-    durationSeconds: t.durationSec,
+    // After a pause and resume the cloud has only seen the time since the resume (see focusSecondsToRecord); more would be refused.
+    durationSeconds: focusSecondsToRecord(t),
     mode: 'focus',
     completedAt: serverTimestamp(),
     localDate: localDateString(new Date())

@@ -16,7 +16,7 @@ import {
   X
 } from 'lucide-react';
 import { useStudyFlowStore } from '../store/studyFlowStore';
-import { formatTimeLeft } from '../utils/formatters';
+import { formatTimeLeft, plural } from '../utils/formatters';
 import { clampMinutes, remainingSeconds, TIMER_LIMITS_MIN } from '../lib/timerEngine';
 import type { SoundscapeType } from '../types';
 import confetti from 'canvas-confetti';
@@ -81,7 +81,8 @@ const LengthsForm: React.FC<{
   const [draft, setDraft] = useState<string[]>(saved);
   const savedKey = saved.join('/');
 
-  const clamped = draft.map((v, i) => String(clampMinutes(Number(v), LIMITS[i])));
+  // A blank box keeps the saved length (it is not read as 0, which would become 1 minute).
+  const clamped = draft.map((v, i) => (v.trim() === '' ? saved[i] : String(clampMinutes(Number(v), LIMITS[i]))));
   const changed = clamped.join('/') !== savedKey;
   const busy = timerStatus !== 'idle';
 
@@ -94,8 +95,8 @@ const LengthsForm: React.FC<{
   const btn = 'min-h-[44px] px-4 rounded-lg text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-600 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-400 disabled:border-zinc-300 dark:disabled:border-zinc-700';
   const names = ['Focus', 'Short break', 'Long break'];
   const adjusted = draft
-    .map((v, i) => ({ name: names[i], typed: v.trim(), max: LIMITS[i], to: clampMinutes(Number(v), LIMITS[i]) }))
-    .filter((d) => d.typed !== '' && String(d.to) !== String(Number(d.typed)));
+    .map((v, i) => ({ name: names[i], typed: v.trim(), max: LIMITS[i], to: clamped[i], kept: saved[i] }))
+    .filter((d) => d.typed === '' || String(d.to) !== String(Number(d.typed)));
   return (
     <form
       noValidate
@@ -112,7 +113,7 @@ const LengthsForm: React.FC<{
       </div>
       {adjusted.map((d) => (
         <p key={d.name} role="status" className="text-xs font-medium text-amber-800 dark:text-amber-300">
-          {d.name} can be 1 to {d.max} minutes, so {d.typed} will be saved as {d.to}.
+          {d.typed === '' ? `${d.name} is empty, so it stays at ${plural(Number(d.kept), 'minute')}.` : `${d.name} can be 1 to ${d.max} minutes, so ${d.typed} will be saved as ${d.to}.`}
         </p>
       ))}
       <p className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -240,10 +241,10 @@ export const FocusTimerPage: React.FC = () => {
   const modeLabel = timerMode === 'focus' ? 'Focus' : timerMode === 'shortBreak' ? 'Short break' : 'Long break';
   const announcement =
     timer.status === 'running'
-      ? `${modeLabel} running, ${minutesLeft} ${minutesLeft === 1 ? 'minute' : 'minutes'} left`
+      ? `${modeLabel} running, ${plural(minutesLeft, 'minute')} left`
       : timer.status === 'paused'
-      ? `${modeLabel} paused, ${minutesLeft} ${minutesLeft === 1 ? 'minute' : 'minutes'} left`
-      : `${modeLabel} ready, ${Math.round(timer.durationSec / 60)} minutes`;
+      ? `${modeLabel} paused, ${plural(minutesLeft, 'minute')} left`
+      : `${modeLabel} ready, ${plural(Math.round(timer.durationSec / 60), 'minute')}`;
 
   // Calculate duration and progress ratio
   const totalDuration = timer.durationSec;
