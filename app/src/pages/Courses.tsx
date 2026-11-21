@@ -101,7 +101,7 @@ const CourseDetail: React.FC<{ course: CourseGrade; onBack: () => void }> = ({ c
  * course. The grades calculator (formerly the Grades page) follows below, where courses are added and weights and scores are set.
  */
 export const CoursesPage: React.FC = () => {
-  const { grades, assignments, sessions, notes } = useStudyFlowStore();
+  const { grades, assignments, sessions, notes, addCourseGrade } = useStudyFlowStore();
   const [openId, setOpenId] = useState<string | null>(null);
   const summaries = useSummaries(grades);
   const open = grades.find((c) => c.id === openId) ?? null;
@@ -120,9 +120,33 @@ export const CoursesPage: React.FC = () => {
       </div>
 
       {unlisted.length > 0 && (
-        <p data-testid="unlisted-courses" className="text-sm text-zinc-700 dark:text-zinc-300">
-          Your deadlines, classes or notes mention {unlisted.join(', ')}. Add {unlisted.length === 1 ? 'it' : 'them'} as {unlisted.length === 1 ? 'a course' : 'courses'} below to see the work for {unlisted.length === 1 ? 'it' : 'each'} in one place.
-        </p>
+        <div data-testid="unlisted-courses" className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+          <p className="min-w-0 [overflow-wrap:anywhere]">Not courses yet: {unlisted.join(', ')}.</p>
+          <button
+            type="button"
+            onClick={() => {
+              // Each one becomes a course named by its code, with the same starting set-up as Add course (rename it later in the course list).
+              for (const code of unlisted) {
+                const stamp = `${Date.now()}-${code}`;
+                addCourseGrade({
+                  courseCode: code.toUpperCase().slice(0, 20),
+                  courseName: code.slice(0, 80),
+                  credits: 3,
+                  targetLetter: 'A',
+                  color: '#4F46E5',
+                  assessments: [
+                    { id: `a-${stamp}-1`, name: 'Midterm exam', weight: 30, score: undefined },
+                    { id: `a-${stamp}-2`, name: 'Coursework', weight: 30, score: undefined },
+                    { id: `a-${stamp}-3`, name: 'Final exam', weight: 40, score: undefined }
+                  ]
+                });
+              }
+            }}
+            className="min-h-[44px] px-3 rounded-lg border border-zinc-300 dark:border-zinc-600 text-xs font-medium text-zinc-800 dark:text-zinc-100 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800"
+          >
+            Add these courses
+          </button>
+        </div>
       )}
 
       {grades.length > 0 && (

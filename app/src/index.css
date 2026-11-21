@@ -189,3 +189,9 @@ summary:focus-visible,
 @media (max-width: 767.98px) {
   html[data-typing='true'] .sf-bottom-bar { display: none !important; }
 }
+
+/* Dialogs on a phone fit the visible height (above the on-screen keyboard) and scroll as one area when they are taller. */
+@media (max-width: 767.98px) {
+  /* zero specificity: a dialog's own max-height class (and the full-screen sheets) still win */
+  :where([role='dialog'][aria-modal='true']:not([data-fullscreen]):not(.fixed)) { max-height: calc(var(--vvh, 100dvh) - 2rem); overflow-y: auto; }
+}

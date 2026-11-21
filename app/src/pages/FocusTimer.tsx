@@ -21,6 +21,7 @@ import { remainingSeconds } from '../lib/timerEngine';
 import { LENGTH_KEY, MODE_NAME, savedMinutes } from '../lib/timerLength';
 import { readCuesMuted, writeCuesMuted } from '../lib/timerCues';
 import { TimerLengthDialog } from '../components/TimerLengthDialog';
+import { useDialog } from '../lib/useDialog';
 import type { SoundscapeType } from '../types';
 
 /** A small flame for each finished focus session. A lit one flickers slowly; with "reduce motion" it holds still (see index.css). */
@@ -70,6 +71,9 @@ export const FocusTimerPage: React.FC = () => {
   // The length dialog (opened by tapping the time on the ring), and whether the end-of-block sounds are muted on this device.
   const [lengthOpen, setLengthOpen] = useState(false);
   const [cuesMuted, setCuesMuted] = useState(readCuesMuted);
+  // Background sound is one row; its choices open in a sheet.
+  const [soundOpen, setSoundOpen] = useState(false);
+  const soundSheetRef = useDialog(soundOpen, () => setSoundOpen(false));
   const [pickedInMode, setPickedInMode] = useState(timer.mode);
   if (pickedInMode !== timer.mode) {
     setPickedInMode(timer.mode);
@@ -339,15 +343,41 @@ export const FocusTimerPage: React.FC = () => {
         />
       )}
 
-      {/* AMBIENT SOUNDSCAPES DEEP WORK AUDIO (Web Audio Synthesizer) */}
-      <div className="bg-surface-light dark:bg-surface-dark p-5 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs space-y-3.5 transition-colors">
+      {/* AMBIENT SOUNDSCAPES DEEP WORK AUDIO (Web Audio Synthesizer): one row here, the choices in a sheet */}
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark px-4 shadow-2xs">
+        <p className="flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300 min-w-0">
+          <Headphones className="h-4 w-4 shrink-0 text-zinc-600 dark:text-zinc-400" aria-hidden="true" />
+          <span className="truncate">
+            Background sound: <span className="font-medium text-zinc-900 dark:text-zinc-100">{sounds[timerMode === 'focus' ? soundscape : breakSoundscape].label}</span>
+          </span>
+        </p>
+        <button
+          type="button"
+          onClick={() => setSoundOpen(true)}
+          aria-label="Change background sound"
+          className="shrink-0 min-h-[44px] px-3 -mr-2 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+        >
+          Change
+        </button>
+      </div>
+
+      {soundOpen && (
+      <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-zinc-900/60 dark:bg-black/80 backdrop-blur-sm" onClick={() => setSoundOpen(false)}>
+      <div
+        ref={soundSheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="sound-sheet-title"
+        onClick={(e) => e.stopPropagation()}
+        className="w-full md:max-w-2xl max-h-[100dvh] overflow-y-auto bg-surface-light dark:bg-surface-dark p-5 rounded-t-2xl md:rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xl space-y-3.5"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800/80 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
               <Headphones className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <h2 id="sound-sheet-title" className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <span>Background sound</span>
                 {chosenSound !== 'off' && soundIsPlayingNow && (
                   <span className="flex items-center gap-0.5 text-xs text-emerald-600 dark:text-emerald-400 tabular-nums">
@@ -437,7 +467,16 @@ export const FocusTimerPage: React.FC = () => {
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          onClick={() => setSoundOpen(false)}
+          className="w-full min-h-[44px] rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium cursor-pointer"
+        >
+          Done
+        </button>
       </div>
+      </div>
+      )}
 
       {/* Focus Session Counter & Milestones */}
       <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex items-center justify-between transition-colors">
