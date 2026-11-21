@@ -52,6 +52,23 @@ export function App() {
     return () => window.clearTimeout(t);
   }, []);
   const { activeTab, theme, themeMode, setThemeMode } = useStudyFlowStore();
+  // While a text box has focus (the keyboard is up on a phone), bars fixed to the bottom step aside so they never ride on top of it.
+  useEffect(() => {
+    const typing = (el: EventTarget | null) =>
+      el instanceof HTMLElement && (el.isContentEditable || (el instanceof HTMLTextAreaElement) || (el instanceof HTMLInputElement && !['checkbox', 'radio', 'button', 'submit', 'range', 'color', 'file'].includes(el.type)));
+    const on = (e: FocusEvent) => {
+      if (typing(e.target)) document.documentElement.dataset.typing = 'true';
+    };
+    const off = () => {
+      delete document.documentElement.dataset.typing;
+    };
+    document.addEventListener('focusin', on);
+    document.addEventListener('focusout', off);
+    return () => {
+      document.removeEventListener('focusin', on);
+      document.removeEventListener('focusout', off);
+    };
+  }, []);
   // The browser tab and history say which page this is; an assignment's own page uses its title.
   const path = usePath();
   const openAssignmentId = assignmentIdFromPath(path);

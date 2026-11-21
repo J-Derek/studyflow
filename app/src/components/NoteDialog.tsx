@@ -8,6 +8,7 @@ import { FormatButtons } from './FormatToolbar';
 import { useFormatting } from '../lib/useFormatting';
 import { MiniMarkdown } from './MiniMarkdown';
 import { NoteReader } from './NoteReader';
+import { useIsPhone } from '../lib/useIsPhone';
 
 export const NOTE_TITLE_MAX = 120;
 export const NOTE_BODY_MAX = 15000;
@@ -75,7 +76,11 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
   };
   // The full-screen reader has its own focus handling while it is open. Escape leaves the edit first, then the full screen.
   const dialogRef = useDialog(!reading, full && !fromReader ? () => setFull(false) : requestClose);
-  const isFull = full && mode === 'edit';
+  // On a phone, editing is a full-screen sheet: Cancel, title and Save in a top bar, the formatting buttons under it, then one scroll
+  // area for the text. 100dvh follows the keyboard (see interactive-widget in index.html), so the bottom is never under it.
+  const phone = useIsPhone();
+  const sheet = phone && mode === 'edit';
+  const isFull = (full && mode === 'edit') || sheet;
 
   const save = () => {
     if (!canSave) return;
@@ -134,10 +139,32 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
         data-fullscreen={isFull || undefined}
         className={`bg-surface-light dark:bg-surface-dark overflow-y-auto ${
           isFull
-            ? 'w-full h-[100dvh] flex flex-col gap-4 p-4 md:p-8'
+            ? `w-full h-[100dvh] flex flex-col ${sheet ? 'gap-2 p-3 overflow-hidden' : 'gap-4 p-4 md:p-8'}`
             : 'w-full max-w-xl max-h-[calc(100dvh-2rem)] border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-5 space-y-4'
         }`}
       >
+        {sheet ? (
+          <div className="flex items-center justify-between gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={requestClose}
+              className="min-h-[44px] px-3 -ml-2 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <h2 id="note-dialog-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate min-w-0">
+              {note ? 'Edit note' : 'New note'}
+            </h2>
+            <button
+              type="button"
+              onClick={save}
+              disabled={!canSave}
+              className="min-h-[44px] px-4 -mr-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Save note
+            </button>
+          </div>
+        ) : (
         <div className="flex items-start justify-between gap-3">
           <h2 id="note-dialog-title" className="text-base font-semibold text-zinc-900 dark:text-zinc-50 break-words min-w-0">
             {mode === 'edit' ? (note ? 'Edit note' : 'New note') : note?.title}
@@ -151,6 +178,7 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
+        )}
 
         {mode === 'view' && note ? (
           <>
@@ -162,7 +190,7 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
             ) : (
               <p className="text-sm text-zinc-600 dark:text-zinc-400">This note has no text yet.</p>
             )}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+            <div data-testid="note-actions" className="sticky bottom-0 -mx-5 -mb-5 px-5 pb-5 pt-2 bg-surface-light dark:bg-surface-dark flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 dark:border-zinc-800">
               <div className="flex flex-wrap items-center gap-1">
                 <button
                   type="button"
@@ -218,7 +246,33 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
             </div>
 
             {/* Full screen is for writing: the course and pin fields wait (their values are kept) until the student steps back out. */}
-            <div className={isFull ? 'hidden' : 'space-y-1'}>
+            {!sheet && (            <div className={isFull ? 'hidden' : 'space-y-1'}>
+              <label htmlFor="note-course" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                Course (optional)
+              </label>
+              <input
+                id="note-course"
+                value={course}
+                maxLength={COURSE_MAX}
+                list="note-course-suggestions"
+                placeholder="e.g. LAW 101"
+                onChange={(e) => setCourse(e.target.value)}
+                className={field}
+              />
+              <datalist id="note-course-suggestions">
+                {courses.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
+            </div>
+            )}
+
+            {sheet && (
+              <details className="shrink-0 rounded-lg border border-zinc-200 dark:border-zinc-800 px-3">
+                <summary className="min-h-[44px] flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer">Course and pin</summary>
+                <div className="space-y-2 pb-3">
+            {/* Full screen is for writing: the course and pin fields wait (their values are kept) until the student steps back out. */}
+            <div className="space-y-1">
               <label htmlFor="note-course" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 Course (optional)
               </label>
@@ -238,6 +292,15 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
               </datalist>
             </div>
 
+            <label className={`flex items-center gap-2 min-h-[44px] text-sm text-zinc-800 dark:text-zinc-200 cursor-pointer`}>
+              <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} className="h-4 w-4" />
+              <span>Pin to the top</span>
+            </label>
+
+                </div>
+              </details>
+            )}
+
             <div className={isFull ? 'flex-1 min-h-0 flex flex-col gap-1' : 'space-y-1'}>
               <label htmlFor="note-body" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 Note
@@ -245,6 +308,7 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
               <div role="toolbar" aria-label="Formatting" className="flex flex-wrap items-center gap-1 -ml-1">
                 <FormatButtons onFormat={format} />
                 <span className="flex-1" />
+                {!sheet && (
                 <button
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
@@ -257,6 +321,7 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
                   {full ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Maximize2 className="h-4 w-4" aria-hidden="true" />}
                   <span className="hidden sm:inline">{full ? 'Exit full screen' : 'Full screen'}</span>
                 </button>
+                )}
               </div>
               <textarea
                 id="note-body"
@@ -275,10 +340,12 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
               )}
             </div>
 
+            {!sheet && (
             <label className={`${isFull ? 'hidden' : 'flex'} items-center gap-2 min-h-[44px] text-sm text-zinc-800 dark:text-zinc-200 cursor-pointer`}>
               <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} className="h-4 w-4" />
               <span>Pin to the top</span>
             </label>
+            )}
 
             {askDiscard && (
               <div role="alert" className="rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-2">
@@ -302,6 +369,7 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
               </div>
             )}
 
+            {!sheet && (
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
               <button
                 type="button"
@@ -319,6 +387,7 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
                 Save note
               </button>
             </div>
+            )}
           </>
         )}
       </div>

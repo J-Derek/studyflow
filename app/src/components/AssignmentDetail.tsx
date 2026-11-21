@@ -226,6 +226,13 @@ const NotesEditor: React.FC<{ assignment: Assignment; registerFlush: (f: () => v
   const format = useFormatting(areaRef, text, change);
   const boxId = useId();
   useEffect(() => registerFlush(flush), [flush, registerFlush]);
+  // The notes box grows with the text, so the page is the only thing that scrolls (a box with its own scroll inside a scrolling page is hard to use on a phone).
+  useEffect(() => {
+    const el = areaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.max(280, el.scrollHeight + 2)}px`;
+  }, [text]);
 
   return (
     <section aria-labelledby={`${boxId}-h`} className="space-y-2">
