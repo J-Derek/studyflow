@@ -10,6 +10,14 @@ export function plural(n: number, one: string, many = `${one}s`): string {
   return `${n} ${n === 1 ? one : many}`;
 }
 
+/** Focus time for a summary: "0 min", "12 min", "59 min", then hours with one decimal from an hour up ("1 h", "2.1 h"). */
+export function formatFocusTime(minutes: number): string {
+  const m = Math.max(0, Math.round(Number.isFinite(minutes) ? minutes : 0));
+  if (m < 60) return `${m} min`;
+  const h = Math.round((m / 60) * 10) / 10;
+  return `${Number.isInteger(h) ? h : h.toFixed(1)} h`;
+}
+
 export function formatTimeLeft(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;

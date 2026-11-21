@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getDaysRemaining, plural } from './formatters';
+import { formatFocusTime, getDaysRemaining, plural } from './formatters';
 
 // Instants chosen around the 2026 US daylight-saving changes, evaluated in explicit zones.
 describe('getDaysRemaining across daylight-saving boundaries', () => {
@@ -47,5 +47,18 @@ describe('plural', () => {
     expect(plural(2, 'minute')).toBe('2 minutes');
     expect(plural(1, 'class', 'classes')).toBe('1 class');
     expect(plural(3, 'class', 'classes')).toBe('3 classes');
+  });
+});
+
+describe('formatFocusTime', () => {
+  it('shows minutes under an hour and hours from an hour up', () => {
+    expect(formatFocusTime(0)).toBe('0 min');
+    expect(formatFocusTime(1)).toBe('1 min');
+    expect(formatFocusTime(12)).toBe('12 min');
+    expect(formatFocusTime(59)).toBe('59 min');
+    expect(formatFocusTime(60)).toBe('1 h');
+    expect(formatFocusTime(61)).toBe('1 h');
+    expect(formatFocusTime(125)).toBe('2.1 h');
+    expect(formatFocusTime(Number.NaN)).toBe('0 min');
   });
 });
