@@ -175,3 +175,12 @@ summary:focus-visible,
     text-decoration: underline;
   }
 }
+
+/* The ring at the end of a block: it eases open (relief, a break starts) or tightens (a nudge, focus starts). Held still for "reduce motion". */
+@keyframes sf-ring-ease { from { transform: scale(0.96); opacity: 0.6; } to { transform: none; opacity: 1; } }
+@keyframes sf-ring-tighten { from { transform: scale(1.06); } to { transform: none; } }
+.sf-ring-ease { animation: sf-ring-ease 1100ms ease-out both; }
+.sf-ring-tighten { animation: sf-ring-tighten 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .sf-ring-ease, .sf-ring-tighten { animation: none !important; }
+}

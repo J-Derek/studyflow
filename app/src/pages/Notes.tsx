@@ -230,10 +230,10 @@ export const NotesPage: React.FC = () => {
           note={openNote}
           courses={suggestions}
           onClose={close}
-          onSave={(data) => {
+          onSave={(data, keepOpen) => {
             if (openNote) updateNote(openNote.id, data);
             else addNote(data);
-            close();
+            if (!keepOpen) close();
           }}
           onDelete={(n) => {
             // A second delete replaces the undo toast, so finish removing the first note's PDFs now.

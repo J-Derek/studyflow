@@ -503,3 +503,35 @@ export function playCompletionChime(): void {
     console.warn('Completion chime error:', err);
   }
 }
+
+/** The relief cue when a focus block ends: the soft, warm, rising two-note chime. */
+export const playReliefCue = playCompletionChime;
+
+/** The nudge when a break ends: one low, steady knock (a short low tone that settles at once, no tune and no ring). */
+export function playNudgeCue(): void {
+  try {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(95, now + 0.14);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.linearRampToValueAtTime(0.32, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.38);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.42);
+    setTimeout(() => {
+      try {
+        g.disconnect();
+      } catch {
+        /* already gone */
+      }
+    }, 700);
+  } catch (err) {
+    console.warn('Nudge cue error:', err);
+  }
+}

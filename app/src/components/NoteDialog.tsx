@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BookOpen, Maximize2, Minimize2, Pencil, Pin, PinOff, Trash2, X } from 'lucide-react';
 import type { Note } from '../types';
 import { useDialog } from '../lib/useDialog';
@@ -18,7 +18,8 @@ interface NoteDialogProps {
   note: Note | null;
   /** Course names the student already uses, offered as suggestions. */
   courses: string[];
-  onSave: (data: { title: string; body: string; course: string; pinned: boolean }) => void;
+  /** `keepOpen` is true when the note was edited from the full-screen reader: the note stays open and goes back to the reader. */
+  onSave: (data: { title: string; body: string; course: string; pinned: boolean }, keepOpen?: boolean) => void;
   onDelete: (note: Note) => void;
   onTogglePin: (note: Note) => void;
   onClose: () => void;
@@ -41,6 +42,9 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
   const [pinned, setPinned] = useState(note?.pinned ?? false);
   const [askDiscard, setAskDiscard] = useState(false);
   const [reading, setReading] = useState(false);
+  // Editing that began in the full-screen reader: it stays full screen, opens where the student was reading, and goes back to the reader.
+  const [fromReader, setFromReader] = useState(false);
+  const [openAt, setOpenAt] = useState<number | null>(null);
   // Writing full screen: the same editor, filling the window. Escape steps back out of it before it would close the note.
   const [full, setFull] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
@@ -52,27 +56,65 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
   const canSave = title.trim().length > 0 || body.trim().length > 0;
 
   // Closing with unsaved changes asks first, so typed text is never lost by a stray tap or Escape.
+  const backToReader = () => {
+    setTitle(note?.title ?? '');
+    setBody(note?.body ?? '');
+    setCourse(note?.course ?? '');
+    setPinned(note?.pinned ?? false);
+    setAskDiscard(false);
+    setFromReader(false);
+    setFull(false);
+    setMode('view');
+    setReading(true);
+  };
+  // Leaving the editor: back to the full-screen reader if that is where it began, otherwise the note closes.
+  const leaveEdit = () => (fromReader ? backToReader() : onClose());
   const requestClose = () => {
     if (dirty) setAskDiscard(true);
-    else onClose();
+    else leaveEdit();
   };
-  // The full-screen reader has its own focus handling while it is open.
-  const dialogRef = useDialog(!reading, full ? () => setFull(false) : requestClose);
+  // The full-screen reader has its own focus handling while it is open. Escape leaves the edit first, then the full screen.
+  const dialogRef = useDialog(!reading, full && !fromReader ? () => setFull(false) : requestClose);
   const isFull = full && mode === 'edit';
 
   const save = () => {
     if (!canSave) return;
-    onSave({ title, body, course, pinned });
+    onSave({ title, body, course, pinned }, fromReader);
+    if (fromReader) {
+      // the note was saved in place; show it again in the full-screen reader
+      setAskDiscard(false);
+      setFromReader(false);
+      setFull(false);
+      setMode('view');
+      setReading(true);
+    }
   };
+
+  // Opened from the reader: the cursor goes to the end of the text and the page is scrolled to where the student was reading.
+  useEffect(() => {
+    if (openAt === null || mode !== 'edit') return;
+    const frame = requestAnimationFrame(() => {
+      const el = bodyRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+      el.scrollTop = openAt * Math.max(0, el.scrollHeight - el.clientHeight);
+      setOpenAt(null);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [openAt, mode]);
 
   if (reading && note) {
     return (
       <NoteReader
         note={note}
         onClose={() => setReading(false)}
-        onEdit={() => {
+        onEdit={(scrolled) => {
           setReading(false);
           setMode('edit');
+          setFromReader(true);
+          setFull(true);
+          setOpenAt(scrolled);
         }}
       />
     );
@@ -171,7 +213,7 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
                 placeholder="e.g. Week 3: Contract law"
                 onChange={(e) => setTitle(e.target.value)}
                 className={field}
-                autoFocus
+                autoFocus={!fromReader}
               />
             </div>
 
@@ -251,7 +293,7 @@ export const NoteDialog: React.FC<NoteDialogProps> = ({ note, courses, onSave, o
                   </button>
                   <button
                     type="button"
-                    onClick={onClose}
+                    onClick={leaveEdit}
                     className="min-h-[44px] px-4 rounded-lg border border-zinc-300 dark:border-zinc-600 text-sm font-medium text-zinc-800 dark:text-zinc-100 cursor-pointer"
                   >
                     Discard

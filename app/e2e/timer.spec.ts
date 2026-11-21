@@ -113,7 +113,7 @@ test.describe('focus timer', () => {
 
     const timerDoc = await readDoc(`users/${uid}/liveState/timer`);
     const rev = Number(timerDoc?.rev?.integerValue);
-    const session = await readDoc(`users/${uid}/focusSessions/run-${rev - 1}`);
+    const session = await readDoc(`users/${uid}/focusSessions/run-${rev - 2}`);
     expect(session?.mode?.stringValue).toBe('focus');
     expect(Number(session?.durationSeconds?.integerValue)).toBe(3);
 

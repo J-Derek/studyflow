@@ -115,14 +115,12 @@ test('Today points to Courses, the name of the tab', async ({ page }) => {
   await expect(page.getByText('Add graded work in Grades')).toHaveCount(0);
 });
 
-test('timer lengths: a blank box keeps the saved length and says so; one minute reads "1 minute"', async ({ page }) => {
+test('one minute reads "1 minute" for the clock and the screen reader', async ({ page }) => {
   await page.goto('/timer');
   await ready(page);
-  await page.getByText('Change timer lengths').click();
-  await page.getByLabel('Focus', { exact: true }).fill('');
-  await expect(page.getByText('Focus is empty, so it stays at 25 minutes.')).toBeVisible();
-  await page.getByLabel('Focus', { exact: true }).fill('1');
-  await page.getByRole('button', { name: 'Apply', exact: true }).click();
+  await page.getByTestId('change-length').click();
+  await page.getByRole('dialog').getByLabel('Minutes').fill('1');
+  await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Focus ready, 1 minute' })).toHaveCount(1);
   await expect(page.getByText('1 minutes')).toHaveCount(0);
 });

@@ -17,7 +17,8 @@ import type {
   SoundscapeType,
   Subtask
 } from '../types';
-import { playSoundscape, stopSoundscape, playCompletionChime, setSoundscapeVolume as setAudioVolume } from '../lib/soundscapes';
+import { playSoundscape, stopSoundscape, playReliefCue, playNudgeCue, setSoundscapeVolume as setAudioVolume } from '../lib/soundscapes';
+import { browserCueDeps, cueFor, cueMessage, nextModeAfter, performCue, readCuesMuted, type CueKind } from '../lib/timerCues';
 import {
   syncAssignmentToFirestore,
   updateAssignmentFieldsInFirestore,
@@ -45,7 +46,7 @@ import { readSavedMode, resolveTheme, saveMode, systemPrefersDark, type ThemeMod
 import { isPlaceholderName } from '../utils/placeholderProfile';
 import { DEFAULT_SOUND, DEFAULT_TIMER_SETTINGS, DEFAULT_VOLUME, sanitizeTimerPrefs, takeLegacyDevicePrefs, type TimerPrefs } from '../utils/devicePrefs';
 import { reportSyncError } from '../lib/syncErrors';
-import { TIMER_LIMITS_MIN, complete as completeEngine, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
+import { TIMER_LIMITS_MIN, idleTimer, pause as pauseEngine, reset as resetEngine, start as startEngine, switchMode, type TimerState } from '../lib/timerEngine';
 import { buildSampleData, isLegacySeedId } from '../utils/sampleData';
 import { clampScore } from '../utils/academicCalculations';
 import { afterUncomplete, statusProgress } from '../utils/progress';
@@ -189,6 +190,8 @@ interface StudyFlowState {
   nowMs: number;
   /** Set when a focus block finishes, so the page can celebrate. */
   focusCompletedAtMs: number | null;
+  /** The last block-end cue, shown as words until the student starts, resets or switches the timer. Not saved. */
+  lastCue: { kind: CueKind; message: string; atMs: number } | null;
   pomodorosCompleted: number;
   /** Minutes of focus completed. Counted as blocks finish, so changing the timer length never rewrites history. */
   focusMinutes: number;
@@ -334,6 +337,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           soundscapeVolume: DEFAULT_VOLUME,
           timer: idleTimer('focus', defaultSettings.focusDuration),
           focusCompletedAtMs: null,
+          lastCue: null,
           user: {
             name: 'Student',
             university: 'Academic Workspace',
@@ -974,6 +978,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       timer: idleTimer('focus', defaultSettings.focusDuration),
       nowMs: Date.now(),
       focusCompletedAtMs: null,
+      lastCue: null,
       pomodorosCompleted: 0,
       focusMinutes: 0,
       soundscape: DEFAULT_SOUND,
@@ -981,6 +986,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       soundscapeVolume: DEFAULT_VOLUME,
 
       setTimerMode: (mode) => {
+        set({ lastCue: null });
         stopSoundscape();
         const next = switchMode(mode, durationFor(mode, get().timerSettings));
         set({ timer: next, nowMs: Date.now() });
@@ -991,6 +997,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
       startTimer: () => {
         const { soundscape, breakSoundscape, soundscapeVolume, timer } = get();
         if (timer.status === 'running') return;
+        set({ lastCue: null });
         const sound = timer.mode === 'focus' ? soundscape : breakSoundscape;
         if (sound !== 'off') playSoundscape(sound, soundscapeVolume);
         const now = Date.now();
@@ -1011,6 +1018,7 @@ export const useStudyFlowStore = create<StudyFlowState>()(
 
       resetTimer: () => {
         stopSoundscape();
+        set({ lastCue: null });
         const next = resetEngine(get().timer);
         set({ timer: next, nowMs: Date.now() });
         const uid = get().userId;
@@ -1024,7 +1032,12 @@ export const useStudyFlowStore = create<StudyFlowState>()(
         stopSoundscape();
         const wasFocus = timer.mode === 'focus';
         const now = Date.now();
-        const next = completeEngine(timer);
+        // A block that ends hands over to the next one, ready (not started): a break after focus, focus after a break.
+        const focusDone = get().pomodorosCompleted + (wasFocus ? 1 : 0);
+        const upNext = nextModeAfter(timer.mode, focusDone);
+        const next = switchMode(upNext, durationFor(upNext, get().timerSettings));
+        const kind: CueKind = cueFor(timer.mode);
+        const message = cueMessage(kind, Math.round(next.durationSec / 60));
         set((state) => ({
           timer: next,
           nowMs: now,
@@ -1032,10 +1045,14 @@ export const useStudyFlowStore = create<StudyFlowState>()(
           focusMinutes: wasFocus ? state.focusMinutes + Math.round(timer.durationSec / 60) : state.focusMinutes,
           focusCompletedAtMs: wasFocus ? now : state.focusCompletedAtMs
         }));
-        if (wasFocus) playCompletionChime();
+        set({ lastCue: { kind, message, atMs: now } });
+        performCue(kind, message, readCuesMuted(), browserCueDeps(playReliefCue, playNudgeCue));
         if (userId) {
-          if (wasFocus) completeFocusSession(userId, timer);
-          else pushTimerState(userId, next);
+          if (wasFocus) {
+            // The account first records the finished block (timer goes idle), then follows to the break.
+            completeFocusSession(userId, timer);
+            pushTimerState(userId, next);
+          } else pushTimerState(userId, next);
         }
       },
 

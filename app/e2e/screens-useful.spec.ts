@@ -6,14 +6,12 @@ const ready = async (page: Page, path: string) => {
   await page.waitForFunction(() => !!(window as unknown as { __store?: { getState: () => { userId: string | null } } }).__store?.getState().userId);
 };
 
-test('the Timer shows the clock and Start before the lengths form, which stays collapsed', async ({ page }) => {
+test('the Timer shows the clock and Start within the first screen on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 740 });
   await ready(page, '/timer');
   const start = page.getByRole('button', { name: 'Start', exact: true });
-  const lengths = page.getByText('Change timer lengths');
-  expect((await start.boundingBox())!.y).toBeLessThan((await lengths.boundingBox())!.y);
   expect((await start.boundingBox())!.y + 44).toBeLessThanOrEqual(740);
-  await expect(page.locator('details').first()).not.toHaveAttribute('open', '');
+  await expect(page.getByText('Change timer lengths')).toHaveCount(0);
 });
 
 test('an empty Timetable shows only the add-a-class card, with no empty week columns', async ({ page }) => {
