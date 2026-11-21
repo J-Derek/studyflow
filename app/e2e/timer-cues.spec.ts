@@ -63,9 +63,11 @@ test('the end-of-block sound can be muted on this device, and the choice is reme
   await page.goto('/timer');
   await ready(page);
   const box = page.getByLabel('Play a sound when a block ends (this device)');
+  await page.getByRole('button', { name: 'Change background sound' }).click();
   await expect(box).toBeChecked();
   await box.uncheck();
   await page.reload();
   await ready(page);
+  await page.getByRole('button', { name: 'Change background sound' }).click();
   await expect(box).not.toBeChecked();
 });

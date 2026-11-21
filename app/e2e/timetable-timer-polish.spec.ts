@@ -112,29 +112,44 @@ test('the Timetable (both views) stays accessible in light and dark', async ({ p
   }
 });
 
-test('the "Choose sound for" switch follows the timer mode, and can still be switched by hand', async ({ page }) => {
+test('the "Choose sound for" switch (in the sound sheet) follows the timer mode, and can still be switched by hand', async ({ page }) => {
   await ready(page, '/timer');
+  const open = () => page.getByRole('button', { name: 'Change background sound' }).click();
+  const done = () => page.getByRole('button', { name: 'Done', exact: true }).click();
   const group = page.getByRole('group', { name: 'Choose sound for' });
   const focus = group.getByRole('button', { name: 'When I focus' });
   const onBreaks = group.getByRole('button', { name: 'On breaks' });
-  await expect(focus).toHaveAttribute('aria-pressed', 'true');
 
+  await open();
+  await expect(page.getByRole('dialog', { name: 'Background sound' })).toBeVisible();
+  await expect(focus).toHaveAttribute('aria-pressed', 'true');
   // a manual switch works
   await onBreaks.click();
   await expect(onBreaks).toHaveAttribute('aria-pressed', 'true');
+  await done();
 
-  // changing the timer mode brings the card back in line with it
+  // changing the timer mode brings the sheet back in line with it
   await page.getByRole('button', { name: /^Short Break/ }).click();
+  await open();
   await expect(onBreaks).toHaveAttribute('aria-pressed', 'true');
+  await done();
   await page.getByRole('button', { name: /^Focus \(/ }).click();
+  await open();
   await expect(focus).toHaveAttribute('aria-pressed', 'true');
 
   // and a manual switch still works in the new mode
   await onBreaks.click();
   await expect(onBreaks).toHaveAttribute('aria-pressed', 'true');
+  await done();
   await page.getByRole('button', { name: /^Long Break/ }).click();
   await page.getByRole('button', { name: /^Focus \(/ }).click();
+  await open();
   await expect(focus).toHaveAttribute('aria-pressed', 'true');
+
+  // Escape closes the sheet and focus goes back to Change
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Background sound' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Change background sound' })).toBeFocused();
 });
 
 test('the clock moves on in step with Start: 24:59 a little after the first second, never stuck on 25:00', async ({ page }) => {

@@ -56,3 +56,35 @@ test('Courses: one short line and "Add these courses" turns the mentioned codes 
   expect(codes).toEqual(['LAW 101', 'PHY 101']);
   await context.close();
 });
+
+test('a dialog with an input still fits, with Save in view, when the visible height shrinks to 360x360 (as with a keyboard open)', async ({ browser }) => {
+  const { context, page } = await phone(browser);
+  await page.goto('/timer');
+  await ready(page);
+  await page.getByTestId('change-length').click();
+  const dlg = page.getByRole('dialog', { name: /^Change the .* length$/ });
+  await expect(dlg).toBeVisible();
+  await page.setViewportSize({ width: 360, height: 360 });
+  await expect(dlg.getByRole('button', { name: 'Save' })).toBeInViewport();
+  const box = await dlg.boundingBox();
+  expect(box!.height).toBeLessThanOrEqual(360); // never taller than what is visible
+  await expect(dlg.getByRole('button', { name: 'Cancel' })).toBeInViewport();
+  await context.close();
+});
+
+test('Background sound is one row, and its choices open in a sheet that closes with Escape', async ({ browser }) => {
+  const { context, page } = await phone(browser);
+  await page.goto('/timer');
+  await ready(page);
+  const row = page.getByRole('button', { name: 'Change background sound' });
+  await expect(page.getByText('Background sound:')).toBeVisible();
+  await expect(page.getByText('Soft rain')).toHaveCount(0); // the tiles are in the sheet
+  await row.click();
+  const sheet = page.getByRole('dialog', { name: 'Background sound' });
+  await expect(sheet.getByText('Soft rain')).toBeVisible();
+  await expect(sheet.getByLabel('Play a sound when a block ends (this device)')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(sheet).toHaveCount(0);
+  await expect(row).toBeFocused();
+  await context.close();
+});
