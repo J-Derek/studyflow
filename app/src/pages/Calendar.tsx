@@ -301,7 +301,7 @@ export const CalendarPage: React.FC = () => {
           
           <button
             onClick={() => openAdd()}
-            className="min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-xs transition shadow-2xs active:scale-95 max-md:fixed max-md:bottom-[4.75rem] max-md:right-4 max-md:z-30 max-md:shadow-lg max-md:px-4"
+            className="min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 px-3 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white/90 text-white dark:text-zinc-900 font-medium text-xs transition shadow-2xs active:scale-95 sf-bottom-bar max-md:fixed max-md:bottom-[4.75rem] max-md:right-4 max-md:z-30 max-md:shadow-lg max-md:px-4"
           >
             <Plus className="h-3.5 w-3.5" /> <span>Add block</span>
           </button>

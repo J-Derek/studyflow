@@ -103,3 +103,36 @@ test('timetable at 360x640: the day strip is in view and Add block sits above th
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await context.close();
 });
+
+test('assignment notes at 360x640: the notes box grows (the page is the only scroll), and full screen has one scroll area with Close in view', async ({ browser }) => {
+  const { context, page } = await phone(browser);
+  await page.goto('/assignments');
+  await ready(page);
+  await page.evaluate(() => (window as unknown as W).__store.getState().addAssignment({ title: 'Essay', course: 'X 1', dueDate: '2030-01-15', priority: 'low', status: 'pending', progress: 0 }));
+  await page.getByRole('group', { name: /Essay/ }).getByText('X 1').click();
+  const box = page.locator('textarea').first();
+  await box.fill(longBody);
+  const own = await box.evaluate((el) => el.scrollHeight - el.clientHeight);
+  expect(own).toBeLessThanOrEqual(2); // no scroll of its own
+
+  await page.getByRole('button', { name: 'Full screen' }).click();
+  const space = page.getByTestId('writing-space');
+  await expect(space).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Close writing space' })).toBeInViewport();
+  expect(await scrollContainers(page, '[data-testid="writing-space"]')).toBeLessThanOrEqual(1);
+  await context.close();
+});
+
+test('while a text box has focus the bottom nav steps aside (the keyboard is up), and comes back after', async ({ browser }) => {
+  const { context, page } = await phone(browser);
+  await page.goto('/notes');
+  await ready(page);
+  await page.evaluate(() => (window as unknown as W).__store.getState().addNote({ title: 'A note', body: 'Body', course: '', pinned: false }));
+  const nav = page.getByRole('navigation', { name: 'Mobile Navigation' });
+  await expect(nav).toBeVisible();
+  await page.getByPlaceholder('Search your notes').focus();
+  await expect(nav).toBeHidden();
+  await page.getByPlaceholder('Search your notes').blur();
+  await expect(nav).toBeVisible();
+  await context.close();
+});
