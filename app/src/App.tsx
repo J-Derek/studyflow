@@ -51,6 +51,19 @@ export function App() {
     return () => window.clearTimeout(t);
   }, []);
   const { activeTab, theme, themeMode, setThemeMode } = useStudyFlowStore();
+  // The visible height (with the on-screen keyboard taken off) as --vvh, so dialogs on a phone fit above the keyboard (see index.css).
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const set = () => document.documentElement.style.setProperty('--vvh', `${Math.round(vv.height)}px`);
+    set();
+    vv.addEventListener('resize', set);
+    vv.addEventListener('scroll', set);
+    return () => {
+      vv.removeEventListener('resize', set);
+      vv.removeEventListener('scroll', set);
+    };
+  }, []);
   // While a text box has focus (the keyboard is up on a phone), bars fixed to the bottom step aside so they never ride on top of it.
   useEffect(() => {
     const typing = (el: EventTarget | null) =>
