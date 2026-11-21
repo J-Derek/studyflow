@@ -11,7 +11,7 @@ import {
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import { useAccountView } from '../store/useAccountView';
-import { getDaysRemaining, plural } from '../utils/formatters';
+import { formatFocusTime, getDaysRemaining, plural } from '../utils/formatters';
 import { overallResult } from '../utils/gradingScale';
 import type { Assignment } from '../types';
 import { AssignmentModal } from '../components/AssignmentModal';
@@ -75,7 +75,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Real-time Dynamic GPA & Academic Standing
   const scale = user.gradingScale ?? 'us4';
   const overall = overallResult(grades, scale);
-  const focusHours = (focusMinutes / 60).toFixed(1);
   const todayLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
   // Urgent / Upcoming assignments sorted by due date
@@ -210,7 +209,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
         <div>
           <dt className="text-sm text-zinc-600 dark:text-zinc-400">Focus sessions</dt>
-          <dd className="font-display tabular-nums text-3xl font-semibold text-zinc-900 dark:text-zinc-50">{pomodorosCompleted}<span className="ml-2 text-sm font-normal font-sans text-zinc-600 dark:text-zinc-400">about {focusHours} h</span></dd>
+          <dd className="font-display tabular-nums text-3xl font-semibold text-zinc-900 dark:text-zinc-50">{pomodorosCompleted}<span className="ml-2 text-sm font-normal font-sans text-zinc-600 dark:text-zinc-400">{formatFocusTime(focusMinutes)} focused</span></dd>
         </div>
         <div>
           <dt className="text-sm text-zinc-600 dark:text-zinc-400">{scale === 'us4' ? 'Projected GPA' : 'Average so far'}</dt>
@@ -256,18 +255,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark overflow-hidden divide-y divide-zinc-200/70 dark:divide-zinc-800/70 shadow-2xs">
             {urgentAssignments.length === 0 ? (
-              <div className="p-8 text-center">
+              <div className="p-4 md:p-8 text-center">
                 {assignments.length === 0 ? (
                   <>
-                    <EmptyIllustration kind="assignments" className="h-24 w-32 mb-2" />
+                    <EmptyIllustration kind="assignments" className="hidden md:block h-24 w-32 mb-2" />
                     <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">No deadlines scheduled yet</h3>
                     <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">Use the quick start card above or click “Add assignment” to begin.</p>
                   </>
                 ) : (
                   <>
-                    <EmptyIllustration kind="done" className="h-28 w-36 mb-2" />
-                    <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">All assignments cleared</h3>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">No urgent deadlines pending on your course.</p>
+                    <EmptyIllustration kind="done" className="hidden md:block h-28 w-36 mb-2" />
+                    <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 inline-flex items-center gap-1.5">
+                      <CheckCircle2 className="md:hidden h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                      All assignments cleared
+                    </h3>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">Nothing due soon.</p>
                   </>
                 )}
               </div>
