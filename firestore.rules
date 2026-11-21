@@ -41,6 +41,13 @@ service cloud.firestore {
     //   Created only in a batch with the timer going running -> idle, and only
     //   after enough server time has elapsed since the timer started.
     //
+    // /users/{userId}/shares/{shareId}       (owner-only marker for a note shared by link)
+    //   id (= shareId), noteId, sharedAt (server time)
+    //
+    // /sharedNotes/{shareId}                  (public read-only copy of a note; anyone with the link can get it, nobody can list)
+    //   title, body (up to 100000 characters), course, sharedAt (server time), updatedAt (server time), sharedBy? (display name)
+    //   No uid or email: who owns it is the marker above, created in the same batch.
+    //
     // Default: deny everything else.
     // ===============================================================
 
@@ -198,8 +205,9 @@ service cloud.firestore {
 
     function isValidNote(data) {
       return data.keys().hasAll(['id', 'title', 'body', 'course', 'pinned', 'createdAt', 'editedAt', 'updatedAt']) &&
-             data.keys().hasOnly(['id', 'title', 'body', 'course', 'pinned', 'createdAt', 'editedAt', 'updatedAt', 'archivedPeriod', 'archived']) &&
+             data.keys().hasOnly(['id', 'title', 'body', 'course', 'pinned', 'createdAt', 'editedAt', 'updatedAt', 'archivedPeriod', 'archived', 'shareId']) &&
              optionalString(data, 'archivedPeriod', 1, 60) &&
+             (!('shareId' in data) || (data.shareId is string && isValidShareId(data.shareId))) &&
              data.archived is bool &&
              validString(data.id, 1, 100) &&
              validString(data.title, 1, 200) &&
@@ -285,6 +293,38 @@ service cloud.firestore {
              optionalString(data, 'assignmentId', 1, 100) &&
              optionalString(data, 'notes', 0, 2000) &&
              after.status == 'idle' && after.rev == timer.rev + 1;
+    }
+
+    // A note shared by link. shareId is a random id of 20 to 64 URL-safe characters.
+    function isValidShareId(shareId) {
+      return shareId.matches('^[A-Za-z0-9_-]{20,64}$');
+    }
+
+    function isValidSharedNote(data) {
+      return data.keys().hasAll(['title', 'body', 'course', 'sharedAt', 'updatedAt']) &&
+             data.keys().hasOnly(['title', 'body', 'course', 'sharedAt', 'updatedAt', 'sharedBy']) &&
+             validString(data.title, 1, 200) &&
+             data.body is string && data.body.size() <= 100000 &&
+             data.course is string && data.course.size() <= 50 &&
+             optionalString(data, 'sharedBy', 1, 100) &&
+             data.sharedAt is timestamp &&
+             isServerTime(data.updatedAt);
+    }
+
+    function isValidShareMarker(data, shareId) {
+      return data.keys().hasAll(['id', 'noteId', 'sharedAt']) &&
+             data.keys().hasOnly(['id', 'noteId', 'sharedAt']) &&
+             data.id == shareId &&
+             validString(data.noteId, 1, 100) &&
+             isServerTime(data.sharedAt);
+    }
+
+    function sharedNotePath(shareId) {
+      return /databases/$(database)/documents/sharedNotes/$(shareId);
+    }
+
+    function shareMarkerPath(shareId) {
+      return /databases/$(database)/documents/users/$(request.auth.uid)/shares/$(shareId);
     }
 
     // ---------------- Collections ----------------
@@ -377,6 +417,20 @@ service cloud.firestore {
         allow delete: if isOwner(userId);
       }
 
+      // Which shared notes are this student's. Created only together with the public copy (never for an id that already exists),
+      // so nobody can claim someone else's link.
+      match /shares/{shareId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId) && request.query.limit <= 500;
+        allow create: if isOwner(userId) &&
+                         isValidShareId(shareId) &&
+                         isValidShareMarker(request.resource.data, shareId) &&
+                         !exists(sharedNotePath(shareId)) &&
+                         existsAfter(sharedNotePath(shareId));
+        allow update: if false;
+        allow delete: if isOwner(userId);
+      }
+
       // Timer singleton with a rev counter used as compare-and-swap.
       match /liveState/{docId} {
         allow get: if isOwner(userId);
@@ -388,6 +442,22 @@ service cloud.firestore {
                          request.resource.data.rev == resource.data.rev + 1;
         allow delete: if isOwner(userId);
       }
+    }
+
+    // Read by anyone who has the link (one document at a time, no listing). Written only by the student who shared it.
+    match /sharedNotes/{shareId} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if request.auth != null &&
+                       isValidShareId(shareId) &&
+                       isValidSharedNote(request.resource.data) &&
+                       isServerTime(request.resource.data.sharedAt) &&
+                       existsAfter(shareMarkerPath(shareId));
+      allow update: if request.auth != null &&
+                       exists(shareMarkerPath(shareId)) &&
+                       isValidSharedNote(request.resource.data) &&
+                       immutable(['sharedAt']);
+      allow delete: if request.auth != null && exists(shareMarkerPath(shareId));
     }
 
     match /{document=**} {

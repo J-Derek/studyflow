@@ -768,3 +768,88 @@ describe('get/exists call budget on the largest batch', () => {
     await assertSucceeds(b.commit());
   });
 });
+
+describe('notes shared by link', () => {
+  const ID = 'Abc123_-Abc123_-Abc123';
+  const shared = (over: Record<string, unknown> = {}) => ({
+    title: 'Week 3',
+    body: 'Offer, acceptance, consideration.',
+    course: 'LAW 101',
+    sharedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...over
+  });
+  const marker = (over: Record<string, unknown> = {}) => ({ id: ID, noteId: 'n1', sharedAt: serverTimestamp(), ...over });
+  const sDoc = (db: Db, id = ID) => doc(db, 'sharedNotes', id);
+  const mDoc = (db: Db, uid = ALICE, id = ID) => doc(db, 'users', uid, 'shares', id);
+  const share = (db: Db, uid = ALICE, id = ID, data = shared(), m = marker({ id })) => {
+    const b = writeBatch(db);
+    b.set(sDoc(db, id), data);
+    b.set(mDoc(db, uid, id), m);
+    return b.commit();
+  };
+
+  it('lets a student share a note, and anyone with the link read it, signed in or not', async () => {
+    await assertSucceeds(share(asAlice()));
+    await assertSucceeds(getDoc(sDoc(anon())));
+    await assertSucceeds(getDoc(sDoc(asBob())));
+    await assertSucceeds(getDoc(mDoc(asAlice())));
+    await assertFails(getDoc(mDoc(asBob())));
+  });
+
+  it('never lets anyone list shared notes', async () => {
+    await assertSucceeds(share(asAlice()));
+    await assertFails(getDocs(query(collection(anon(), 'sharedNotes'), limit(10))));
+    await assertFails(getDocs(query(collection(asBob(), 'sharedNotes'), limit(10))));
+    await assertFails(getDocs(query(collection(asAlice(), 'sharedNotes'), limit(10))));
+  });
+
+  it('needs a signed-in student and the owner marker in the same write', async () => {
+    await assertFails(setDoc(sDoc(anon()), shared()));
+    await assertFails(setDoc(sDoc(asAlice()), shared())); // no marker
+    await assertFails(setDoc(mDoc(asAlice()), marker())); // marker without the shared copy
+    await assertFails(share(asBob(), ALICE)); // a marker in someone else's account
+  });
+
+  it('rejects a short id, extra or missing fields, a uid or email, a client clock and an oversized body', async () => {
+    await assertFails(share(asAlice(), ALICE, 'short-id-123'));
+    await assertFails(share(asAlice(), ALICE, ID, shared({ ownerUid: ALICE })));
+    await assertFails(share(asAlice(), ALICE, ID, shared({ email: 'a@example.com' })));
+    await assertFails(share(asAlice(), ALICE, ID, shared({ sharedAt: Timestamp.fromMillis(0) })));
+    await assertFails(share(asAlice(), ALICE, ID, shared({ updatedAt: Timestamp.fromMillis(0) })));
+    await assertFails(share(asAlice(), ALICE, ID, shared({ title: '' })));
+    await assertFails(share(asAlice(), ALICE, ID, shared({ body: 'x'.repeat(100001) })));
+    await assertFails(share(asAlice(), ALICE, ID, shared({ sharedBy: 'x'.repeat(101) })));
+    await assertFails(share(asAlice(), ALICE, ID, shared(), marker({ id: 'other-id-other-id-other' })));
+    await assertSucceeds(share(asAlice(), ALICE, ID, shared({ body: 'x'.repeat(100000), sharedBy: 'Alice', course: '' })));
+  });
+
+  it('lets only the owner update or stop sharing, and nobody take over an existing link', async () => {
+    await assertSucceeds(share(asAlice()));
+    // Bob cannot claim the id (the shared copy already exists), overwrite it or delete it
+    await assertFails(share(asBob(), BOB));
+    await assertFails(setDoc(sDoc(asBob()), shared({ body: 'changed' })));
+    await assertFails(deleteDoc(sDoc(asBob())));
+    await assertFails(deleteDoc(sDoc(anon())));
+    // Alice updates it (server clock, sharedAt kept) and then stops sharing
+    await assertFails(updateDoc(sDoc(asAlice()), { body: 'v2', sharedAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(sDoc(asAlice()), { body: 'v2', updatedAt: serverTimestamp() }));
+    const alice = asAlice();
+    const b = writeBatch(alice);
+    b.delete(sDoc(alice));
+    b.delete(mDoc(alice));
+    await assertSucceeds(b.commit());
+    await assertSucceeds(getDoc(sDoc(anon()))); // reading a missing link is allowed; it is simply not there
+    expect((await getDoc(sDoc(anon()))).exists()).toBe(false);
+  });
+
+  it('accepts a share id on a note, and rejects a malformed one', async () => {
+    const note = (over: Record<string, unknown> = {}) => ({
+      id: 'n1', title: 'Week 3', body: 'x', course: '', pinned: false, createdAt: '2026-11-01T08:00:00.000Z', editedAt: '2026-11-01T08:00:00.000Z',
+      archived: false, updatedAt: serverTimestamp(), ...over
+    });
+    await assertSucceeds(setDoc(doc(asAlice(), 'users', ALICE, 'notes', 'n1'), note({ shareId: ID })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'notes', 'n1'), note({ shareId: 'x' })));
+    await assertFails(setDoc(doc(asAlice(), 'users', ALICE, 'notes', 'n1'), note({ shareId: 42 })));
+  });
+});

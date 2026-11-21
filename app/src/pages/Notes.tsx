@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { deleteFilesForNote } from '../lib/localFiles';
-import { FileText, Pin, Plus, Search } from 'lucide-react';
+import { FileText, Link2, Pin, Plus, Search } from 'lucide-react';
 import { EmptyIllustration } from '../components/EmptyIllustration';
 import { useStudyFlowStore } from '../store/studyFlowStore';
 import type { Assignment, Note } from '../types';
 import { NoteDialog } from '../components/NoteDialog';
+import { ShareNoteDialog } from '../components/ShareNoteDialog';
 import { WritingSpace } from '../components/WritingSpace';
 import { assignmentWritings, courseCode } from '../utils/assignmentWriting';
 import { NOTE_FORMAT, plainText } from '../utils/miniMarkdown';
@@ -40,6 +41,9 @@ export const NotesPage: React.FC = () => {
   const [justDeleted, setJustDeleted] = useState<Note | null>(null);
   // The assignment whose writing is open in the writing space (the same one the Assignments page opens).
   const [writingFor, setWritingFor] = useState<Assignment | null>(null);
+  // The note whose share-by-link dialog is open.
+  const [sharingId, setSharingId] = useState<string | null>(null);
+  const sharingNote = sharingId ? notes.find((n) => n.id === sharingId) ?? null : null;
 
   useEffect(() => {
     if (!justDeleted) return;
@@ -163,7 +167,7 @@ export const NotesPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setOpen({ id: n.id })}
-                className="w-full h-full flex flex-col items-start justify-start text-left p-4 pr-14 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors cursor-pointer"
+                className="w-full h-full flex flex-col items-start justify-start text-left p-4 pr-24 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-surface-light dark:bg-surface-dark hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors cursor-pointer"
               >
                 <span className="flex w-full flex-wrap items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
                   {n.course && <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">{n.course}</span>}
@@ -181,6 +185,15 @@ export const NotesPage: React.FC = () => {
                 className="absolute top-1 right-1 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
               >
                 <Pin className={`h-4 w-4 ${n.pinned ? 'fill-current text-blue-700 dark:text-blue-400' : ''}`} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                aria-label={n.shareId ? `Shared by link: manage the link for ${n.title}` : `Share note ${n.title}`}
+                title={n.shareId ? 'Shared by link' : 'Share by link'}
+                onClick={() => setSharingId(n.id)}
+                className="absolute top-1 right-12 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+              >
+                <Link2 className={`h-4 w-4 ${n.shareId ? 'text-blue-700 dark:text-blue-400' : ''}`} aria-hidden="true" />
               </button>
             </li>
           ))}
@@ -221,6 +234,8 @@ export const NotesPage: React.FC = () => {
           </ul>
         </section>
       )}
+
+      {sharingNote && <ShareNoteDialog note={sharingNote} onClose={() => setSharingId(null)} />}
 
       {writingFor && <WritingSpace assignment={writingFor} onClose={() => setWritingFor(null)} />}
 

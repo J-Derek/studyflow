@@ -92,6 +92,8 @@ export interface Note {
   editedAt: string; // ISO
   /** Set when this belongs to a past semester/term (its period id). Missing means current. */
   archivedPeriod?: string;
+  /** Set while the note is shared by link: the id in /s/<id> (see services/sharedNotes). */
+  shareId?: string;
 }
 
 /** What a student has written for one assignment (the writing space). `id` is the assignment's id; the text is Markdown. */
